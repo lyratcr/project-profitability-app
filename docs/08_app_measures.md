@@ -579,3 +579,92 @@ IF (
     CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Actual" )
 )
 ```
+
+## 7. Org-aware hours MoM (open item #24): CREATED 2026-11-04
+
+`Synerion Hours MoM %_app` is built on `Synerion Hours_app`, which ignores `dim_hierarchy_master`. P1's hours KPI needs a MoM that follows the org filter in the same org view as the hours it sits next to. Created in the Dev model after Ion's approval (`State = Ready`); re-run against the model measures with identical values (October 2026: no org 1.4517% both; L1 = BPO −1.0153% / −1.0124%; week Oct 25–31, L1 = BPO, 27.99% / 28.17%).
+
+| Measure | Action | Folder | Format |
+|---|---|---|---|
+| **Synerion Hours (Employee Org) MoM %_app** | NEW | `_app\Hours` | `0.0%` |
+| **Synerion Hours (Project Org) MoM %_app** | NEW | `_app\Hours` | `0.0%` |
+
+### Validation (query-scoped, 2026-11-04)
+
+October 2026 vs September 2026:
+
+| Context | Employee Org MoM | Project Org MoM | `Synerion Hours MoM %_app` | Independent check |
+|---|---|---|---|---|
+| No org | 1.45% | 1.45% | 1.45% | equal to the existing measure ✓ |
+| Week Oct 25–31, L1 = BPO | 27.99% | 28.17% | — | (38,940 − 30,425) / 30,425 ✓ (plain SUM of `worked_hours`, `employee_L1`; one month back is Sep 25–30) |
+| L1 = BPO | −1.02% | −1.01% | 1.45% (company-wide, wrong under the filter) | employee: (171,790 − 173,552) / 173,552 = −1.02% ✓ (fact `employee_L1`); project: (169,978 − 171,716) / 171,716 = −1.01% ✓ (same master-hierarchy measure; the fact's `project_L1` gives 171,788 / 173,612 because of #21) |
+
+### DAX
+
+#### Synerion Hours (Employee Org) MoM %_app (NEW)
+
+Description: `ADDED 2026-11-04 (Fabric app): Change in employee-org Synerion hours vs the same period one month earlier (numeric); follows the master hierarchy.`
+
+```dax
+VAR _lm = CALCULATE ( [Synerion Hours (Employee Org)_app], DATEADD ( dim_calendar[date], -1, MONTH ) )
+RETURN DIVIDE ( [Synerion Hours (Employee Org)_app] - _lm, _lm )
+```
+
+#### Synerion Hours (Project Org) MoM %_app (NEW)
+
+Description: `ADDED 2026-11-04 (Fabric app): Change in project-org Synerion hours vs the same period one month earlier (numeric); follows the master hierarchy.`
+
+```dax
+VAR _lm = CALCULATE ( [Synerion Hours (Project Org)_app], DATEADD ( dim_calendar[date], -1, MONTH ) )
+RETURN DIVIDE ( [Synerion Hours (Project Org)_app] - _lm, _lm )
+```
+
+## 8. Productive share (open item #25): CREATED 2026-11-04
+
+`subtask_category` holds the Synerion auxiliar code: "Default" becomes "Regular Time", a null code "Productive Time" (none in 2026), and named codes keep their name. Ion (2026-11-04): **productive = subtask Regular Time, Activity 01, Activity 02 or Productive Time, excluding pay categories Holiday and Time Off**, over all Synerion hours. One measure per org view, like the hours measures (P1 has a page-level employee / project org toggle). Created in the Dev model after Ion's approval (`State = Ready`); re-run against the model measures with identical values (October 2026: no org 93.6261%; L1 = BPO 92.3229% / 92.4402%; week Oct 25–31, L1 = BPO, 92.9730% / 93.0772%).
+
+| Measure | Action | Folder | Format |
+|---|---|---|---|
+| **Productive Share (Employee Org)_app** | NEW | `_app\Hours` | `0.0%` |
+| **Productive Share (Project Org)_app** | NEW | `_app\Hours` | `0.0%` |
+
+### Validation (query-scoped, 2026-11-04)
+
+| Context | Employee org | Project org | Independent check (plain SUM of `worked_hours`, `employee_L1`) |
+|---|---|---|---|
+| October 2026, no org | 93.6% | 93.6% | 253,917 / 271,203 (from the subtask × pay category breakdown) ✓ |
+| October 2026, L1 = BPO | 92.3% | 92.4% | 158,601 / 171,790 = 92.3% ✓ |
+| Week Oct 25–31, no org | 94.3% | 94.3% | — |
+| Week Oct 25–31, L1 = BPO | 93.0% | 93.1% | 36,204 / 38,940 = 93.0% ✓ |
+
+### DAX
+
+#### Productive Share (Employee Org)_app (NEW)
+
+Description: `ADDED 2026-11-04 (Fabric app): Share of employee-org Synerion hours that are productive: subtask Regular Time, Activity 01/02 or Productive Time, excluding Holiday and Time Off pay.`
+
+```dax
+DIVIDE (
+    CALCULATE (
+        [Synerion Hours (Employee Org)_app],
+        KEEPFILTERS ( fact_profitability_metrics[subtask_category] IN { "Regular Time", "Activity 01", "Activity 02", "Productive Time" } ),
+        KEEPFILTERS ( NOT fact_profitability_metrics[pay_category_description] IN { "Holiday", "Time Off" } )
+    ),
+    [Synerion Hours (Employee Org)_app]
+)
+```
+
+#### Productive Share (Project Org)_app (NEW)
+
+Description: `ADDED 2026-11-04 (Fabric app): Share of project-org Synerion hours that are productive: subtask Regular Time, Activity 01/02 or Productive Time, excluding Holiday and Time Off pay.`
+
+```dax
+DIVIDE (
+    CALCULATE (
+        [Synerion Hours (Project Org)_app],
+        KEEPFILTERS ( fact_profitability_metrics[subtask_category] IN { "Regular Time", "Activity 01", "Activity 02", "Productive Time" } ),
+        KEEPFILTERS ( NOT fact_profitability_metrics[pay_category_description] IN { "Holiday", "Time Off" } )
+    ),
+    [Synerion Hours (Project Org)_app]
+)
+```
