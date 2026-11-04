@@ -408,13 +408,15 @@ Grouped by `fact_profitability_metrics[ukg_employee_id]`, filtered on `fact_prof
 
 | Project | Week | Rows | With hours | Flagged | Independent flagged | Prev-4-weeks hours = check |
 |---|---|---|---|---|---|---|
-| PAR-401-01 | 2026-10-27 – 11-02 (last full week) | 109 | 106 | 3 | 3 | 18,901 = 18,901 |
-| PAR-401-05 | 2026-10-27 – 11-02 | 365 | 352 | 13 | 13 | 53,665 = 53,665 |
-| PAR-401-01 | 2026-11-03 – 11-09 (current, data through 11-03) | 108 | 93 | 15 | 15 | 18,626 = 18,626 |
+| PAR-401-01 | Sun 2026-10-25 – Sat 10-31 (last full week) | 109 | 104 | 5 | 5 | 18,931 = 18,931 |
+| PAR-401-05 | Sun 2026-10-25 – Sat 10-31 | 363 | 350 | 13 | 13 | 53,630 = 53,630 |
+| PAR-401-01 | Sun 2026-11-01 – Wed 11-04 (current week to date; hours through Tue 11-03) | 108 | 97 | 11 | 11 | 18,769 = 18,769 |
+
+*Corrected 2026-11-04 (task 2.3):* the first version of this table used 2026-10-27 – 11-02 and 11-03 – 11-09, which are Tuesday–Monday ranges (2026-10-27 is a Tuesday). The measures were right (they use the first date the app sends); the table now uses real **Sunday–Saturday** weeks (Auxis weeks), built by `app/src/lib/weeks.ts`.
 
 No row is flagged while having hours in the week.
 
-**Note for P6:** on the current (partial) week the flag means "nothing logged *yet* this week" (15 people on a Monday). The page should label it that way for the current week, and use the full last week for the Monday review.
+**Note for P6:** on the current (partial) week the flag means "nothing logged *yet* this week" (11 people by Wednesday morning). The page should label it that way for the current week, and use the full last week for the Monday review.
 
 ## 6. Master-hierarchy-aware measures (open item #19): CREATED 2026-11-04
 

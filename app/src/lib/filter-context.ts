@@ -1,10 +1,12 @@
 import { describePeriod, type FilterOptions, type FilterState } from "./filters";
+import { describeWeek } from "./weeks";
 import type { PageDef } from "./routes";
 
 /** Filter context in words, limited to the filters the page applies. */
-export function describeFilterContext(page: PageDef, filters: FilterState, options: FilterOptions | null): string {
+export function describeFilterContext(page: PageDef, filters: FilterState, options: FilterOptions | null, today: Date = new Date()): string {
     const parts: string[] = [];
     if (page.filters.includes("period")) parts.push(describePeriod(filters.period));
+    if (page.filters.includes("week")) parts.push(describeWeek(filters.week, today));
     if (page.filters.includes("org")) {
         const path = [filters.org.l1, filters.org.l2, filters.org.l3].filter((v): v is string => v !== undefined);
         parts.push(path.length > 0 ? path.join(" › ") : "All organizations");

@@ -15,8 +15,9 @@ export interface GlobalFilters {
 }
 
 /** Filter state from the URL, validated against the model's own values. */
-export function useGlobalFilters(route: Route, today: Date = new Date()): GlobalFilters {
-    const todayKey = today.toDateString();
+export function useGlobalFilters(route: Route, now: Date = new Date()): GlobalFilters {
+    // Local date and hour: the Monday review window ends on Tuesday morning (lib/weeks.ts).
+    const nowKey = [now.getFullYear(), now.getMonth(), now.getDate(), now.getHours()].join("-");
     const paramsKey = route.params.toString();
     const { options, isLoading, error, customersLoading, projectsLoading } = useFilterOptions(
         route.params,
@@ -26,9 +27,11 @@ export function useGlobalFilters(route: Route, today: Date = new Date()): Global
 
     const kinds = route.page.periodKinds;
     const state = useMemo(() => {
-        const read = readFilters(new URLSearchParams(paramsKey), new Date(todayKey), options);
-        return { ...read, period: coercePeriod(read.period, kinds, new Date(todayKey)) };
-    }, [paramsKey, todayKey, options, kinds]);
+        const [y, m, d, h] = nowKey.split("-").map(Number);
+        const at = new Date(y, m, d, h);
+        const read = readFilters(new URLSearchParams(paramsKey), at, options);
+        return { ...read, period: coercePeriod(read.period, kinds, at) };
+    }, [paramsKey, nowKey, options, kinds]);
 
     const setFilters = useCallback(
         (next: FilterState) => {

@@ -12,7 +12,7 @@
 
 ## 2. Global elements
 
-- **Top bar:** app name, page tabs, "Data through" from `[Last Synerion Date_app]` (hours) and `[Last Revenue Date_app]` (revenue), and model refresh from `[Last Refresh Date]`. If the Synerion date is earlier than last Sunday, show a warning: "Hours are not current: last day loaded is …".
+- **Top bar:** app name, page tabs, "Data through" from `[Last Synerion Date_app]` (hours) and `[Last Revenue Date_app]` (revenue), and model refresh from `[Last Refresh Date]`. If the Synerion date is earlier than the Saturday that ends the last complete Sunday–Saturday week, show a warning: "Hours are not current: last day loaded is …".
 - **Global filters → DAX:**
 
 | Filter | Column | Default |
@@ -23,7 +23,7 @@
 | Customer | `dim_project[project_customer]` | All |
 | Project | `dim_project[project_key]` (shown as `project_name`) | All (P6: the PM's projects) |
 
-- **Weeks** start on Monday (`dim_calendar[year_week]`). The app works out "this week", "last week" and the Monday review window from the viewer's local date and sends them as `dim_calendar[date]` ranges. No `TODAY()` in DAX.
+- **Weeks** run **Sunday to Saturday** (Auxis weeks; Ion, 2026-11-04), as `dim_calendar[start_of_week_sun]` / `[end_of_week_sat]`. `dim_calendar[year_week]` is Monday-based ISO and is not used (open item #22). The app works out "this week", "last week" and the Monday review window from the viewer's local date and sends them as `dim_calendar[date]` ranges. No `TODAY()` in DAX.
 - **Month-over-month:** use the numeric `… MoM %_app` measures, or query the previous period.
 
 ## 3. Pages
@@ -77,7 +77,7 @@
 **Project selector.** The PM picks one or more projects. There's no PM field in the model yet (open item #4 in `04`); until it exists, the selection is remembered per user in the browser.
 
 **Monday review banner** (Mondays, and any day until the integration runs):
-"Review last week's hours (Mon dd – Sun dd). Synerion approval closes **today at end of day**; the integration to Project Operations runs **Tuesday early morning**." It links to the week table below, filtered to last week.
+"Review last week's hours (Sun dd – Sat dd). Synerion approval closes **today at end of day**; the integration to Project Operations runs **Tuesday early morning**." It links to the week table below, filtered to last week.
 
 **KPI cards (whole project life):**
 - `[Total Planned Revenue_app]`, `[Revenue Billed to Date_app]`, `[Revenue Left to Bill_app]`.
