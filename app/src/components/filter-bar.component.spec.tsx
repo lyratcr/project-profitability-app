@@ -6,7 +6,12 @@ import { FilterBar } from "./filter-bar.component";
 
 const today = new Date(2026, 10, 4);
 const options: FilterOptions = {
-    org: [["BPO", "BOS", "POD0"]],
+    org: [
+        ["BPO", "BOS", "POD0"],
+        ["BPO", "BOS", "POD1"],
+        ["BPO", "FAO", "MGMT"],
+        ["DTF", "IAI", "CORE"],
+    ],
     countries: ["Colombia", "Costa Rica", "United States"],
     customers: ["Access Corporation  "],
     projects: [{ key: "PAR-401-01", name: "PAR-401-01 Project" }],
@@ -48,9 +53,31 @@ describe("FilterBar", () => {
         expect(screen.queryByLabelText("Employee country")).toBeNull();
     });
 
-    it("never offers the organization filter yet (open item #19)", () => {
-        renderBar("headcount");
-        expect(screen.queryByLabelText(/L1|Organization/)).toBeNull();
+    it("offers L1 > L2 > L3 on every page but Projects", () => {
+        for (const id of ["effort", "headcount", "fte", "flows", "yield"]) {
+            const { unmount } = render(
+                <FilterBar page={page(id)} state={state} options={options} optionsLoading={false} optionsError={undefined} onChange={() => {}} today={today} />,
+            );
+            expect(screen.getByLabelText("L1")).toBeInTheDocument();
+            unmount();
+        }
+        render(<FilterBar page={page("projects")} state={state} options={options} optionsLoading={false} optionsError={undefined} onChange={() => {}} today={today} />);
+        expect(screen.queryByLabelText("L1")).toBeNull();
+    });
+
+    it("cascades the organization levels and resets lower levels", () => {
+        const onChange = renderBar("headcount");
+        expect(screen.getByLabelText("L2")).toBeDisabled();
+        fireEvent.change(screen.getByLabelText("L1"), { target: { value: "BPO" } });
+        expect(onChange).toHaveBeenLastCalledWith({ ...state, org: { l1: "BPO" } });
+    });
+
+    it("lists only the L2 and L3 values under the selected parents", () => {
+        renderBar("headcount", { state: { ...state, org: { l1: "BPO", l2: "BOS" } } });
+        const l2 = screen.getByLabelText("L2") as HTMLSelectElement;
+        expect([...l2.options].map((o) => o.value)).toEqual(["", "BOS", "FAO"]);
+        const l3 = screen.getByLabelText("L3") as HTMLSelectElement;
+        expect([...l3.options].map((o) => o.value)).toEqual(["", "POD0", "POD1"]);
     });
 
     it("reports a country change and 'All' as undefined", () => {

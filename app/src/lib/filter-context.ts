@@ -5,6 +5,10 @@ import type { PageDef } from "./routes";
 export function describeFilterContext(page: PageDef, filters: FilterState, options: FilterOptions | null): string {
     const parts: string[] = [];
     if (page.filters.includes("period")) parts.push(describePeriod(filters.period));
+    if (page.filters.includes("org")) {
+        const path = [filters.org.l1, filters.org.l2, filters.org.l3].filter((v): v is string => v !== undefined);
+        parts.push(path.length > 0 ? path.join(" › ") : "All organizations");
+    }
     if (page.filters.includes("country")) parts.push(filters.country ?? "All countries");
     if (page.filters.includes("customer")) parts.push(filters.customer?.trim() ?? "All customers");
     if (page.filters.includes("project")) {

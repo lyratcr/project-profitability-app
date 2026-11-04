@@ -27,6 +27,8 @@ interface FilterBarProps {
 const KIND_LABEL: Record<PeriodKind, string> = { month: "Month", quarter: "Quarter", ytd: "Year to date", range: "Custom" };
 const ALL = "";
 
+const unique = (values: readonly string[] | undefined): string[] => [...new Set(values ?? [])];
+
 const controlClass =
     "h-9 rounded-md border border-border bg-card px-2 text-[length:var(--text-300)] text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-60";
 
@@ -120,6 +122,61 @@ export function FilterBar({ page, state, options, optionsLoading, optionsError, 
                             </select>
                         </Field>
                     )}
+                </>
+            )}
+
+            {shows("org") && (
+                <>
+                    <Field label="L1" id={`${id}-l1`}>
+                        <select
+                            id={`${id}-l1`}
+                            className={controlClass}
+                            disabled={listsDisabled}
+                            value={state.org.l1 ?? ALL}
+                            onChange={(e) => set({ org: e.target.value === ALL ? {} : { l1: e.target.value } })}
+                        >
+                            <option value={ALL}>All</option>
+                            {unique(options?.org.map(([a]) => a)).map((v) => (
+                                <option key={v} value={v}>
+                                    {v}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
+                    <Field label="L2" id={`${id}-l2`}>
+                        <select
+                            id={`${id}-l2`}
+                            className={controlClass}
+                            disabled={listsDisabled || state.org.l1 === undefined}
+                            value={state.org.l2 ?? ALL}
+                            onChange={(e) => set({ org: e.target.value === ALL ? { l1: state.org.l1 } : { l1: state.org.l1, l2: e.target.value } })}
+                        >
+                            <option value={ALL}>All</option>
+                            {unique(options?.org.filter(([a]) => a === state.org.l1).map(([, b]) => b)).map((v) => (
+                                <option key={v} value={v}>
+                                    {v}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
+                    <Field label="L3" id={`${id}-l3`}>
+                        <select
+                            id={`${id}-l3`}
+                            className={controlClass}
+                            disabled={listsDisabled || state.org.l2 === undefined}
+                            value={state.org.l3 ?? ALL}
+                            onChange={(e) =>
+                                set({ org: e.target.value === ALL ? { l1: state.org.l1, l2: state.org.l2 } : { ...state.org, l3: e.target.value } })
+                            }
+                        >
+                            <option value={ALL}>All</option>
+                            {unique(options?.org.filter(([a, b]) => a === state.org.l1 && b === state.org.l2).map(([, , c]) => c)).map((v) => (
+                                <option key={v} value={v}>
+                                    {v}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
                 </>
             )}
 
