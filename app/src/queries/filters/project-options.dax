@@ -1,0 +1,20 @@
+// Filter options: project keys in either fact, with the name from the hours fact (blank for revenue-only projects).
+// Until open item #1 is fixed, project filters go to the fact project_key columns instead of dim_project.
+DEFINE
+    VAR _keys =
+        DISTINCT (
+            UNION (
+                DISTINCT ( fact_profitability_metrics[project_key] ),
+                DISTINCT ( fact_revenue_metrics[project_key] )
+            )
+        )
+EVALUATE
+ADDCOLUMNS (
+    FILTER ( _keys, NOT ISBLANK ( [project_key] ) && [project_key] <> "" ),
+    "Project Name",
+        CALCULATE (
+            MAX ( fact_profitability_metrics[project_name] ),
+            TREATAS ( { [project_key] }, fact_profitability_metrics[project_key] )
+        )
+)
+ORDER BY [project_key]

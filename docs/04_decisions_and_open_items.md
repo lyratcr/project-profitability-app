@@ -24,9 +24,14 @@
 | 16 | Mobile check of the deployed app: nobody available yet to review it on a phone (the layout stacks to one column below 640 px, but nobody has seen it) | Definition of done (mobile), from 0.5 on | Ion | Deferred (2026-11-04) |
 | 17 | Actual revenue has rows dated in the future (2026-11-04 check: 164 rows; Fixed Fee After Month $1.83 M dated 10–28 Nov 2026; Manual Adjustment up to 2027-03-02). Confirm with Finance that this is how Project Ops posts them; they land in future months' actual revenue | P5, P6 revenue by month; `Last Revenue Date_app` uses T&M only | Finance / Ion | Open (found 2026-11-04) |
 | 18 | Repo skills (`build-page`, `model-change`, `release`) and `.github/pull_request_template.md` refer to docs that don't exist here (`07_app_measures.md`, `04_decisions_and_changelog.md`, `08_build_plan.md`, `Retell_AI`); measures doc is `08_app_measures.md` | Tooling | Ion | Open (found 2026-11-04) |
+| 19 | The organization filter (master hierarchy) doesn't reach hours: `Synerion Hours_app`, `People With Hours_app` and `Planned Revenue_app` ignore `dim_hierarchy_master` (Sep 2026 with L1 = BPO: hours 267,322 unchanged; FTE 1,541 → 1,004; revenue $6.03 M → $3.47 M). Decide which org hours follow (employee org, as headcount/FTE do, or project org) and add master-hierarchy-aware `_app` measures; the filter stays hidden until then | Global org filter on P1–P5 | Ion | Open (found 2026-11-04) |
+| 20 | Customer names have stray whitespace (e.g. `"
+NY Municipal Credit"`, `"Access Corporation  "`), and 3 revenue customers have no hours match (e.g. Propelis). Trim in gold | Customer filter labels and matching | Data engineering | Open (found 2026-11-04) |
 
 ## Log
 
+2026-11-04 | Decision | Filters | Global filters live in the hash query and only accept values loaded from the model (whitelist); the period defaults to the last complete month from the viewer's date; Yield accepts single months only; country is not offered on Yield (revenue has no employee country) | Claude
+2026-11-04 | Decision | Filters | Until #1 is fixed, customer and project filter each fact's own column (`project_customer` / `financial_customer`, `project_key` in both) instead of `dim_project`; the organization filter is hidden until #19 is decided | Claude
 2026-11-04 | Release | App shell | `npx rayfin up` from `main` @ `d5d78c6` (PRs #1–#6 merged, approved by Ion) to `_Corporate DCOE Backend Dev`, app https://epic-acorn-69682d5614-eastus2.webapp.fabricapps.net. Checked in Ion's Chrome: live data dates, direct link `#/flows`, Google Fonts load (no CSP block) | Ion + Claude
 2026-11-04 | Decision | Routing | Hash routes (`#/effort`, page state in the hash query) so deep links work on Fabric static hosting without server rewrites | Claude
 2026-11-04 | Decision | Stale-data warning | Hours are "not current" when `Last Synerion Date_app` is before the Sunday ending the last complete Mon–Sun week, using the viewer's local date | Claude

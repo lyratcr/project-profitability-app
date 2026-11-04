@@ -84,4 +84,13 @@ describe("AppHeader", () => {
         expect(screen.getAllByText("—")).toHaveLength(3);
         expect(screen.queryByRole("status")).toBeNull();
     });
+
+    it("keeps the current filters in the tab links", () => {
+        render(
+            <ThemeContext.Provider value={{ isDark: false, toggleTheme: () => {}, theme: {} as VisualTheme }}>
+                <AppHeader current={PAGES[0]} params={new URLSearchParams({ period: "m:2026-09", country: "Colombia" })} today={wednesday} />
+            </ThemeContext.Provider>,
+        );
+        expect(screen.getByRole("link", { name: "Yield" })).toHaveAttribute("href", "#/yield?period=m%3A2026-09&country=Colombia");
+    });
 });

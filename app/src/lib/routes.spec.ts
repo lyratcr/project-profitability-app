@@ -28,4 +28,11 @@ describe("routes", () => {
         expect(pageHref(yieldPage)).toBe("#/yield");
         expect(pageHref(yieldPage, new URLSearchParams({ month: "2026-09" }))).toBe("#/yield?month=2026-09");
     });
+
+    it("configures filters per page (no organization yet, monthly Yield)", () => {
+        for (const p of PAGES) expect(p.filters).not.toContain("org");
+        const yieldPage = PAGES.find((p) => p.id === "yield")!;
+        expect(yieldPage.periodKinds).toEqual(["month"]);
+        expect(yieldPage.filters).not.toContain("country");
+    });
 });

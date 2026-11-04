@@ -1,0 +1,13 @@
+// Filter options: customers in either fact (hours: project_customer; revenue: financial_customer).
+// Until open item #1 is fixed, customer filters go to these fact columns instead of dim_project.
+DEFINE
+    VAR _customers =
+        DISTINCT (
+            UNION (
+                DISTINCT ( fact_profitability_metrics[project_customer] ),
+                DISTINCT ( fact_revenue_metrics[financial_customer] )
+            )
+        )
+EVALUATE
+FILTER ( _customers, NOT ISBLANK ( [project_customer] ) && [project_customer] <> "" )
+ORDER BY [project_customer]
