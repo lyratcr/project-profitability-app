@@ -7,10 +7,10 @@
 /* These tokens are consumed directly as CSS variables, so emit them
    even when no Tailwind utility references them. */
 @theme static {
-  --color-brand:            #0f6cbd;  /* branded surfaces */
-  --color-brand-foreground: #0f6cbd;  /* brand-colored content on standard surfaces */
-  --color-hover:            rgba(0, 0, 0, 0.04);  /* row/cell hover surface in DataGrid + visuals */
-  --color-emphasis-foreground: #242424;  /* page and visual titles, KPI values */
+  --color-brand:            #1f3a5f;  /* branded surfaces (ink navy) */
+  --color-brand-foreground: #1f4f86;  /* brand-colored content on standard surfaces */
+  --color-hover:            rgba(31, 58, 95, 0.05);  /* row/cell hover surface in DataGrid + visuals */
+  --color-emphasis-foreground: #111827;  /* page and visual titles, KPI values */
   --font-page-title: var(--font-heading);
   --font-page-subtitle: var(--font-base);
   --font-visual-title: var(--font-heading);
@@ -33,17 +33,17 @@
 @theme {
   /* Color tokens — light theme
      Usage: bg-*, text-*, border-* (e.g. bg-brand text-on-brand). */
-  --color-background: #ffffff;                                       /* page background */
-  --color-foreground: #242424;                                       /* default text */
+  --color-background: #f6f5f1;                                       /* page background (warm paper) */
+  --color-foreground: #1d2433;                                       /* default text */
 
   --color-card: #ffffff;                                             /* card and elevated surfaces */
 
   --color-on-brand: #ffffff;                                         /* text/icons on brand surfaces */
 
-  --color-muted: #f0f0f0;                                            /* subtle backgrounds */
-  --color-muted-foreground: #616161;                                 /* subdued text */
+  --color-muted: #ecebe5;                                            /* subtle backgrounds */
+  --color-muted-foreground: #5d6470;                                 /* subdued text */
 
-  --color-accent: #f5f5f5;                                           /* accent highlights */
+  --color-accent: #efeee8;                                           /* accent highlights */
 
   --color-destructive: #b10e1c;                                      /* errors & destructive actions */
   --color-destructive-foreground: #ffffff;
@@ -51,8 +51,11 @@
   --color-success: #0e700e;                                          /* success surfaces */
   --color-success-foreground: #ffffff;
 
-  --color-border: #e0e0e0;                                           /* default border */
-  --color-ring: #0f6cbd;                                             /* focus rings */
+  --color-border: #dcd9cf;                                           /* default border */
+  --color-ring: #2f6db3;                                             /* focus rings */
+
+  --color-warning: #8a5a00;                                          /* stale-data and caution text */
+  --color-warning-surface: #fdf3dc;                                  /* stale-data banner background */
 
   --shadow-container-2:  var(--shadow-xs);
   --shadow-container-4:  var(--shadow-sm);
@@ -111,14 +114,12 @@
 
   /* Font Families
      Usage: font-* (e.g. font-heading, font-base) */
-  --font-heading: 'Segoe UI', 'Segoe UI Web (West European)',       /* headings, titles, display text */
-    -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
-  --font-base: 'Segoe UI', 'Segoe UI Web (West European)',          /* body text, labels, UI controls */
-    -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
-  --font-monospace: Consolas, 'Courier New', Courier, monospace;     /* code, pre-formatted text */
-  --font-numeric: Bahnschrift, 'Segoe UI',                          /* KPI values, numeric displays */
-    'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto,
+  --font-heading: 'Source Serif 4', Georgia, 'Times New Roman', serif;          /* headings, titles, display text */
+  --font-base: 'IBM Plex Sans', 'Segoe UI', -apple-system, BlinkMacSystemFont,   /* body text, labels, UI controls */
     'Helvetica Neue', sans-serif;
+  --font-monospace: 'IBM Plex Mono', Consolas, 'Courier New', monospace;         /* code, pre-formatted text */
+  --font-numeric: 'IBM Plex Sans', 'Segoe UI', -apple-system,                    /* KPI values, numeric displays */
+    BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 
   /* Icon Sizes — 100-based scale
      Usage: icon-size-* custom utility (e.g. icon-size-200) */
@@ -141,19 +142,23 @@
 }
 
 @layer base {
+  :root {
+    --radius-scale: 0.75; /* precise, ledger-like corners */
+  }
+
   .dark {
     /* Color tokens — dark theme */
-    --color-background: #292929;
-    --color-foreground: #ffffff;
+    --color-background: #14181f;
+    --color-foreground: #e6e8ec;
 
-    --color-card: #292929;
+    --color-card: #1b2029;
 
     --color-on-brand: #ffffff;
 
-    --color-muted: #141414;
-    --color-muted-foreground: #adadad;
+    --color-muted: #10141a;
+    --color-muted-foreground: #9aa3af;
 
-    --color-accent: #3d3d3d;
+    --color-accent: #232a35;
 
     --color-destructive: #dc626d;
     --color-destructive-foreground: #ffffff;
@@ -161,13 +166,16 @@
     --color-success: #54b054;
     --color-success-foreground: #ffffff;
 
-    --color-border: #525252;
-    --color-ring: #479ef5;
+    --color-border: #2e3644;
+    --color-ring: #8fb8ea;
 
-    --color-brand:            #115ea3;
-    --color-brand-foreground: #479ef5;
-    --color-hover:            rgba(255, 255, 255, 0.09);
-    --color-emphasis-foreground: #ffffff;
+    --color-warning: #f2c46d;
+    --color-warning-surface: #2e2410;
+
+    --color-brand:            #2f5f99;
+    --color-brand-foreground: #8fb8ea;
+    --color-hover:            rgba(255, 255, 255, 0.06);
+    --color-emphasis-foreground: #f5f7fa;
   }
 }
 
@@ -178,6 +186,15 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--font-base);
+    font-variant-numeric: tabular-nums;
+  }
+
+  select,
+  input,
+  textarea,
+  button {
+    font-family: inherit;
   }
 }
 

@@ -27,6 +27,8 @@
 
 ## Log
 
+2026-11-04 | Decision | Routing | Hash routes (`#/effort`, page state in the hash query) so deep links work on Fabric static hosting without server rewrites | Claude
+2026-11-04 | Decision | Stale-data warning | Hours are "not current" when `Last Synerion Date_app` is before the Sunday ending the last complete Mon–Sun week, using the viewer's local date | Claude
 2026-11-04 | Change | Model | Ion approved; `Hours Previous 4 Weeks_app` and `Missing This Week_app` created in `_app\Projects`, validated before and after creation, TMDL re-exported. Phase 1 done except the 2 rank measures (#1) | Ion + Claude
 2026-11-04 | Proposal | P6 flag | `Hours Previous 4 Weeks_app` and `Missing This Week_app` validated as query-scoped measures on two projects and two weeks (`08_app_measures.md` § 5), pending Ion's approval | Claude
 2026-11-04 | Change | Model | Ion approved; 33 `_app` measures created in the Dev model (`_Measures`, `_app\<topic>`), validated before and after creation, TMDL re-exported; closes #9 except the 2 rank measures (blocked by #1) | Ion + Claude
