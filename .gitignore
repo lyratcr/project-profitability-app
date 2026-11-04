@@ -1,0 +1,26 @@
+# Dependencies and build output
+node_modules/
+dist/
+build/
+*.log
+
+# Secrets and local Rayfin state (commit .env.example only)
+.env
+.env.*
+!.env.example
+**/rayfin/.env
+**/rayfin/.temp/
+
+# Test output
+playwright-report/
+test-results/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Power BI: no data cache, local settings or binaries
+**/.pbi/cache.abf
+**/.pbi/localSettings.json
+*.pbix
+!**/rayfin/.env.example

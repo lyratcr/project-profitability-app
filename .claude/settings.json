@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npx rayfin connector search *)",
+      "Bash(npx fabric-app-semantic-model-tools run-dax-query *)",
+      "Bash(npx rayfin up status *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git switch *)",
+      "Bash(git checkout -b *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "mcp__powerbi-modeling__connection_operations",
+      "mcp__powerbi-modeling__dax_query_operations"
+    ],
+    "ask": [
+      "Bash(npx rayfin up)",
+      "Bash(git push *)",
+      "mcp__powerbi-modeling__measure_operations",
+      "mcp__powerbi-modeling__column_operations",
+      "mcp__powerbi-modeling__table_operations",
+      "mcp__powerbi-modeling__database_operations"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/rayfin/.env)",
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(del *)",
+      "Bash(rd *)",
+      "Bash(Remove-Item *)",
+      "Bash(git clean *)",
+      "Bash(git rm *)",
+      "Bash(git reset --hard *)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(rm *)",
+      "PowerShell(del *)",
+      "PowerShell(rmdir *)",
+      "PowerShell(git clean *)"
+    ]
+  }
+}
