@@ -1,0 +1,21 @@
+// P1 hours by customer and project: the top 15 customers by hours, with their projects and tasks
+// (drill down), share of all hours in the filter context, and the model's grand total for all customers.
+// Customer and project come from the fact's own columns (no dim_project until open item #1 is fixed).
+EVALUATE
+VAR _base =
+    SUMMARIZECOLUMNS (
+        ROLLUPADDISSUBTOTAL (
+            fact_profitability_metrics[project_customer], "IsCustomerTotal",
+            fact_profitability_metrics[project_name], "IsProjectTotal",
+            fact_profitability_metrics[task_name], "IsTaskTotal"
+        ),
+        /* @filters */
+        "Hours", [@Hours],
+        "Share", DIVIDE ( [@Hours], CALCULATE ( [@Hours], ALLSELECTED () ) )
+    )
+VAR _top = TOPN ( 15, FILTER ( _base, [IsProjectTotal] && NOT [IsCustomerTotal] ), [Hours], DESC )
+VAR _topCustomers = SELECTCOLUMNS ( _top, "Customer", fact_profitability_metrics[project_customer] )
+RETURN
+    FILTER ( _base, [IsCustomerTotal] || fact_profitability_metrics[project_customer] IN _topCustomers )
+// Largest first: a subtotal always comes before its children, so the matrix keeps this order.
+ORDER BY [Hours] DESC

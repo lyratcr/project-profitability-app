@@ -6,13 +6,16 @@
 //-----------------------------------------------------------------------
 
 import { AppHeader } from "./components/app-header.component";
+import { EffortPage } from "./components/effort-page.component";
 import { FilterBar } from "./components/filter-bar.component";
 import { PagePlaceholder } from "./components/page-placeholder.component";
 import { useGlobalFilters } from "./hooks/use-global-filters";
 import { useHashRoute } from "./hooks/use-hash-route";
+import { readOrgView, writeOrgView } from "./lib/org-view";
+import { pageHref } from "./lib/routes";
 
 // App shell (build plan 2.1–2.2): top bar with data freshness, page tabs, hash routes and global filters.
-// Pages P1–P6 replace PagePlaceholder in Phases 3–4.
+// Pages P1–P6 replace PagePlaceholder in Phases 3–4 (P1 Effort: 3.1).
 function App() {
     const route = useHashRoute();
     const { page } = route;
@@ -33,7 +36,19 @@ function App() {
                     onChange={filters.setFilters}
                 />
                 <div className="pt-6">
-                    <PagePlaceholder page={page} filters={filters.state} options={filters.options} />
+                    {page.id === "effort" ? (
+                        <EffortPage
+                            page={page}
+                            filters={filters.state}
+                            options={filters.options}
+                            view={readOrgView(route.params)}
+                            onViewChange={(view) => {
+                                window.location.hash = pageHref(page, writeOrgView(route.params, view));
+                            }}
+                        />
+                    ) : (
+                        <PagePlaceholder page={page} filters={filters.state} options={filters.options} />
+                    )}
                 </div>
             </main>
         </div>

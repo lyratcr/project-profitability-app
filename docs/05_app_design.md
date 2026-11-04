@@ -30,10 +30,11 @@
 
 ### P1 · Effort Distribution (`/effort`)
 **Purpose:** where the hours go.
-- **KPI cards:** `[Synerion Hours_app]` with `[Synerion Hours MoM %_app]`; productive share (hours with `subtask_category` = Productive Time ÷ total); overtime hours (`pay_category_description` = Overtime); time off + holiday.
-- **Hours by organization:** `project_L1 > L2 > L3` (where the work is billed) vs `employee_L1 > L2 > L3` (where the people sit), selectable.
-- **Hours by customer and project:** top 15 with share; drill to task (`task_name`).
-- **Weekly trend:** 12–26 weeks of hours, stacked by `pay_category_description`.
+- **Organization view** (whole page, Ion 2026-11-04): Project org (where the work is billed, default) or Employee org (where the people sit); every visual uses the `(Project Org)` or `(Employee Org)` `_app` measures.
+- **KPI cards:** `[Synerion Hours (… Org)_app]` with `[Synerion Hours (… Org) MoM %_app]`; `[Productive Share (… Org)_app]` (subtask Regular Time, Activity 01/02 or Productive Time, excluding Holiday and Time Off pay, ÷ all hours; Ion 2026-11-04, #25); overtime hours (`pay_category_description` = Overtime); time off + holiday.
+- **Hours by organization:** master hierarchy L1 > L2 > L3 in the selected org view, with share.
+- **Hours by customer and project:** top 15 customers with share; drill to project and task (`task_name`).
+- **Weekly trend:** last 13 Sunday–Saturday weeks (about 3 months, Ion 2026-11-04) ending with the period, stacked by `pay_category_description`.
 - **Shrinkage:** hours by `subtask_category` (productive vs internal codes).
 
 ### P2 · Headcount Overview (`/headcount`)

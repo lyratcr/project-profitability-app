@@ -1,0 +1,17 @@
+// P1 hours by organization: master hierarchy L1 > L2 > L3 with the model's subtotals.
+// Grouped by dim_hierarchy_master (what the org-aware measures map), not the fact's own org columns:
+// the measures' TREATAS replaces a filter on those columns, so every row would show the same total.
+// Project-org combos missing from the hierarchy (open item #21) count only in the grand total.
+EVALUATE
+SUMMARIZECOLUMNS (
+    ROLLUPADDISSUBTOTAL (
+        dim_hierarchy_master[L1], "IsL1Total",
+        dim_hierarchy_master[L2], "IsL2Total",
+        dim_hierarchy_master[L3], "IsL3Total"
+    ),
+    /* @filters */
+    "Hours", [@Hours],
+    "Share", DIVIDE ( [@Hours], CALCULATE ( [@Hours], ALLSELECTED () ) )
+)
+// Largest first: a subtotal always comes before its children, so the matrix keeps this order.
+ORDER BY [Hours] DESC

@@ -173,6 +173,11 @@ export function daxString(value: string): string {
 
 const daxDate = (d: Date) => `DATE ( ${d.getFullYear()}, ${d.getMonth() + 1}, ${d.getDate()} )`;
 
+/** A dim_calendar[date] range as a SUMMARIZECOLUMNS filter argument (e.g. a weekly trend window). */
+export function dateRangeArg(start: Date, end: Date): string {
+    return `KEEPFILTERS ( DATESBETWEEN ( ${FILTER_COLUMNS.date}, ${daxDate(start)}, ${daxDate(end)} ) )`;
+}
+
 /**
  * Target columns per filter. Customer and project filter each fact's own column because every
  * query through dim_project fails until open item #1 (duplicate key) is fixed.

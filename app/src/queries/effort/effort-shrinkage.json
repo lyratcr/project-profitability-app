@@ -1,0 +1,15 @@
+{
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+    "description": "P1 shrinkage: hours by Synerion subtask code, largest first, with the share of hours as the label.",
+    "encoding": {
+        "y": { "field": "Subtask", "type": "nominal", "title": null, "sort": { "field": "Hours", "order": "descending" } },
+        "x": { "field": "Hours", "type": "quantitative" }
+    },
+    "layer": [
+        { "mark": "bar" },
+        {
+            "mark": { "type": "text", "align": "left", "dx": 4, "limit": 0 },
+            "encoding": { "text": { "field": "Share", "type": "quantitative" } }
+        }
+    ]
+}
