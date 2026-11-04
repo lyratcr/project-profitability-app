@@ -22,12 +22,12 @@
   - 2026-11-04: Dev model item `48ad695a-a31f-4f3a-852b-7bd2f3bbc39e` (the same model name also exists in `_Corporate DCOE Backend` and `_Corporate DCOE Backend Test`; not used). `app/.gitignore` re-includes `rayfin/.env.example`.
 - [x] 0.4 Smoke query: September 2026 `[Total Worked Hours]` = 267,322 and actual revenue = $6,033,393 (baseline confirmed by Ion 2026-11-04; was $6,031,963).
   - 2026-11-04 (`app/src/queries/smoke/smoke.dax`, model refresh 11/04/2026 09:14 EST): hours **267,322.28 ✓**; actual revenue **$6,033,393.35 ✗** (+$1,430.39 vs expected). Explicit `scenario = "Actual"` and `[Total Revenue (Master Hierarchy)]` agree. Every September row was reloaded today (full load), so the change can't be isolated by load date. Ion confirmed $6,033,393 as the September 2026 baseline on 2026-11-04 (open item #15 closed).
-- [ ] 0.5 First deploy of a page showing the smoke result; Ion shares it with a non-builder to check viewer access (Build + Read on the model).
+- [x] 0.5 First deploy of a page showing the smoke result; Ion shares it with a non-builder to check viewer access (Build + Read on the model).
   - 2026-11-04: smoke page built (`app/src/components/smoke-page.component.tsx`, factory `app/src/queries/smoke/`): two KPI cards (September 2026 hours and actual revenue, original measures until Phase 1) and the model refresh time, with loading, empty and error states. `tsc`, 144 unit tests, lint and `build:fabric` pass.
   - Not viewable locally yet: the template's entry throws without the backend env vars (`run 'npx rayfin up'`), and `npx rayfin dev` would itself create the Fabric item. The template ships no Playwright validation; browser checks (desktop and mobile) run on the deployed app instead, right after the first `npx rayfin up`.
   - 2026-11-04: first `npx rayfin up` (approved by Ion) from branch `feat/0.5-smoke-page` to `_Corporate DCOE Backend Dev`: item `project-real-profitability` (`ccfd1401-8097-42f2-877f-e770b5401df5`), app https://epic-acorn-69682d5614-eastus2.webapp.fabricapps.net (protected, Fabric sign-in). The workspace already had capacity; no trial or capacity change. `rayfin up status`: reachable.
   - Checked in Ion's Chrome, signed in as a builder: 267,322 h and $6,033,393, the same as DAX on Fabric; desktop layout OK. Mobile width not verified (the window could not be resized).
-  - Pending: Ion shares the app with a non-builder (Build + Read on the model) to confirm viewer access; mobile check.
+  - 2026-11-04: Ion confirmed viewer access with a non-builder (Build + Read on the model): OK. Mobile check deferred, nobody available to review on a phone yet (open item #16).
 - [ ] 0.6 Export the model as TMDL into `model/` (skill `export-model`).
 
 ## Phase 1 — Model layer (needs Ion's approval of the DAX)
