@@ -1,0 +1,12 @@
+// P1 KPI cards: hours with MoM, productive share, overtime, time off + holiday.
+// [@…] tokens are the org-aware measures of the page's org view (lib/org-view.ts).
+// Overtime and Time off + Holiday slice the same measure by pay category (Ion, 2026-11-04).
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "Hours", [@Hours],
+    "HoursMoM", [@HoursMoM],
+    "ProductiveShare", [@ProductiveShare],
+    "Overtime", CALCULATE ( [@Hours], KEEPFILTERS ( fact_profitability_metrics[pay_category_description] = "Overtime" ) ),
+    "TimeOffHoliday", CALCULATE ( [@Hours], KEEPFILTERS ( fact_profitability_metrics[pay_category_description] IN { "Time Off", "Holiday" } ) )
+)

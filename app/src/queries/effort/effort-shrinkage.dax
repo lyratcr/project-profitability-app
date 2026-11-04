@@ -1,0 +1,9 @@
+// P1 shrinkage: hours by Synerion subtask code (subtask_category), with share of all hours.
+EVALUATE
+SUMMARIZECOLUMNS (
+    fact_profitability_metrics[subtask_category],
+    /* @filters */
+    "Hours", [@Hours],
+    "Share", DIVIDE ( [@Hours], CALCULATE ( [@Hours], ALLSELECTED () ) )
+)
+ORDER BY [Hours] DESC

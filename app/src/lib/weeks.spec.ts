@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultWeek, describeWeek, lastWeek, parseWeek, reviewWindow, thisWeek, weekChoices, weekSpan, weekStartOf } from "./weeks";
+import { defaultWeek, describeWeek, lastWeek, parseWeek, reviewWindow, thisWeek, weekChoices, weekSpan, trendWindow, weekStartOf } from "./weeks";
 
 const day = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h);
 const at0 = (y: number, m: number, d: number) => new Date(y, m - 1, d);
@@ -88,5 +88,33 @@ describe("labels", () => {
         expect(describeWeek(lastWeek(wednesday), wednesday)).toBe("Last week (Oct 25 – Oct 31, 2026)");
         expect(describeWeek(weekChoices(wednesday)[2], wednesday)).toBe("Oct 18 – Oct 24, 2026");
         expect(weekSpan(lastWeek(day(2026, 1, 7)))).toBe("Dec 28 – Jan 3, 2026");
+    });
+});
+
+describe("trendWindow", () => {
+    const d = (y: number, m: number, day: number) => new Date(y, m - 1, day);
+    const today = d(2026, 11, 4); // Wednesday
+
+    it("ends with the Sunday–Saturday week that holds the period's last day", () => {
+        const w = trendWindow(d(2026, 10, 31), today); // Saturday
+        expect(w.end).toEqual(d(2026, 10, 31));
+        expect(w.start).toEqual(d(2026, 8, 2)); // 13 weeks, starting on a Sunday
+        expect(w.start.getDay()).toBe(0);
+    });
+
+    it("runs to the Saturday when the period ends mid-week", () => {
+        const w = trendWindow(d(2026, 9, 30), today); // Wednesday
+        expect(w.end).toEqual(d(2026, 10, 3));
+        expect(w.start).toEqual(d(2026, 7, 5));
+    });
+
+    it("stops at today when the period runs into the future", () => {
+        const w = trendWindow(d(2026, 11, 30), today);
+        expect(w.end).toEqual(today);
+        expect(w.start).toEqual(d(2026, 8, 9));
+    });
+
+    it("takes another week count", () => {
+        expect(trendWindow(d(2026, 10, 31), today, 26).start).toEqual(d(2026, 5, 3));
     });
 });

@@ -1360,6 +1360,50 @@ table _Measures
 		displayFolder: _app\People
 		lineageTag: ac3e2591-ab6b-4f15-b9a2-163d630e5bfd
 
+	/// ADDED 2026-11-04 (Fabric app): Change in employee-org Synerion hours vs the same period one month earlier (numeric); follows the master hierarchy.
+	measure 'Synerion Hours (Employee Org) MoM %_app' =
+			VAR _lm = CALCULATE ( [Synerion Hours (Employee Org)_app], DATEADD ( dim_calendar[date], -1, MONTH ) )
+			RETURN DIVIDE ( [Synerion Hours (Employee Org)_app] - _lm, _lm )
+		formatString: 0.0%
+		displayFolder: _app\Hours
+		lineageTag: d5748371-1620-4adc-b675-8df293a113a0
+
+	/// ADDED 2026-11-04 (Fabric app): Change in project-org Synerion hours vs the same period one month earlier (numeric); follows the master hierarchy.
+	measure 'Synerion Hours (Project Org) MoM %_app' =
+			VAR _lm = CALCULATE ( [Synerion Hours (Project Org)_app], DATEADD ( dim_calendar[date], -1, MONTH ) )
+			RETURN DIVIDE ( [Synerion Hours (Project Org)_app] - _lm, _lm )
+		formatString: 0.0%
+		displayFolder: _app\Hours
+		lineageTag: 5aed62ab-f0a4-4912-bc35-a1d598f89bb5
+
+	/// ADDED 2026-11-04 (Fabric app): Share of employee-org Synerion hours that are productive: subtask Regular Time, Activity 01/02 or Productive Time, excluding Holiday and Time Off pay.
+	measure 'Productive Share (Employee Org)_app' =
+			DIVIDE (
+			    CALCULATE (
+			        [Synerion Hours (Employee Org)_app],
+			        KEEPFILTERS ( fact_profitability_metrics[subtask_category] IN { "Regular Time", "Activity 01", "Activity 02", "Productive Time" } ),
+			        KEEPFILTERS ( NOT fact_profitability_metrics[pay_category_description] IN { "Holiday", "Time Off" } )
+			    ),
+			    [Synerion Hours (Employee Org)_app]
+			)
+		formatString: 0.0%
+		displayFolder: _app\Hours
+		lineageTag: 9b44ff03-c7cb-429f-95e9-7bc3c0830857
+
+	/// ADDED 2026-11-04 (Fabric app): Share of project-org Synerion hours that are productive: subtask Regular Time, Activity 01/02 or Productive Time, excluding Holiday and Time Off pay.
+	measure 'Productive Share (Project Org)_app' =
+			DIVIDE (
+			    CALCULATE (
+			        [Synerion Hours (Project Org)_app],
+			        KEEPFILTERS ( fact_profitability_metrics[subtask_category] IN { "Regular Time", "Activity 01", "Activity 02", "Productive Time" } ),
+			        KEEPFILTERS ( NOT fact_profitability_metrics[pay_category_description] IN { "Holiday", "Time Off" } )
+			    ),
+			    [Synerion Hours (Project Org)_app]
+			)
+		formatString: 0.0%
+		displayFolder: _app\Hours
+		lineageTag: cac49a04-13fd-442f-b17c-b915f324d77b
+
 	column Column
 		isHidden
 		formatString: 0

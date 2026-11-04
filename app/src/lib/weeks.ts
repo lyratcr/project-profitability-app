@@ -109,3 +109,17 @@ export function describeWeek(week: Week, today: Date): string {
     if (week.start.getTime() === lastWeek(today).start.getTime()) return `Last week (${weekSpan(week)})`;
     return weekSpan(week);
 }
+
+/** Weeks shown by a weekly trend: about the last 3 months (P1; Ion, 2026-11-04; the design allows 12–26). */
+export const TREND_WEEKS = 13;
+
+/**
+ * Window of a weekly trend that ends with the period: `count` whole Sunday–Saturday weeks, the last one
+ * holding the period's last day, or today when the period runs into the future (that week ends today).
+ */
+export function trendWindow(periodEnd: Date, today: Date, count = TREND_WEEKS): { start: Date; end: Date } {
+    const last = day(periodEnd) > day(today) ? day(today) : day(periodEnd);
+    const lastWeekStart = weekStartOf(last);
+    const isCurrent = lastWeekStart.getTime() === weekStartOf(today).getTime();
+    return { start: addDays(lastWeekStart, -7 * (count - 1)), end: isCurrent ? day(today) : addDays(lastWeekStart, 6) };
+}

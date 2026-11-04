@@ -67,6 +67,42 @@ describe("buildMatrix", () => {
         expect(m.totals).toEqual({ c0: 267322.2809 });
     });
 
+    it("puts several measures side by side (hours and share) with the model's totals", () => {
+        // Real rows from the model: project-org hours and share, October 2026, L1 = BPO.
+        const t = {
+            columns: ["dim_hierarchy_master[L1]", "dim_hierarchy_master[L2]", "[IsL1Total]", "[IsL2Total]", "[Hours]", "[Share]"].map((name) => ({ name })),
+            rows: [
+                [null, null, true, true, 169977.9521, 1],
+                ["BPO", null, false, true, 169977.9521, 1],
+                ["BPO", "FAO", false, false, 58712.4175, 0.3454],
+                ["BPO", "RCM", false, false, 57409.3514, 0.3377],
+            ],
+        } as unknown as QueryTable;
+        const m = buildMatrix(t, {
+            levels: ["dim_hierarchy_master[L1]", "dim_hierarchy_master[L2]"],
+            flags: ["[IsL1Total]", "[IsL2Total]"],
+            values: [
+                { raw: "[Hours]", header: "Hours" },
+                { raw: "[Share]", header: "Share" },
+            ],
+        });
+        expect(m.columns.map((c) => [c.id, c.header])).toEqual([["label", ""], ["c0", "Hours"], ["c1", "Share"]]);
+        expect(m.rows[0]).toMatchObject({ label: "BPO", c0: 169977.9521, c1: 1 });
+        expect(m.rows[0]._children!.map((r) => [r.label, r.c0, r.c1])).toEqual([
+            ["FAO", 58712.4175, 0.3454],
+            ["RCM", 57409.3514, 0.3377],
+        ]);
+        expect(m.totals).toEqual({ c0: 169977.9521, c1: 1 });
+    });
+
+    it("needs exactly one of value or values, and no pivot with values", () => {
+        const base = { levels: ["dim_hierarchy_master[L1]"], flags: ["[IsL1Total]"] };
+        const t = { columns: [{ name: "dim_hierarchy_master[L1]" }, { name: "[IsL1Total]" }, { name: "[Hours]" }], rows: [] } as unknown as QueryTable;
+        expect(() => buildMatrix(t, base)).toThrow(/either value or values/);
+        expect(() => buildMatrix(t, { ...base, value: "[Hours]", values: [{ raw: "[Hours]", header: "H" }] })).toThrow(/either value or values/);
+        expect(() => buildMatrix(t, { ...base, values: [{ raw: "[Hours]", header: "H" }], pivot: "[Hours]" })).toThrow(/can't pivot/);
+    });
+
     it("keeps BLANK values blank and labels real blank org values", () => {
         const withBlank = {
             columns,

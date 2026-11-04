@@ -8,6 +8,7 @@ import {
     applyFilters,
     applyOrgToOptions,
     coercePeriod,
+    dateRangeArg,
     daxString,
     describePeriod,
     filterArgs,
@@ -245,5 +246,13 @@ describe("week filter", () => {
         expect(filterArgs(current, new Set<FilterKey>(["week"]))).toEqual([
             "KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 11, 1 ), DATE ( 2026, 11, 4 ) ) )",
         ]);
+    });
+});
+
+describe("dateRangeArg", () => {
+    it("writes a dim_calendar[date] range like the period filter", () => {
+        expect(dateRangeArg(new Date(2026, 4, 3), new Date(2026, 9, 31))).toBe(
+            "KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 5, 3 ), DATE ( 2026, 10, 31 ) ) )",
+        );
     });
 });

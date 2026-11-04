@@ -52,7 +52,11 @@
 
 ## Phase 3 — Executive pages
 
-- [ ] 3.1 P1 Effort Distribution
+- [x] 3.1 P1 Effort Distribution
+  - 2026-11-04: page `#/effort` (`components/effort-page.component.tsx`, queries in `queries/effort/`, one per visual). Page-level **Organization view** toggle (Project org default / Employee org, `view=employee` in the hash, `lib/org-view.ts`) picks the org-aware `_app` measures for every visual through `[@Hours]` / `[@HoursMoM]` / `[@ProductiveShare]` tokens in the `.dax` files. KPI cards: Synerion hours with MoM, productive share, overtime, time off + holiday (pay-category slices computed in the query's DAX). Hours by organization: master hierarchy L1 > L2 > L3 with hours and share (grouped by `dim_hierarchy_master`: grouping by the fact's org columns returns the total on every row, because the measures' TREATAS replaces that filter). Hours by customer and project: top 15 customers > project > task with share, the model's grand total. Weekly trend: last 13 Sunday–Saturday weeks ending with the period (Ion: about 3 months), stacked by pay category. Shrinkage: hours by subtask code with share.
+  - Model: `Synerion Hours (Employee/Project Org) MoM %_app` (#24) and `Productive Share (Employee/Project Org)_app` (#25) created after Ion's approval; TMDL re-exported.
+  - `HierarchyMatrix` / `buildMatrix` take several value columns (`values`, per-column formats). `trendWindow` in `lib/weeks.ts`, `dateRangeArg` in `lib/filters.ts`.
+  - Checks: 282 unit tests, lint, build; `validate:visual` 4/4 (trend and shrinkage, project and employee view, with and without L1 = BPO); every query run on Fabric first. Checked in Ion's Chrome (dark, desktop): October 2026 all orgs 271,203 h / +1.5% / 93.6% / 2,519 / 3,357; L1 = BPO employee view 171,790 h / −1.0% / 92.3% / 1,859 / 1,658, RCM 59,451, BOS 52,542; drill Parallon › projects; same as DAX. Mobile width not verified (the Chrome window can't be resized from here, #16).
 - [ ] 3.2 P2 Headcount Overview
 - [ ] 3.3 P3 FTE Overview
 - [ ] 3.4 P4 Intercompany & Cross-Charge (February 2026 = 223,641 h in both views)

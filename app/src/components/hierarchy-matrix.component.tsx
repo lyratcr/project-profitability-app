@@ -10,8 +10,11 @@ interface HierarchyMatrixProps {
     spec: MatrixSpec;
     /** Header of the row-label column, e.g. "Organization (employee)". */
     rowHeader: string;
-    /** Format string of the measure in the cells (from the query metadata). */
-    format?: string;
+    /**
+     * Format string of the measure in the cells (from the query metadata), or one per value column
+     * when the spec lists several `values`.
+     */
+    format?: string | readonly (string | undefined)[];
     title: string;
     subtitle?: string;
     /** Expand the first level on load. */
@@ -28,10 +31,11 @@ export function HierarchyMatrix({ table, spec, rowHeader, format, title, subtitl
     const { theme } = useThemeContext();
     const matrix = useMemo(() => buildMatrix(table, spec), [table, spec]);
 
-    const columns: GridColumnDef[] = matrix.columns.map((c) =>
+    const formatOf = (i: number) => (typeof format === "string" || format === undefined ? format : format[i]);
+    const columns: GridColumnDef[] = matrix.columns.map((c, i) =>
         c.id === "label"
             ? { id: "label", header: rowHeader, minWidth: 180 }
-            : { id: c.id, header: c.header, numericStyling: true, cellRenderer: (value) => show(value, format) },
+            : { id: c.id, header: c.header, numericStyling: true, cellRenderer: (value) => show(value, formatOf(i - 1)) },
     );
 
     const rows: Row[] = useMemo(() => {
@@ -49,7 +53,7 @@ export function HierarchyMatrix({ table, spec, rowHeader, format, title, subtitl
 
     const totals: DataTable | undefined = matrix.totals
         ? {
-              columns: [{ name: "label" }, ...matrix.columns.slice(1).map((c) => ({ name: c.id, format }))],
+              columns: [{ name: "label" }, ...matrix.columns.slice(1).map((c, i) => ({ name: c.id, format: formatOf(i) }))],
               rows: [["Total", ...matrix.columns.slice(1).map((c) => matrix.totals![c.id])]],
           }
         : undefined;

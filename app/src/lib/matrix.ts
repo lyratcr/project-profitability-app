@@ -16,8 +16,13 @@ export interface MatrixSpec {
     levels: readonly string[];
     /** Raw output names of the matching rollup flags (same order as `levels`). */
     flags: readonly string[];
-    /** Raw output name of the measure shown in the cells. */
-    value: string;
+    /** Raw output name of the measure shown in the cells (with an optional pivot). */
+    value?: string;
+    /**
+     * Several measures side by side instead of a pivot, e.g. hours and share. Each becomes a column
+     * (`c0`, `c1`, … in this order); `pivot` must be omitted.
+     */
+    values?: readonly { raw: string; header: string }[];
     /** Raw output name of the column pivoted into columns; omit for a single value column. */
     pivot?: string;
     /** Raw output name that orders the pivot columns (e.g. dim_calendar[year_month_number]). */
@@ -62,7 +67,10 @@ export function buildMatrix(table: QueryTable, spec: MatrixSpec): Matrix {
     }
     const levelIdx = spec.levels.map((l) => index(table, l));
     const flagIdx = spec.flags.map((f) => index(table, f));
-    const valueIdx = index(table, spec.value);
+    if ((spec.value === undefined) === (spec.values === undefined)) throw new Error("Matrix spec needs either value or values.");
+    if (spec.values && spec.pivot) throw new Error("Matrix spec can't pivot several values.");
+    if (spec.values) return buildMultiValue(table, spec, spec.values, levelIdx, flagIdx);
+    const valueIdx = index(table, spec.value!);
     const pivotIdx = spec.pivot ? index(table, spec.pivot) : -1;
     const sortIdx = spec.pivotSort ? index(table, spec.pivotSort) : -1;
 
@@ -80,49 +88,83 @@ export function buildMatrix(table: QueryTable, spec: MatrixSpec): Matrix {
     const colId = new Map(pivotKeys.map((k, i) => [k, `c${i}`]));
     const columns: MatrixColumn[] = [{ id: "label", header: "" }, ...pivotKeys.map((k, i) => ({ id: `c${i}`, header: k || "Value" }))];
 
-    const nodes = new Map<string, MatrixRow>();
-    const roots: MatrixRow[] = [];
+    const tree = createTree(spec, [...colId.values()]);
     let totals: Record<string, number | null> | null = null;
-    const blank = spec.blankLabel ?? "(blank)";
 
     for (const row of table.rows) {
-        const flags = flagIdx.map((i) => row[i]);
-        if (flags.some((f) => typeof f !== "boolean")) throw new Error("Matrix rollup flags must be boolean.");
-        const depth = flags.filter((f) => f === false).length;
-        // Flags must form a prefix: FALSE for the levels shown, TRUE for the rolled-up ones.
-        if (flags.slice(0, depth).some((f) => f !== false) || flags.slice(depth).some((f) => f !== true)) {
-            throw new Error("Matrix rollup flags must roll up from the innermost level.");
-        }
+        const depth = depthOf(row, flagIdx);
         const column = colId.get(pivotIdx < 0 ? "" : String(row[pivotIdx] ?? ""))!;
         const value = asNumber(row[valueIdx]);
-
         if (depth === 0) {
             totals ??= Object.fromEntries(pivotKeys.map((_, i) => [`c${i}`, null]));
             totals[column] = value;
             continue;
         }
-
-        const path = levelIdx.slice(0, depth).map((i) => (row[i] === null || row[i] === undefined || row[i] === "" ? blank : String(row[i])));
-        ensureNode(path)[column] = value;
+        tree.node(tree.path(row, levelIdx, depth))[column] = value;
     }
+
+    return { columns, rows: tree.roots, totals };
+}
+
+function buildMultiValue(
+    table: QueryTable,
+    spec: MatrixSpec,
+    values: NonNullable<MatrixSpec["values"]>,
+    levelIdx: number[],
+    flagIdx: number[],
+): Matrix {
+    const valueIdx = values.map((v) => index(table, v.raw));
+    const ids = values.map((_, i) => `c${i}`);
+    const columns: MatrixColumn[] = [{ id: "label", header: "" }, ...values.map((v, i) => ({ id: ids[i], header: v.header }))];
+    const tree = createTree(spec, ids);
+    let totals: Record<string, number | null> | null = null;
+
+    for (const row of table.rows) {
+        const depth = depthOf(row, flagIdx);
+        const cells = Object.fromEntries(ids.map((id, i) => [id, asNumber(row[valueIdx[i]])]));
+        if (depth === 0) totals = cells;
+        else Object.assign(tree.node(tree.path(row, levelIdx, depth)), cells);
+    }
+    return { columns, rows: tree.roots, totals };
+}
+
+/** Depth of a rollup row: the number of FALSE flags (0 = grand total). */
+function depthOf(row: readonly unknown[], flagIdx: number[]): number {
+    const flags = flagIdx.map((i) => row[i]);
+    if (flags.some((f) => typeof f !== "boolean")) throw new Error("Matrix rollup flags must be boolean.");
+    const depth = flags.filter((f) => f === false).length;
+    // Flags must form a prefix: FALSE for the levels shown, TRUE for the rolled-up ones.
+    if (flags.slice(0, depth).some((f) => f !== false) || flags.slice(depth).some((f) => f !== true)) {
+        throw new Error("Matrix rollup flags must roll up from the innermost level.");
+    }
+    return depth;
+}
+
+function createTree(spec: MatrixSpec, columnIds: readonly string[]) {
+    const nodes = new Map<string, MatrixRow>();
+    const roots: MatrixRow[] = [];
+    const blank = spec.blankLabel ?? "(blank)";
 
     /**
      * Finds or creates the node for `path`, creating missing ancestors with empty cells. A parent can
      * be missing when the model returns BLANK for its subtotal in every column seen so far.
      */
-    function ensureNode(path: string[]): MatrixRow {
+    function node(path: string[]): MatrixRow {
         const id = path.join(" › ");
         const existing = nodes.get(id);
         if (existing) return existing;
         const depth = path.length;
-        const node: MatrixRow = { _id: id, label: path[depth - 1], depth };
-        for (const c of colId.values()) node[c] = null;
-        if (depth < spec.levels.length) node._children = [];
-        nodes.set(id, node);
-        if (depth === 1) roots.push(node);
-        else ensureNode(path.slice(0, -1))._children!.push(node);
-        return node;
+        const created: MatrixRow = { _id: id, label: path[depth - 1], depth };
+        for (const c of columnIds) created[c] = null;
+        if (depth < spec.levels.length) created._children = [];
+        nodes.set(id, created);
+        if (depth === 1) roots.push(created);
+        else node(path.slice(0, -1))._children!.push(created);
+        return created;
     }
 
-    return { columns, rows: roots, totals };
+    const path = (row: readonly unknown[], levelIdx: number[], depth: number) =>
+        levelIdx.slice(0, depth).map((i) => (row[i] === null || row[i] === undefined || row[i] === "" ? blank : String(row[i])));
+
+    return { node, path, roots };
 }
