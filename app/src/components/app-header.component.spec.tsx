@@ -72,7 +72,7 @@ describe("AppHeader", () => {
         expect(screen.queryByRole("status")).toBeNull();
     });
 
-    it("warns when hours stop before last Sunday", () => {
+    it("warns when hours stop before the end of the last complete week (Saturday)", () => {
         hook.result = success([["2026-10-17T00:00:00.000", "2026-10-30T00:00:00.000", "11/04/2026 09:14 EST"]]);
         renderHeader();
         expect(screen.getByRole("status")).toHaveTextContent("Hours are not current: last day loaded is Oct 17, 2026.");

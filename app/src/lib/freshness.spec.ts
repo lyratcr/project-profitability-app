@@ -18,32 +18,34 @@ describe("parseModelDate", () => {
 });
 
 describe("lastCompleteWeekEnd", () => {
-    it("is yesterday on a Monday", () => {
-        expect(lastCompleteWeekEnd(day(2026, 11, 9))).toEqual(day(2026, 11, 8));
+    // Nov 1, 2026 is a Sunday (dim_calendar); weeks run Sunday–Saturday.
+    it("is yesterday on a Sunday", () => {
+        expect(lastCompleteWeekEnd(day(2026, 11, 8))).toEqual(day(2026, 11, 7));
     });
 
-    it("is the previous Sunday mid-week", () => {
-        expect(lastCompleteWeekEnd(day(2026, 11, 4))).toEqual(day(2026, 11, 1));
+    it("is the previous Saturday mid-week", () => {
+        expect(lastCompleteWeekEnd(day(2026, 11, 4))).toEqual(day(2026, 10, 31));
+        expect(lastCompleteWeekEnd(day(2026, 11, 2))).toEqual(day(2026, 10, 31));
     });
 
-    it("is a week back on a Sunday (the current week is not complete)", () => {
-        expect(lastCompleteWeekEnd(day(2026, 11, 8))).toEqual(day(2026, 11, 1));
+    it("is a week back on a Saturday (the current week is not complete)", () => {
+        expect(lastCompleteWeekEnd(day(2026, 11, 7))).toEqual(day(2026, 10, 31));
     });
 
     it("ignores the time of day", () => {
-        expect(lastCompleteWeekEnd(new Date(2026, 10, 9, 23, 59))).toEqual(day(2026, 11, 8));
+        expect(lastCompleteWeekEnd(new Date(2026, 10, 8, 23, 59))).toEqual(day(2026, 11, 7));
     });
 });
 
 describe("isHoursStale", () => {
-    it("is not stale when hours reach the last complete week's Sunday or later", () => {
+    it("is not stale when hours reach the last complete week's Saturday or later", () => {
         expect(isHoursStale(day(2026, 11, 3), day(2026, 11, 4))).toBe(false);
-        expect(isHoursStale(day(2026, 11, 1), day(2026, 11, 4))).toBe(false);
+        expect(isHoursStale(day(2026, 10, 31), day(2026, 11, 4))).toBe(false);
     });
 
-    it("is stale when the last loaded day is before that Sunday", () => {
+    it("is stale when the last loaded day is before that Saturday", () => {
         expect(isHoursStale(day(2026, 10, 17), day(2026, 11, 4))).toBe(true);
-        expect(isHoursStale(day(2026, 11, 7), day(2026, 11, 9))).toBe(true);
+        expect(isHoursStale(day(2026, 10, 30), day(2026, 11, 2))).toBe(true);
     });
 
     it("does not warn without a date", () => {

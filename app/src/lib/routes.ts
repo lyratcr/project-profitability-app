@@ -22,7 +22,7 @@ export interface PageDef {
 // Organization (master hierarchy L1 > L2 > L3) is required on every page but Projects (Ion, 2026-11-04);
 // pages must use the measures that react to it (open item #19).
 // Country is not offered on Yield: revenue has no employee country.
-// Project Progress works by Monday–Sunday week (task 2.3, lib/weeks.ts) instead of a period.
+// Project Progress works by Sunday–Saturday week (task 2.3, lib/weeks.ts) instead of a period.
 export type PageId = "effort" | "headcount" | "fte" | "flows" | "yield" | "projects";
 
 export const PAGES: readonly PageDef[] = [

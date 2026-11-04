@@ -1,20 +1,20 @@
 /**
- * Week logic for P6 (build plan 2.3). Weeks run Monday–Sunday, as dim_calendar's Monday-based weeks.
- * Every window comes from the viewer's local date and goes to the model as a dim_calendar[date] range;
- * there is no TODAY() in DAX (the service runs in UTC).
+ * Week logic for P6 (build plan 2.3). Auxis weeks run **Sunday–Saturday** (Ion, 2026-11-04), as
+ * dim_calendar[start_of_week_sun] / [end_of_week_sat]. Every window comes from the viewer's local date
+ * and goes to the model as a dim_calendar[date] range; there is no TODAY() in DAX (the service runs in UTC).
  *
- * dim_calendar[year_week] is not used: its label takes the calendar year, so "2025 W01" holds both
- * Jan 1–5 2025 and Dec 29–31 2025 (open item #22).
+ * dim_calendar[year_week] is not used: it is a Monday-based ISO week, and its label takes the calendar
+ * year, so "2025 W01" holds both Jan 1–5 2025 and Dec 29–31 2025 (open item #22).
  */
 
 export interface Week {
-    /** Monday. */
+    /** Sunday. */
     start: Date;
-    /** Sunday, or today for the current week ("to date"). */
+    /** Saturday, or today for the current week ("to date"). */
     end: Date;
-    /** Sunday of the week, even when `end` is cut at today. */
-    sunday: Date;
-    /** URL form: w:2026-10-26 (the Monday). */
+    /** Saturday of the week, even when `end` is cut at today. */
+    weekEnd: Date;
+    /** URL form: w:2026-11-01 (the Sunday). */
     token: string;
     isCurrent: boolean;
 }
@@ -24,30 +24,29 @@ const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.ge
 const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 
-/** Monday of the week that holds `date` (local calendar day). */
-export function mondayOf(date: Date): Date {
+/** Sunday of the week that holds `date` (local calendar day). */
+export function weekStartOf(date: Date): Date {
     const d = day(date);
-    const back = (d.getDay() + 6) % 7; // Mon 0 … Sun 6
-    return addDays(d, -back);
+    return addDays(d, -d.getDay()); // getDay(): Sun 0 … Sat 6
 }
 
-/** The Monday–Sunday week that starts on `monday`; the current week ends at `today`. */
-export function weekStarting(monday: Date, today: Date): Week {
-    const start = mondayOf(monday);
-    const sunday = addDays(start, 6);
-    const isCurrent = start.getTime() === mondayOf(today).getTime();
-    return { start, end: isCurrent ? day(today) : sunday, sunday, token: `w:${ymd(start)}`, isCurrent };
+/** The Sunday–Saturday week that starts on `sunday`; the current week ends at `today`. */
+export function weekStarting(sunday: Date, today: Date): Week {
+    const start = weekStartOf(sunday);
+    const weekEnd = addDays(start, 6);
+    const isCurrent = start.getTime() === weekStartOf(today).getTime();
+    return { start, end: isCurrent ? day(today) : weekEnd, weekEnd, token: `w:${ymd(start)}`, isCurrent };
 }
 
 export function thisWeek(today: Date): Week {
-    return weekStarting(mondayOf(today), today);
+    return weekStarting(weekStartOf(today), today);
 }
 
 export function lastWeek(today: Date): Week {
-    return weekStarting(addDays(mondayOf(today), -7), today);
+    return weekStarting(addDays(weekStartOf(today), -7), today);
 }
 
-/** Parses `w:YYYY-MM-DD`; only a real Monday that is not in the future is accepted. */
+/** Parses `w:YYYY-MM-DD`; only a real Sunday that is not in the future is accepted. */
 export function parseWeek(token: string | null, today: Date): Week | null {
     if (!token) return null;
     const match = /^w:(\d{4})-(\d{2})-(\d{2})$/.exec(token);
@@ -55,15 +54,15 @@ export function parseWeek(token: string | null, today: Date): Week | null {
     const [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
     const date = new Date(y, m - 1, d);
     if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
-    if (date.getDay() !== 1) return null;
-    if (date > mondayOf(today)) return null;
+    if (date.getDay() !== 0) return null;
+    if (date > weekStartOf(today)) return null;
     return weekStarting(date, today);
 }
 
 /** The current week and the `count - 1` weeks before it, newest first. */
 export function weekChoices(today: Date, count = 12): Week[] {
-    const monday = mondayOf(today);
-    return Array.from({ length: count }, (_, i) => weekStarting(addDays(monday, -7 * i), today));
+    const sunday = weekStartOf(today);
+    return Array.from({ length: count }, (_, i) => weekStarting(addDays(sunday, -7 * i), today));
 }
 
 /**
@@ -75,19 +74,19 @@ export const INTEGRATION_HOUR_TUESDAY = 6;
 export interface ReviewWindow {
     /** True on Monday, and on Tuesday before the integration runs. */
     active: boolean;
-    /** The week the PMs review: the Monday–Sunday week before the review Monday. */
+    /** The week the PMs review: the Sunday–Saturday week that ended the Saturday before. */
     week: Week;
 }
 
 /**
  * Monday timesheet review (docs/05_app_design.md P6): Synerion approval closes Monday at end of day;
- * the integration to Project Operations runs Tuesday early morning.
+ * the integration to Project Operations runs Tuesday early morning. Monday and Tuesday belong to the
+ * week that started on Sunday, so the review week is always last week.
  */
 export function reviewWindow(now: Date): ReviewWindow {
     const dow = now.getDay();
     const active = dow === 1 || (dow === 2 && now.getHours() < INTEGRATION_HOUR_TUESDAY);
-    const reviewMonday = dow === 2 ? addDays(day(now), -1) : mondayOf(now);
-    return { active, week: weekStarting(addDays(reviewMonday, -7), now) };
+    return { active, week: lastWeek(now) };
 }
 
 /** Default week for P6: the review week while the Monday review is open, otherwise this week. */
@@ -99,12 +98,12 @@ export function defaultWeek(now: Date): Week {
 const short = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
 const withYear = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-/** "Oct 26 – Nov 1, 2026" for the full week (Monday–Sunday). */
+/** "Oct 25 – Oct 31, 2026" for the full week (Sunday–Saturday). */
 export function weekSpan(week: Week): string {
-    return `${short.format(week.start)} – ${withYear.format(week.sunday)}`;
+    return `${short.format(week.start)} – ${withYear.format(week.weekEnd)}`;
 }
 
-/** Label for selectors: "This week (Nov 2 – Nov 4, to date)", "Last week (Oct 26 – Nov 1, 2026)", or the span. */
+/** Label for selectors: "This week (Nov 1 – Nov 4, to date)", "Last week (Oct 25 – Oct 31, 2026)", or the span. */
 export function describeWeek(week: Week, today: Date): string {
     if (week.isCurrent) return `This week (${short.format(week.start)} – ${short.format(week.end)}, to date)`;
     if (week.start.getTime() === lastWeek(today).start.getTime()) return `Last week (${weekSpan(week)})`;

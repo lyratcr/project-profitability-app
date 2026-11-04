@@ -122,11 +122,11 @@ describe("FilterBar", () => {
         const onChange = renderBar("projects");
         expect(screen.queryByLabelText("Period")).toBeNull();
         const week = screen.getByLabelText("Week") as HTMLSelectElement;
-        expect(week.value).toBe("w:2026-11-02");
-        expect(week.options[0].text).toBe("This week (Nov 2 – Nov 4, to date)");
-        expect(week.options[1].text).toBe("Last week (Oct 26 – Nov 1, 2026)");
-        fireEvent.change(week, { target: { value: "w:2026-10-26" } });
-        expect(onChange.mock.calls.at(-1)![0].week.token).toBe("w:2026-10-26");
+        expect(week.value).toBe("w:2026-11-01");
+        expect(week.options[0].text).toBe("This week (Nov 1 – Nov 4, to date)");
+        expect(week.options[1].text).toBe("Last week (Oct 25 – Oct 31, 2026)");
+        fireEvent.change(week, { target: { value: "w:2026-10-25" } });
+        expect(onChange.mock.calls.at(-1)![0].week.token).toBe("w:2026-10-25");
     });
 });
 

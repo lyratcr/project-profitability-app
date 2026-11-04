@@ -225,25 +225,25 @@ describe("customer-dependent project list", () => {
 
 describe("week filter", () => {
     it("reads the week from the URL and falls back to the default week", () => {
-        expect(readFilters(new URLSearchParams({ week: "w:2026-10-26" }), today, null).week.token).toBe("w:2026-10-26");
-        expect(readFilters(new URLSearchParams({ week: "w:2026-10-27" }), today, null).week.token).toBe("w:2026-11-02");
+        expect(readFilters(new URLSearchParams({ week: "w:2026-10-25" }), today, null).week.token).toBe("w:2026-10-25");
+        expect(readFilters(new URLSearchParams({ week: "w:2026-10-26" }), today, null).week.token).toBe("w:2026-11-01");
         // Monday morning: the review week (last week) is the default
-        expect(readFilters(new URLSearchParams(), new Date(2026, 10, 2, 9), null).week.token).toBe("w:2026-10-26");
+        expect(readFilters(new URLSearchParams(), new Date(2026, 10, 2, 9), null).week.token).toBe("w:2026-10-25");
     });
 
     it("writes the week token", () => {
-        const state = readFilters(new URLSearchParams({ week: "w:2026-10-19" }), today, null);
-        expect(writeFilters(new URLSearchParams(), state).get("week")).toBe("w:2026-10-19");
+        const state = readFilters(new URLSearchParams({ week: "w:2026-10-18" }), today, null);
+        expect(writeFilters(new URLSearchParams(), state).get("week")).toBe("w:2026-10-18");
     });
 
-    it("sends a past week as Monday–Sunday and the current week up to today", () => {
-        const past = readFilters(new URLSearchParams({ week: "w:2026-10-26" }), today, null);
+    it("sends a past week as Sunday–Saturday and the current week up to today", () => {
+        const past = readFilters(new URLSearchParams({ week: "w:2026-10-25" }), today, null);
         expect(filterArgs(past, new Set<FilterKey>(["week"]))).toEqual([
-            "KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 10, 26 ), DATE ( 2026, 11, 1 ) ) )",
+            "KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 10, 25 ), DATE ( 2026, 10, 31 ) ) )",
         ]);
         const current = readFilters(new URLSearchParams(), today, null);
         expect(filterArgs(current, new Set<FilterKey>(["week"]))).toEqual([
-            "KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 11, 2 ), DATE ( 2026, 11, 4 ) ) )",
+            "KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 11, 1 ), DATE ( 2026, 11, 4 ) ) )",
         ]);
     });
 });

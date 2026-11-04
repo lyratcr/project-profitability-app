@@ -107,7 +107,7 @@ export interface OrgSelection {
 
 export interface FilterState {
     period: Period;
-    /** Monday–Sunday week (P6); defaults to the review week during the Monday review, else this week. */
+    /** Sunday–Saturday week (P6); defaults to the review week during the Monday review, else this week. */
     week: Week;
     org: OrgSelection;
     country?: string;

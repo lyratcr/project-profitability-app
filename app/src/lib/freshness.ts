@@ -19,16 +19,17 @@ function startOfDay(date: Date): Date {
 }
 
 /**
- * The Sunday that ends the most recent complete Monday–Sunday week before `today`.
- * Monday → yesterday; Sunday → the Sunday a week earlier (today's week is not complete yet).
+ * The Saturday that ends the most recent complete Sunday–Saturday week before `today` (Auxis weeks
+ * start on Sunday). Sunday → yesterday; Saturday → the Saturday a week earlier (today's week is not
+ * complete yet).
  */
 export function lastCompleteWeekEnd(today: Date): Date {
     const day = startOfDay(today);
-    const back = day.getDay() === 0 ? 7 : day.getDay();
+    const back = (day.getDay() + 1) % 7 || 7;
     return new Date(day.getFullYear(), day.getMonth(), day.getDate() - back);
 }
 
-/** Hours are stale when the last loaded Synerion day is earlier than the last complete week's Sunday. */
+/** Hours are stale when the last loaded Synerion day is earlier than the last complete week's Saturday. */
 export function isHoursStale(lastSynerionDate: Date | null, today: Date): boolean {
     if (lastSynerionDate === null) return false;
     return startOfDay(lastSynerionDate) < lastCompleteWeekEnd(today);
