@@ -63,6 +63,7 @@
   - Model: `Headcount (Last Week)_app` moved to Sunday–Saturday weeks (the week that holds the period's last day with hours) with the employee-org mapping, and `Headcount (Last Week) MoM %_app` created, after Ion's approval (`08_app_measures.md` § 9). TMDL re-exported.
   - `describeMonthComparison` (MoM wording) in `lib/filters.ts`; P1 uses `numberCell` and it too.
   - Checks: 294 unit tests, lint, build; `validate:visual` 4/4 (trend and country, with and without L1 = BPO); every query run on Fabric first. Checked in Ion's Chrome (dark, desktop): October 2026 1,561 / +1.2% / 1,634 / 6.1%, Costa Rica 66.6%; L1 = BPO 992 / 1,041, Costa Rica 75.4%; same as DAX. Mobile not verified (#16).
+  - Merged (PR #14) and deployed from `main` @ `d665eb4` on 2026-11-04; checked live, same numbers as DAX.
 - [ ] 3.3 P3 FTE Overview
 - [ ] 3.4 P4 Intercompany & Cross-Charge (February 2026 = 223,641 h in both views)
 - [ ] 3.5 P5 Revenue & Capacity Yield
