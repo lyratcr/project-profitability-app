@@ -371,3 +371,47 @@ CALCULATE (
 - **`Actual Revenue Last Month_app` in a weekly context** is the same week shifted one month back; it is only meaningful for a whole month.
 - **Hours vs plan only per project:** company-wide, Synerion hours include internal and non-billable time (Sep 2026: 865%).
 - **`Time Allocation %_app`** is 100% at total level by design; it is meaningful per person and project.
+
+## 5. P6 "No hours this week" flag (build plan 1.2): PROPOSED, pending Ion's approval
+
+Not in the model yet. For the P6 "Who logged time" table: a person who logged time on the project in the 4 weeks before the selected week, but nothing in it. The app sends the week as a `dim_calendar[date]` range (Monday–Sunday); the measures take its first day, so no `TODAY()` is involved.
+
+### Hours Previous 4 Weeks_app
+
+Folder `_app\Projects` · format `#,0`  
+Description: `ADDED 2026-11-04 (Fabric app): Synerion hours in the 28 days before the first date of the selected period (the 4 weeks before the selected week).`
+
+```dax
+VAR _start = MIN ( dim_calendar[date] )
+RETURN
+    CALCULATE (
+        [Synerion Hours_app],
+        REMOVEFILTERS ( dim_calendar ),
+        DATESBETWEEN ( dim_calendar[date], _start - 28, _start - 1 )
+    )
+```
+
+### Missing This Week_app
+
+Folder `_app\Projects` · format `0`  
+Description: `ADDED 2026-11-04 (Fabric app): 1 when there are hours in the previous 4 weeks but none in the selected period; blank otherwise. Use per person and project.`
+
+```dax
+IF ( [Hours Previous 4 Weeks_app] > 0 && COALESCE ( [Synerion Hours_app], 0 ) = 0, 1 )
+```
+
+Because `Hours Previous 4 Weeks_app` is non-blank for them, `SUMMARIZECOLUMNS` keeps the people who logged nothing in the week; the table gets one row per person who logged in either window.
+
+### Validation (query-scoped, 2026-11-04)
+
+Grouped by `fact_profitability_metrics[ukg_employee_id]`, filtered on `fact_profitability_metrics[project_key]` (not `dim_project`, because of open item #1). Independent check: the same 4-week sum with fixed `transaction_date` bounds.
+
+| Project | Week | Rows | With hours | Flagged | Independent flagged | Prev-4-weeks hours = check |
+|---|---|---|---|---|---|---|
+| PAR-401-01 | 2026-10-27 – 11-02 (last full week) | 109 | 106 | 3 | 3 | 18,901 = 18,901 |
+| PAR-401-05 | 2026-10-27 – 11-02 | 365 | 352 | 13 | 13 | 53,665 = 53,665 |
+| PAR-401-01 | 2026-11-03 – 11-09 (current, data through 11-03) | 108 | 93 | 15 | 15 | 18,626 = 18,626 |
+
+No row is flagged while having hours in the week.
+
+**Note for P6:** on the current (partial) week the flag means "nothing logged *yet* this week" (15 people on a Monday). The page should label it that way for the current week, and use the full last week for the Monday review.

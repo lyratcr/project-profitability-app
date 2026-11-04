@@ -27,6 +27,7 @@
 
 ## Log
 
+2026-11-04 | Proposal | P6 flag | `Hours Previous 4 Weeks_app` and `Missing This Week_app` validated as query-scoped measures on two projects and two weeks (`08_app_measures.md` § 5), pending Ion's approval | Claude
 2026-11-04 | Change | Model | Ion approved; 33 `_app` measures created in the Dev model (`_Measures`, `_app\<topic>`), validated before and after creation, TMDL re-exported; closes #9 except the 2 rank measures (blocked by #1) | Ion + Claude
 2026-11-04 | Proposal | `_app` measures | 33 `_app` measures validated as query-scoped measures (Sep 2026 and week of 2026-10-05) in `08_app_measures.md`, pending Ion's approval. Changes vs `03` § 3: `Plan End Date_app` ignores the date filter; `Last Revenue Date_app` uses T&M only (#17); the two customer rank measures wait for #1 | Claude
 2026-11-04 | Finding | Data freshness | Synerion hours now load through 2026-11-03 (142,755 h after 2026-10-17), so #2 is progressing; `dim_calendar` now ends 2029-04-01 (plan ends 2029-12-01, #5 still open) | Claude
