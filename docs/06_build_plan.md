@@ -35,7 +35,8 @@
 
 - [x] 1.1 Create the `_app` measures in `03_measure_review.md` § 3 (skill `model-change`), validate, export TMDL.
   - 2026-11-04: 33 measures created in `_Measures` → `_app\<topic>` after Ion's approval; DAX, formats and validated values in `docs/08_app_measures.md`. Validated before and after creation (Sep 2026 and week of 2026-10-05; identical). TMDL re-exported. `Customer Rank by Revenue Growth_app / Decline_app` wait for open item #1.
-- [ ] 1.2 Propose `Hours Previous 4 Weeks_app` and `Missing This Week_app` for the P6 flag.
+- [x] 1.2 Propose `Hours Previous 4 Weeks_app` and `Missing This Week_app` for the P6 flag.
+  - 2026-11-04: created after Ion's approval (`08_app_measures.md` § 5); validated on PAR-401-01 and PAR-401-05, last full and current week, before and after creation. On the current partial week the flag means "nothing logged yet". TMDL re-exported.
 
 ## Phase 2 — App shell
 

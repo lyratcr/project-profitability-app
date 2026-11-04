@@ -372,9 +372,9 @@ CALCULATE (
 - **Hours vs plan only per project:** company-wide, Synerion hours include internal and non-billable time (Sep 2026: 865%).
 - **`Time Allocation %_app`** is 100% at total level by design; it is meaningful per person and project.
 
-## 5. P6 "No hours this week" flag (build plan 1.2): PROPOSED, pending Ion's approval
+## 5. P6 "No hours this week" flag (build plan 1.2): CREATED 2026-11-04
 
-Not in the model yet. For the P6 "Who logged time" table: a person who logged time on the project in the 4 weeks before the selected week, but nothing in it. The app sends the week as a `dim_calendar[date]` range (Monday–Sunday); the measures take its first day, so no `TODAY()` is involved.
+Created in the Dev model after Ion's approval (`State = Ready`); re-validated against the model measures with identical results. For the P6 "Who logged time" table: a person who logged time on the project in the 4 weeks before the selected week, but nothing in it. The app sends the week as a `dim_calendar[date]` range (Monday–Sunday); the measures take its first day, so no `TODAY()` is involved.
 
 ### Hours Previous 4 Weeks_app
 
