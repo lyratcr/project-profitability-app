@@ -1,6 +1,6 @@
 # App Measures (`_app`)
 
-> Project knowledge file. Created 2026-11-04 (build plan 1.1). **Status: PROPOSED, pending Ion's approval. Nothing below exists in the model yet.** Source: `03_measure_review.md` § 3, with the changes in § 1.
+> Project knowledge file. Created 2026-11-04 (build plan 1.1). **Status: CREATED 2026-11-04** in the published Dev model after Ion's approval (33 measures, all `State = Ready`). The two customer rank measures are still pending (§ 1). Source: `03_measure_review.md` § 3, with the changes in § 1.
 
 All measures go in table `_Measures`, display folder `_app\<topic>`, description `ADDED 2026-11-04 (Fabric app): <text>`. Originals are not touched.
 
@@ -52,6 +52,8 @@ Validated as query-scoped measures (`DEFINE MEASURE`) on 2026-11-04 against the 
 | `_app\Projects` | **Hours Not Yet Billed_app** | `#,0;-#,0;0` | 236,458 | 50,865 |
 | `_app\Data health` | **Last Synerion Date_app** | `yyyy-mm-dd` | 2026-11-03 | 2026-11-03 |
 | `_app\Data health` | **Last Revenue Date_app** | `yyyy-mm-dd` | 2026-10-30 | 2026-10-30 |
+
+Re-run after creation against the model measures (no `DEFINE`): all 37 columns identical in both windows.
 
 Independent checks (plain `SUM` / `DISTINCTCOUNT` in the same query) agree exactly: hours 267,322 / 60,719; actual revenue $6,033,393 / $2,845,079; plan revenue $6,103,163 / $297,888; people 1,605 / 1,538.
 

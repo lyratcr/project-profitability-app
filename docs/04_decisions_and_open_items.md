@@ -14,7 +14,7 @@
 | 6 | FTE definition for P3/P5: allocation FTE (current) vs capacity FTE (hours ÷ 40) | P3, P5 | Adan | Open |
 | 7 | Headcount definition for P2: people with hours (current) vs active employees in UKG | P2 | Adan | Open |
 | 8 | Revenue per FTE: last-week FTE vs month-average FTE | P5 | Adan | Open |
-| 9 | Create the `_app` measures in `03_measure_review.md` § 3 (after Ion approves the DAX) | All pages | Ion + Claude | Open |
+| 9 | Create the `_app` measures in `03_measure_review.md` § 3 (after Ion approves the DAX) | All pages | Ion + Claude | Done 2026-11-04 (33 of 35; the 2 customer rank measures wait for #1) |
 | 10 | Cost in local currency (COP/CRC) labelled USD; Project Ops standard cost and roles outdated | Margin (out of scope now) | Finance | Deferred |
 | 11 | `project_key` = first 10 characters of the project name (fragile); use the Project Ops project id | Data quality | Data engineering | Open |
 | 12 | `dim_employee_history` relates on `ukg_employee_id` → `dim_employee[employee_number]` | Not used by the app | Data engineering | Open |
@@ -27,6 +27,7 @@
 
 ## Log
 
+2026-11-04 | Change | Model | Ion approved; 33 `_app` measures created in the Dev model (`_Measures`, `_app\<topic>`), validated before and after creation, TMDL re-exported; closes #9 except the 2 rank measures (blocked by #1) | Ion + Claude
 2026-11-04 | Proposal | `_app` measures | 33 `_app` measures validated as query-scoped measures (Sep 2026 and week of 2026-10-05) in `08_app_measures.md`, pending Ion's approval. Changes vs `03` § 3: `Plan End Date_app` ignores the date filter; `Last Revenue Date_app` uses T&M only (#17); the two customer rank measures wait for #1 | Claude
 2026-11-04 | Finding | Data freshness | Synerion hours now load through 2026-11-03 (142,755 h after 2026-10-17), so #2 is progressing; `dim_calendar` now ends 2029-04-01 (plan ends 2029-12-01, #5 still open) | Claude
 2026-11-04 | Change | Model export | First TMDL snapshot of the published Dev model in `model/definition/` (baseline before the `_app` measures, Phase 1); Phase 0 complete except the deferred mobile check (#16) | Claude
