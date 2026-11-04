@@ -415,3 +415,165 @@ Grouped by `fact_profitability_metrics[ukg_employee_id]`, filtered on `fact_prof
 No row is flagged while having hours in the week.
 
 **Note for P6:** on the current (partial) week the flag means "nothing logged *yet* this week" (15 people on a Monday). The page should label it that way for the current week, and use the full last week for the Monday review.
+
+## 6. Master-hierarchy-aware measures (open item #19): CREATED 2026-11-04
+
+Created and updated in the Dev model after Ion's approval (all `State = Ready`, formats and folders as below). Re-run against the model measures: same values as the validation table (no org: hours 267,322, people 1,605, plan $6,103,163; L1 = BPO: employee-org hours 173,552, project-org hours 171,716, plan $3,426,309, planned hours 2,977, billed hours 3,378). `Planned Revenue_app`, `Planned Hours_app` and `Billed Hours_app` keep their ADDED text and gain a FIXED line.
+
+`dim_hierarchy_master` has no relationships and serves both views (Ion, 2026-11-04). Each measure maps it with `TREATAS` to the org that fits it, like the existing headcount (employee org), cross-charge (project org) and revenue (financial org) measures. With no org selected, every measure returns its unfiltered value. Pages choose the employee-org or project-org version per visual (P1 "where the people sit" vs "where the work is billed").
+
+`UPDATE` rows change `_app` measures created in § 2 (ours, not used by any page yet); `Revenue vs Plan_app` and `Hours Not Yet Billed_app` follow automatically.
+
+| Measure | Action | Folder | Format |
+|---|---|---|---|
+| **Synerion Hours (Employee Org)_app** | NEW | `_app\Hours` | `#,0` |
+| **Synerion Hours (Project Org)_app** | NEW | `_app\Hours` | `#,0` |
+| **People With Hours (Employee Org)_app** | NEW | `_app\People` | `#,0` |
+| **People With Hours (Project Org)_app** | NEW | `_app\People` | `#,0` |
+| **Planned Revenue_app** | UPDATE | `_app\Projects` | `\$#,0;(\$#,0);\$#,0` |
+| **Planned Hours_app** | UPDATE | `_app\Projects` | `#,0` |
+| **Billed Hours_app** | UPDATE | `_app\Projects` | `#,0` |
+
+### Validation (query-scoped, 2026-11-04)
+
+September 2026, `dim_hierarchy_master[L1] = "BPO"`, against plain filters on the fact's own org column:
+
+| Measure | Via master hierarchy | Direct fact filter | |
+|---|---|---|---|
+| Hours, employee org | 173,552 | 173,552 | exact |
+| People, employee org | 1,045 | 1,045 | exact |
+| Hours, project org | 171,716 | 173,612 | −1,896 h: project-org combos missing from the hierarchy (#21) |
+| People, project org | 1,035 | 1,047 | same cause |
+| Planned revenue, financial org | $3,426,309 | $3,426,309 | exact |
+| Planned hours, financial org | 2,977 | 2,977 | exact |
+| Billed hours, financial org | 3,378 | 3,378 | exact |
+
+No org selected: every measure equals its unfiltered value (hours 267,322; people 1,605; plan $6,103,163). September 2025 shows small gaps (employee-org hours 163,276 vs 163,364) because the hierarchy only has 2026 combos (`01_model_overview.md` issue 7).
+
+### DAX
+
+#### Synerion Hours (Employee Org)_app (NEW)
+
+Description: `ADDED 2026-11-04 (Fabric app): Synerion hours of the people who sit in the selected org (employee org).`
+
+```dax
+IF (
+    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+    CALCULATE (
+        [Total Worked Hours],
+        TREATAS (
+            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+            fact_profitability_metrics[employee_L1], fact_profitability_metrics[employee_L2], fact_profitability_metrics[employee_L3]
+        )
+    ),
+    [Total Worked Hours]
+)
+```
+
+#### Synerion Hours (Project Org)_app (NEW)
+
+Description: `ADDED 2026-11-04 (Fabric app): Synerion hours logged on projects that belong to the selected org (project org).`
+
+```dax
+IF (
+    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+    CALCULATE (
+        [Total Worked Hours],
+        TREATAS (
+            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+            fact_profitability_metrics[project_L1], fact_profitability_metrics[project_L2], fact_profitability_metrics[project_L3]
+        )
+    ),
+    [Total Worked Hours]
+)
+```
+
+#### People With Hours (Employee Org)_app (NEW)
+
+Description: `ADDED 2026-11-04 (Fabric app): People with hours who sit in the selected org.`
+
+```dax
+IF (
+    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+    CALCULATE (
+        [Active Headcount],
+        TREATAS (
+            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+            fact_profitability_metrics[employee_L1], fact_profitability_metrics[employee_L2], fact_profitability_metrics[employee_L3]
+        )
+    ),
+    [Active Headcount]
+)
+```
+
+#### People With Hours (Project Org)_app (NEW)
+
+Description: `ADDED 2026-11-04 (Fabric app): People with hours on the selected org's projects.`
+
+```dax
+IF (
+    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+    CALCULATE (
+        [Active Headcount],
+        TREATAS (
+            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+            fact_profitability_metrics[project_L1], fact_profitability_metrics[project_L2], fact_profitability_metrics[project_L3]
+        )
+    ),
+    [Active Headcount]
+)
+```
+
+#### Planned Revenue_app (UPDATE)
+
+Description: `FIXED 2026-11-04 (Fabric app): Plan (Backlog) revenue in the selected period; follows the master hierarchy through the financial org.`
+
+```dax
+IF (
+    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+    CALCULATE (
+        CALCULATE ( SUM ( fact_revenue_metrics[actual_revenue_usd] ), fact_revenue_metrics[scenario] = "Backlog" ),
+        TREATAS (
+            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+            fact_revenue_metrics[financial_L1], fact_revenue_metrics[financial_L2], fact_revenue_metrics[financial_L3]
+        )
+    ),
+    CALCULATE ( SUM ( fact_revenue_metrics[actual_revenue_usd] ), fact_revenue_metrics[scenario] = "Backlog" )
+)
+```
+
+#### Planned Hours_app (UPDATE)
+
+Description: `FIXED 2026-11-04 (Fabric app): Plan (Backlog) hours in the selected period; follows the master hierarchy through the financial org.`
+
+```dax
+IF (
+    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+    CALCULATE (
+        CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Backlog" ),
+        TREATAS (
+            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+            fact_revenue_metrics[financial_L1], fact_revenue_metrics[financial_L2], fact_revenue_metrics[financial_L3]
+        )
+    ),
+    CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Backlog" )
+)
+```
+
+#### Billed Hours_app (UPDATE)
+
+Description: `FIXED 2026-11-04 (Fabric app): Hours integrated into Project Operations (Actual); follows the master hierarchy through the financial org.`
+
+```dax
+IF (
+    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+    CALCULATE (
+        CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Actual" ),
+        TREATAS (
+            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+            fact_revenue_metrics[financial_L1], fact_revenue_metrics[financial_L2], fact_revenue_metrics[financial_L3]
+        )
+    ),
+    CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Actual" )
+)
+```

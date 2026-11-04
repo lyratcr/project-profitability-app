@@ -1174,20 +1174,53 @@ table _Measures
 		displayFolder: _app\Projects
 		lineageTag: c5c3ea8e-9a93-42cc-90ad-e79a0eb2d7a7
 
-	/// ADDED 2026-11-04 (Fabric app): Plan (Backlog) revenue in the selected period.
-	measure 'Planned Revenue_app' = CALCULATE ( SUM ( fact_revenue_metrics[actual_revenue_usd] ), fact_revenue_metrics[scenario] = "Backlog" )
+	/// ADDED 2026-11-04 (Fabric app): Plan (Backlog) revenue in the selected period. FIXED 2026-11-04 (Fabric app): follows the master hierarchy through the financial org.
+	measure 'Planned Revenue_app' =
+			IF (
+			    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+			    CALCULATE (
+			        CALCULATE ( SUM ( fact_revenue_metrics[actual_revenue_usd] ), fact_revenue_metrics[scenario] = "Backlog" ),
+			        TREATAS (
+			            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+			            fact_revenue_metrics[financial_L1], fact_revenue_metrics[financial_L2], fact_revenue_metrics[financial_L3]
+			        )
+			    ),
+			    CALCULATE ( SUM ( fact_revenue_metrics[actual_revenue_usd] ), fact_revenue_metrics[scenario] = "Backlog" )
+			)
 		formatString: \$#,0;(\$#,0);\$#,0
 		displayFolder: _app\Projects
 		lineageTag: 8d7499e1-d1a4-46d2-91c3-5d1b9c7d1d0f
 
-	/// ADDED 2026-11-04 (Fabric app): Plan (Backlog) hours in the selected period.
-	measure 'Planned Hours_app' = CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Backlog" )
+	/// ADDED 2026-11-04 (Fabric app): Plan (Backlog) hours in the selected period. FIXED 2026-11-04 (Fabric app): follows the master hierarchy through the financial org.
+	measure 'Planned Hours_app' =
+			IF (
+			    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+			    CALCULATE (
+			        CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Backlog" ),
+			        TREATAS (
+			            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+			            fact_revenue_metrics[financial_L1], fact_revenue_metrics[financial_L2], fact_revenue_metrics[financial_L3]
+			        )
+			    ),
+			    CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Backlog" )
+			)
 		formatString: #,0
 		displayFolder: _app\Projects
 		lineageTag: 5ee51671-206b-40cf-8c8e-ab6482001937
 
-	/// ADDED 2026-11-04 (Fabric app): Hours integrated into Project Operations (Actual) in the period.
-	measure 'Billed Hours_app' = CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Actual" )
+	/// ADDED 2026-11-04 (Fabric app): Hours integrated into Project Operations (Actual) in the period. FIXED 2026-11-04 (Fabric app): follows the master hierarchy through the financial org.
+	measure 'Billed Hours_app' =
+			IF (
+			    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+			    CALCULATE (
+			        CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Actual" ),
+			        TREATAS (
+			            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+			            fact_revenue_metrics[financial_L1], fact_revenue_metrics[financial_L2], fact_revenue_metrics[financial_L3]
+			        )
+			    ),
+			    CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Actual" )
+			)
 		formatString: #,0
 		displayFolder: _app\Projects
 		lineageTag: bb6aae7e-1ae0-41f7-81b1-f54f1e97dfed
@@ -1258,6 +1291,74 @@ table _Measures
 		formatString: 0
 		displayFolder: _app\Projects
 		lineageTag: 066350ab-2bcb-48f2-957d-510cd43453e4
+
+	/// ADDED 2026-11-04 (Fabric app): Synerion hours of the people who sit in the selected org (employee org).
+	measure 'Synerion Hours (Employee Org)_app' =
+			IF (
+			    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+			    CALCULATE (
+			        [Total Worked Hours],
+			        TREATAS (
+			            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+			            fact_profitability_metrics[employee_L1], fact_profitability_metrics[employee_L2], fact_profitability_metrics[employee_L3]
+			        )
+			    ),
+			    [Total Worked Hours]
+			)
+		formatString: #,0
+		displayFolder: _app\Hours
+		lineageTag: a20e4bc6-8d60-454f-a332-25c4854dc283
+
+	/// ADDED 2026-11-04 (Fabric app): Synerion hours logged on projects that belong to the selected org (project org).
+	measure 'Synerion Hours (Project Org)_app' =
+			IF (
+			    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+			    CALCULATE (
+			        [Total Worked Hours],
+			        TREATAS (
+			            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+			            fact_profitability_metrics[project_L1], fact_profitability_metrics[project_L2], fact_profitability_metrics[project_L3]
+			        )
+			    ),
+			    [Total Worked Hours]
+			)
+		formatString: #,0
+		displayFolder: _app\Hours
+		lineageTag: b7282b1e-1f03-4b3d-9473-c7c7e7baa7d2
+
+	/// ADDED 2026-11-04 (Fabric app): People with hours who sit in the selected org.
+	measure 'People With Hours (Employee Org)_app' =
+			IF (
+			    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+			    CALCULATE (
+			        [Active Headcount],
+			        TREATAS (
+			            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+			            fact_profitability_metrics[employee_L1], fact_profitability_metrics[employee_L2], fact_profitability_metrics[employee_L3]
+			        )
+			    ),
+			    [Active Headcount]
+			)
+		formatString: #,0
+		displayFolder: _app\People
+		lineageTag: 34d7a268-8b32-4cd9-a677-f5d485806d13
+
+	/// ADDED 2026-11-04 (Fabric app): People with hours on the selected org's projects.
+	measure 'People With Hours (Project Org)_app' =
+			IF (
+			    ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+			    CALCULATE (
+			        [Active Headcount],
+			        TREATAS (
+			            SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+			            fact_profitability_metrics[project_L1], fact_profitability_metrics[project_L2], fact_profitability_metrics[project_L3]
+			        )
+			    ),
+			    [Active Headcount]
+			)
+		formatString: #,0
+		displayFolder: _app\People
+		lineageTag: ac3e2591-ab6b-4f15-b9a2-163d630e5bfd
 
 	column Column
 		isHidden

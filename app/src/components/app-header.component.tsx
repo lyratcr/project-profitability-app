@@ -9,12 +9,14 @@ import { dataFreshness, freshnessColumns } from "@/queries/shell";
 
 interface AppHeaderProps {
     current: PageDef;
+    /** Current page state; tabs carry it so filters survive a page change. */
+    params?: URLSearchParams;
     /** Viewer's local "today"; injectable for tests. */
     today?: Date;
 }
 
 /** Top bar: app name, data freshness, theme toggle and page tabs (docs/05_app_design.md § 2). */
-export function AppHeader({ current, today = new Date() }: AppHeaderProps): ReactElement {
+export function AppHeader({ current, params, today = new Date() }: AppHeaderProps): ReactElement {
     const { isDark, toggleTheme } = useThemeContext();
     const config = dataFreshness();
     const { data, isLoading } = useSemanticModelQuery({ connection: config.connection, query: config.query });
@@ -97,7 +99,7 @@ export function AppHeader({ current, today = new Date() }: AppHeaderProps): Reac
                         return (
                             <li key={page.id}>
                                 <a
-                                    href={pageHref(page)}
+                                    href={pageHref(page, params)}
                                     aria-current={active ? "page" : undefined}
                                     className={cn(
                                         "inline-block whitespace-nowrap border-b-2 px-3 pt-3 pb-2 text-[length:var(--text-300)] focus-visible:outline-2 focus-visible:outline-ring",
