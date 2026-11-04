@@ -6,6 +6,9 @@ import { countryOptions, customerOptions, optionColumns, orgOptions, projectOpti
 export interface FilterOptionsResult {
     /** Null until every option list has loaded once. */
     options: FilterOptions | null;
+    /** True while the customer or project list reloads for a new org or customer (old values still shown). */
+    customersLoading: boolean;
+    projectsLoading: boolean;
     isLoading: boolean;
     /** First error message, if any list failed. */
     error: string | undefined;
@@ -21,10 +24,11 @@ const asText = (values: unknown[]) => values.filter((v): v is string => typeof v
 /**
  * Loads the whitelist of filter values from the model (cached for the session). When the page applies
  * the organization filter, the customer and project lists are narrowed to the selected L1 > L2 > L3
- * (the project's org). While a narrowed list reloads, useSemanticModelQuery keeps the previous result,
- * so the bar doesn't flicker.
+ * (the project's org); when it applies the customer filter, the project list is also narrowed to the
+ * selected customer. While a narrowed list reloads, useSemanticModelQuery keeps the previous result and
+ * the `*Loading` flags tell the filter bar to disable that list.
  */
-export function useFilterOptions(params: URLSearchParams, appliesOrg: boolean): FilterOptionsResult {
+export function useFilterOptions(params: URLSearchParams, appliesOrg: boolean, appliesCustomer: boolean): FilterOptionsResult {
     const org = orgOptions();
     const country = countryOptions();
     const orgQ = useSemanticModelQuery({ connection: org.connection, query: org.query });
@@ -44,8 +48,13 @@ export function useFilterOptions(params: URLSearchParams, appliesOrg: boolean): 
     const selectedOrg = appliesOrg ? readOrg(params, orgRows) : {};
 
     const customer = customerOptions(selectedOrg);
-    const project = projectOptions(selectedOrg);
     const customerQ = useSemanticModelQuery({ connection: customer.connection, query: customer.query });
+    const customers = customerQ.data?.status === "success" ? asText(column(customerQ.data.table, optionColumns.customer)) : null;
+    const requestedCustomer = params.get("customer");
+    const selectedCustomer =
+        appliesCustomer && requestedCustomer !== null && customers?.includes(requestedCustomer) ? requestedCustomer : undefined;
+
+    const project = projectOptions(selectedOrg, selectedCustomer);
     const projectQ = useSemanticModelQuery({ connection: project.connection, query: project.query });
 
     const all = [orgQ, countryQ, customerQ, projectQ];
@@ -53,13 +62,16 @@ export function useFilterOptions(params: URLSearchParams, appliesOrg: boolean): 
     const error = failed?.data?.status === "error" ? failed.data.error.message : undefined;
     const isLoading = all.some((q) => q.isLoading || q.data === undefined) && error === undefined;
 
+    const customersLoading = customerQ.isLoading;
+    const projectsLoading = projectQ.isLoading || customerQ.isLoading;
+
     if (
         orgQ.data?.status !== "success" ||
         countryQ.data?.status !== "success" ||
-        customerQ.data?.status !== "success" ||
+        customers === null ||
         projectQ.data?.status !== "success"
     ) {
-        return { options: null, isLoading, error };
+        return { options: null, isLoading, error, customersLoading, projectsLoading };
     }
 
     const keys = column(projectQ.data.table, optionColumns.projectKey);
@@ -69,12 +81,14 @@ export function useFilterOptions(params: URLSearchParams, appliesOrg: boolean): 
         options: {
             org: orgRows,
             countries: asText(column(countryQ.data.table, optionColumns.country)),
-            customers: asText(column(customerQ.data.table, optionColumns.customer)),
+            customers,
             projects: keys
                 .map((key, i) => ({ key, name: typeof names[i] === "string" ? (names[i] as string) : null }))
                 .filter((p): p is { key: string; name: string | null } => typeof p.key === "string" && p.key !== ""),
         },
         isLoading,
         error,
+        customersLoading,
+        projectsLoading,
     };
 }

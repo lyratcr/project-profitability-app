@@ -19,6 +19,9 @@ interface FilterBarProps {
     options: FilterOptions | null;
     optionsLoading: boolean;
     optionsError: string | undefined;
+    /** The customer / project list is reloading for a new org or customer. */
+    customersLoading?: boolean;
+    projectsLoading?: boolean;
     onChange: (next: FilterState) => void;
     /** Viewer's local "today"; injectable for tests. */
     today?: Date;
@@ -44,7 +47,17 @@ function Field({ label, children, id }: { label: string; children: ReactNode; id
 }
 
 /** Global filters for the current page (docs/05_app_design.md § 2). Values come only from the model. */
-export function FilterBar({ page, state, options, optionsLoading, optionsError, onChange, today = new Date() }: FilterBarProps): ReactElement | null {
+export function FilterBar({
+    page,
+    state,
+    options,
+    optionsLoading,
+    optionsError,
+    customersLoading = false,
+    projectsLoading = false,
+    onChange,
+    today = new Date(),
+}: FilterBarProps): ReactElement | null {
     const id = useId();
     const shows = (key: FilterKey) => page.filters.includes(key);
     if (page.filters.length === 0) return null;
@@ -204,9 +217,9 @@ export function FilterBar({ page, state, options, optionsLoading, optionsError, 
                     <select
                         id={`${id}-customer`}
                         className={`${controlClass} max-w-64`}
-                        disabled={listsDisabled}
+                        disabled={listsDisabled || customersLoading}
                         value={state.customer ?? ALL}
-                        onChange={(e) => set({ customer: e.target.value === ALL ? undefined : e.target.value })}
+                        onChange={(e) => set({ customer: e.target.value === ALL ? undefined : e.target.value, project: undefined })}
                     >
                         <option value={ALL}>All</option>
                         {options?.customers.map((c) => (
@@ -223,7 +236,7 @@ export function FilterBar({ page, state, options, optionsLoading, optionsError, 
                     <select
                         id={`${id}-project`}
                         className={`${controlClass} max-w-80`}
-                        disabled={listsDisabled}
+                        disabled={listsDisabled || projectsLoading}
                         value={state.project ?? ALL}
                         onChange={(e) => set({ project: e.target.value === ALL ? undefined : e.target.value })}
                     >

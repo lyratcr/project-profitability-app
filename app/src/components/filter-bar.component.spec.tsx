@@ -104,4 +104,16 @@ describe("FilterBar", () => {
         renderBar("effort", { options: null, optionsError: "Forbidden" });
         expect(screen.getByRole("alert")).toHaveTextContent("Filter values unavailable");
     });
+
+    it("resets the project when the customer changes", () => {
+        const onChange = renderBar("effort", { state: { ...state, project: "PAR-401-01" } });
+        fireEvent.change(screen.getByLabelText("Customer"), { target: { value: "Access Corporation  " } });
+        expect(onChange).toHaveBeenLastCalledWith({ ...state, customer: "Access Corporation  ", project: undefined });
+    });
+
+    it("disables a list while it reloads for a new org or customer", () => {
+        renderBar("effort", { customersLoading: false, projectsLoading: true });
+        expect(screen.getByLabelText("Customer")).not.toBeDisabled();
+        expect(screen.getByLabelText("Project")).toBeDisabled();
+    });
 });

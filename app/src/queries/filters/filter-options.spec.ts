@@ -39,4 +39,13 @@ describe("filter option query factories", () => {
             expect(f.query).not.toContain("fact_revenue_metrics[financial_L1] )");
         }
     });
+
+    it("narrow projects to the selected customer as well", () => {
+        const q = projectOptions({ l1: "BPO" }, "Parallon").query;
+        expect(q).toContain('TREATAS ( { "Parallon" }, fact_profitability_metrics[project_customer] )');
+        expect(q).toContain('TREATAS ( { "Parallon" }, fact_revenue_metrics[financial_customer] )');
+        expect(q).toContain('TREATAS ( { "BPO" }, fact_profitability_metrics[project_L1] )');
+        expect(projectOptions().query).not.toContain("/* @");
+        expect(customerOptions().query).not.toContain("/* @");
+    });
 });

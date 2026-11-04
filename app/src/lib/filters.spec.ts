@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
     FILTERS_PLACEHOLDER,
     ORG_OPTION_MARKERS,
+    CUSTOMER_OPTION_MARKERS,
+    applyCustomerToOptions,
     applyFilters,
     applyOrgToOptions,
     coercePeriod,
@@ -198,5 +200,23 @@ VAR _r = CALCULATETABLE ( DISTINCT ( u[c] ) ${ORG_OPTION_MARKERS.revenue.marker}
     it("escapes org values and refuses queries without both markers", () => {
         expect(applyOrgToOptions(query, { l1: 'A"B' })).toContain('{ "A""B" }');
         expect(() => applyOrgToOptions("EVALUATE x", {})).toThrow(/exactly one/);
+    });
+});
+
+describe("customer-dependent project list", () => {
+    const query = `A ${CUSTOMER_OPTION_MARKERS.hours.marker} B ${CUSTOMER_OPTION_MARKERS.revenue.marker} C`;
+
+    it("removes the markers without a customer", () => {
+        expect(applyCustomerToOptions(query, undefined)).toBe("A  B  C");
+    });
+
+    it("filters hours on project_customer and revenue on financial_customer, escaped", () => {
+        expect(applyCustomerToOptions(query, 'Walk-On"s')).toBe(
+            'A , KEEPFILTERS ( TREATAS ( { "Walk-On""s" }, fact_profitability_metrics[project_customer] ) ) B , KEEPFILTERS ( TREATAS ( { "Walk-On""s" }, fact_revenue_metrics[financial_customer] ) ) C',
+        );
+    });
+
+    it("refuses queries without both markers", () => {
+        expect(() => applyCustomerToOptions("EVALUATE x", "A")).toThrow(/exactly one/);
     });
 });

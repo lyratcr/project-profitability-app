@@ -28,6 +28,8 @@ function App() {
                     options={filters.options}
                     optionsLoading={filters.optionsLoading}
                     optionsError={filters.optionsError}
+                    customersLoading={filters.customersLoading}
+                    projectsLoading={filters.projectsLoading}
                     onChange={filters.setFilters}
                 />
                 <div className="pt-6">

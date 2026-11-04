@@ -1,4 +1,4 @@
-import { applyOrgToOptions, type OrgSelection } from "@/lib/filters";
+import { applyCustomerToOptions, applyOrgToOptions, type OrgSelection } from "@/lib/filters";
 import type { ColumnMetadataMap } from "@/lib/to-data-table";
 import countryQuery from "./country-options.dax?raw";
 import customerQuery from "./customer-options.dax?raw";
@@ -41,11 +41,14 @@ export function customerOptions(org: OrgSelection = {}) {
     return { connection, query: applyOrgToOptions(customerQuery, org), columnMetadata: meta(optionColumns.customer, "Customer", "Customer") } as const;
 }
 
-/** Projects, narrowed to the selected org when an org is given (validated with readOrg). */
-export function projectOptions(org: OrgSelection = {}) {
+/**
+ * Projects, narrowed to the selected org (validated with readOrg) and customer (validated against the
+ * customer list) when given.
+ */
+export function projectOptions(org: OrgSelection = {}, customer?: string) {
     return {
         connection,
-        query: applyOrgToOptions(projectQuery, org),
+        query: applyCustomerToOptions(applyOrgToOptions(projectQuery, org), customer),
         columnMetadata: {
             ...meta(optionColumns.projectKey, "ProjectKey", "Project key"),
             ...meta(optionColumns.projectName, "ProjectName", "Project"),

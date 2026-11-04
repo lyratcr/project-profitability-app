@@ -317,3 +317,23 @@ export function applyOrgToOptions(query: string, org: OrgSelection): string {
     }
     return out;
 }
+
+/** Markers in the project option query, and the fact columns that carry the customer. */
+export const CUSTOMER_OPTION_MARKERS = {
+    hours: { marker: "/* @hours-customer */", column: "fact_profitability_metrics[project_customer]" },
+    revenue: { marker: "/* @revenue-customer */", column: "fact_revenue_metrics[financial_customer]" },
+} as const;
+
+/**
+ * Narrows the project option query to one customer (already validated against the customer list).
+ * Without a customer the markers are removed.
+ */
+export function applyCustomerToOptions(query: string, customer: string | undefined): string {
+    let out = query;
+    for (const { marker, column } of Object.values(CUSTOMER_OPTION_MARKERS)) {
+        const count = out.split(marker).length - 1;
+        if (count !== 1) throw new Error(`Option query must contain exactly one ${marker} marker (found ${count}).`);
+        out = out.replace(marker, customer === undefined ? "" : `, KEEPFILTERS ( TREATAS ( { ${daxString(customer)} }, ${column} ) )`);
+    }
+    return out;
+}

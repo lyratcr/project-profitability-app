@@ -8,6 +8,8 @@ export interface GlobalFilters {
     options: FilterOptions | null;
     optionsLoading: boolean;
     optionsError: string | undefined;
+    customersLoading: boolean;
+    projectsLoading: boolean;
     /** Replaces the filter state in the URL (adds a history entry, so Back undoes it). */
     setFilters: (next: FilterState) => void;
 }
@@ -16,7 +18,11 @@ export interface GlobalFilters {
 export function useGlobalFilters(route: Route, today: Date = new Date()): GlobalFilters {
     const todayKey = today.toDateString();
     const paramsKey = route.params.toString();
-    const { options, isLoading, error } = useFilterOptions(route.params, route.page.filters.includes("org"));
+    const { options, isLoading, error, customersLoading, projectsLoading } = useFilterOptions(
+        route.params,
+        route.page.filters.includes("org"),
+        route.page.filters.includes("customer"),
+    );
 
     const kinds = route.page.periodKinds;
     const state = useMemo(() => {
@@ -31,5 +37,5 @@ export function useGlobalFilters(route: Route, today: Date = new Date()): Global
         [route.page, paramsKey],
     );
 
-    return { state, options, optionsLoading: isLoading, optionsError: error, setFilters };
+    return { state, options, optionsLoading: isLoading, optionsError: error, customersLoading, projectsLoading, setFilters };
 }
