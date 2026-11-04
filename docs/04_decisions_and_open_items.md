@@ -21,9 +21,13 @@
 | 13 | Silver merge key `synerion_emp_id` isn't unique (fine while full load) | Only if incremental is turned on | Data engineering | Note |
 | 14 | `TODAY()` in DAX is UTC on the service; the app passes week windows instead | P6 | — | Decided |
 | 15 | Smoke check: September 2026 actual revenue now $6,033,393 vs $6,031,963 noted on 2026-11-03 (+$1,430); hours unchanged. Confirm the new baseline for reconciliations | Task 0.4 sign-off | Ion | Closed 2026-11-04: Ion confirmed $6,033,393 |
+| 16 | Mobile check of the deployed app: nobody available yet to review it on a phone (the layout stacks to one column below 640 px, but nobody has seen it) | Definition of done (mobile), from 0.5 on | Ion | Deferred (2026-11-04) |
 
 ## Log
 
+2026-11-04 | Decision | Task 0.5 | Viewer access confirmed by Ion with a non-builder; 0.5 ticked. Mobile check deferred until someone can review on a phone (open item #16) | Ion
+2026-11-04 | Release | First deploy | Smoke page deployed from `feat/0.5-smoke-page` (Ion approved deploying before merge to main) to `_Corporate DCOE Backend Dev`, item `project-real-profitability`; live values match DAX on Fabric | Ion + Claude
+2026-11-04 | Finding | Tooling | The Rayfin dataapp template (CLI 1.36.2) has no Playwright validation and can't render locally before the first `rayfin up` (no backend env vars; `rayfin dev` provisions the item). Browser validation for 0.5 moves to right after the first deploy; CLAUDE.md's "Playwright before rayfin up" rule applies from then on | Claude
 2026-11-04 | Decision | Smoke baseline | September 2026 actual revenue baseline is $6,033,393 (Ion confirmed); closes open item #15 and task 0.4 | Ion
 2026-11-04 | Finding | Smoke query | Sep 2026 Synerion hours 267,322 match; actual revenue $6,033,393 (+$1,430 vs 2026-11-03 figure) after the 2026-11-04 09:14 EST refresh; open item #15 | Claude
 2026-11-04 | Decision | Connector | `profitmodel` points to the Dev model (`_Corporate DCOE Backend Dev`, item 48ad695a-…); the same model also exists in the prod and Test workspaces | Ion + Claude
