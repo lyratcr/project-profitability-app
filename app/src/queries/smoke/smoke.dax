@@ -1,0 +1,11 @@
+// Phase 0 smoke query (build plan task 0.4).
+// Expected for September 2026: Synerion hours 267,322 · actual revenue $6,033,393 (baseline confirmed 2026-11-04).
+// Revenue uses the Actual scenario explicitly (the original [Total Revenue] adds Backlog).
+EVALUATE
+SUMMARIZECOLUMNS (
+    KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 9, 1 ), DATE ( 2026, 9, 30 ) ) ),
+    "Synerion Hours", [Total Worked Hours],
+    "Actual Revenue", CALCULATE ( SUM ( fact_revenue_metrics[actual_revenue_usd] ), fact_revenue_metrics[scenario] = "Actual" ),
+    "Actual Revenue (Master Hierarchy)", [Total Revenue (Master Hierarchy)],
+    "Last Refresh", [Last Refresh Date]
+)
