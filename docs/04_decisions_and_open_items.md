@@ -31,6 +31,7 @@ NY Municipal Credit"`, `"Access Corporation  "`), and 3 revenue customers have n
 
 ## Log
 
+2026-11-04 | Proposal | `_app` measures | 4 new org-aware hours/people measures (employee and project org) and financial-org versions of `Planned Revenue_app`, `Planned Hours_app`, `Billed Hours_app` (`08_app_measures.md` § 6), validated, pending Ion's approval | Claude
 2026-11-04 | Decision | Org filter | Ion: an L1 > L2 > L3 filter is required on every tab except Projects. `dim_hierarchy_master` serves both views; each measure maps it to the org that fits it (employee, project or financial), as the existing headcount, cross-charge and revenue measures already do | Ion
 2026-11-04 | Decision | Filters | Global filters live in the hash query and only accept values loaded from the model (whitelist); the period defaults to the last complete month from the viewer's date; Yield accepts single months only; country is not offered on Yield (revenue has no employee country) | Claude
 2026-11-04 | Decision | Filters | Until #1 is fixed, customer and project filter each fact's own column (`project_customer` / `financial_customer`, `project_key` in both) instead of `dim_project`; the organization filter is hidden until #19 is decided | Claude
