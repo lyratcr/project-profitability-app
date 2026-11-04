@@ -1,0 +1,158 @@
+table fact_revenue_metrics
+	lineageTag: 0a876c77-a3dc-41b3-8117-4b448869ff94
+	sourceLineageTag: [gold].[fact_revenue_metrics]
+
+	column transaction_date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: ff46064e-87e4-4f59-8b9c-a6a8b1357ca9
+		sourceLineageTag: transaction_date
+		summarizeBy: none
+		sourceColumn: transaction_date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_key
+		dataType: string
+		lineageTag: ccad8431-b9f8-4b0b-8a81-00514942f11d
+		sourceLineageTag: project_key
+		summarizeBy: none
+		sourceColumn: project_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column actual_revenue_usd
+		dataType: double
+		lineageTag: 1735a77c-4299-4260-a055-aee0f852c01b
+		sourceLineageTag: actual_revenue_usd
+		summarizeBy: sum
+		sourceColumn: actual_revenue_usd
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column revenue_type
+		dataType: string
+		lineageTag: 5a950b8d-886f-4f57-84fe-f6cfa8fd0649
+		sourceLineageTag: revenue_type
+		summarizeBy: none
+		sourceColumn: revenue_type
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column financial_L1
+		dataType: string
+		lineageTag: 9b70fc27-4dc9-4cca-9b3a-31a1464b9c37
+		sourceLineageTag: financial_L1
+		summarizeBy: none
+		sourceColumn: financial_L1
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column financial_customer
+		dataType: string
+		lineageTag: 64c5d221-4342-4b10-80e3-275b8f6d7262
+		sourceLineageTag: financial_customer
+		summarizeBy: none
+		sourceColumn: financial_customer
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column _gold_modified_at
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: a03819ac-c348-47a2-86a3-2f17974a9e47
+		sourceLineageTag: _gold_modified_at
+		summarizeBy: none
+		sourceColumn: _gold_modified_at
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column _gold_pipeline_run_id
+		dataType: string
+		lineageTag: c94c3263-af19-4365-b246-903ec56fc827
+		sourceLineageTag: _gold_pipeline_run_id
+		summarizeBy: none
+		sourceColumn: _gold_pipeline_run_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column financial_L2
+		dataType: string
+		lineageTag: 05220cb0-6c13-4549-bc4a-f739e14771ad
+		sourceLineageTag: financial_L2
+		summarizeBy: none
+		sourceColumn: financial_L2
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column financial_L3
+		dataType: string
+		lineageTag: fe0a145f-2693-4c8e-b736-122698e8784d
+		sourceLineageTag: financial_L3
+		summarizeBy: none
+		sourceColumn: financial_L3
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column org_key
+		dataType: string
+		lineageTag: 75eede9b-1f0c-4f62-9497-7923ef006e3a
+		sourceLineageTag: org_key
+		summarizeBy: none
+		sourceColumn: org_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column hours_quantity
+		dataType: double
+		lineageTag: 79783d97-00a2-4fd2-9c97-a4520d38bb17
+		sourceLineageTag: hours_quantity
+		summarizeBy: sum
+		sourceColumn: hours_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column scenario
+		dataType: string
+		lineageTag: 8dc03793-7fcb-44fb-93bb-31e59db73102
+		sourceLineageTag: scenario
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_revenue_metrics = entity
+		mode: directLake
+		source
+			entityName: fact_revenue_metrics
+			schemaName: gold
+			expressionSource: 'DirectLake - LH_Corp_DataHub'
+
+	changedProperty = IsHidden
+

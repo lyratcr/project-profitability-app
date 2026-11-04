@@ -28,7 +28,8 @@
   - 2026-11-04: first `npx rayfin up` (approved by Ion) from branch `feat/0.5-smoke-page` to `_Corporate DCOE Backend Dev`: item `project-real-profitability` (`ccfd1401-8097-42f2-877f-e770b5401df5`), app https://epic-acorn-69682d5614-eastus2.webapp.fabricapps.net (protected, Fabric sign-in). The workspace already had capacity; no trial or capacity change. `rayfin up status`: reachable.
   - Checked in Ion's Chrome, signed in as a builder: 267,322 h and $6,033,393, the same as DAX on Fabric; desktop layout OK. Mobile width not verified (the window could not be resized).
   - 2026-11-04: Ion confirmed viewer access with a non-builder (Build + Read on the model): OK. Mobile check deferred, nobody available to review on a phone yet (open item #16).
-- [ ] 0.6 Export the model as TMDL into `model/` (skill `export-model`).
+- [x] 0.6 Export the model as TMDL into `model/` (skill `export-model`).
+  - 2026-11-04: `model/definition/` (15 files: 11 tables, 51 measures in `_Measures`, relationships, Direct Lake expression on `LH_Corp_DataHub`, compatibility level 1606). No `_app` objects yet. Checked: no credentials, emails or roles; only a OneLake URL with workspace and lakehouse ids. Power BI modeling MCP EULA accepted with Ion's OK.
 
 ## Phase 1 — Model layer (needs Ion's approval of the DAX)
 

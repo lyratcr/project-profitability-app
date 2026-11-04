@@ -25,6 +25,7 @@
 
 ## Log
 
+2026-11-04 | Change | Model export | First TMDL snapshot of the published Dev model in `model/definition/` (baseline before the `_app` measures, Phase 1); Phase 0 complete except the deferred mobile check (#16) | Claude
 2026-11-04 | Decision | Task 0.5 | Viewer access confirmed by Ion with a non-builder; 0.5 ticked. Mobile check deferred until someone can review on a phone (open item #16) | Ion
 2026-11-04 | Release | First deploy | Smoke page deployed from `feat/0.5-smoke-page` (Ion approved deploying before merge to main) to `_Corporate DCOE Backend Dev`, item `project-real-profitability`; live values match DAX on Fabric | Ion + Claude
 2026-11-04 | Finding | Tooling | The Rayfin dataapp template (CLI 1.36.2) has no Playwright validation and can't render locally before the first `rayfin up` (no backend env vars; `rayfin dev` provisions the item). Browser validation for 0.5 moves to right after the first deploy; CLAUDE.md's "Playwright before rayfin up" rule applies from then on | Claude

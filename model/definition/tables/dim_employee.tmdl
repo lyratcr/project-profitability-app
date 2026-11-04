@@ -1,0 +1,95 @@
+table dim_employee
+	lineageTag: ae565ac2-498f-4231-8666-f0473ea7dd53
+	sourceLineageTag: [gold].[dim_employee]
+
+	column ukg_employee_id
+		dataType: string
+		lineageTag: d7b0d0a0-121c-4d17-abda-7aeff433007c
+		sourceLineageTag: ukg_employee_id
+		summarizeBy: none
+		sourceColumn: ukg_employee_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column employee_full_name
+		dataType: string
+		lineageTag: 558f5c03-14d5-4b65-998f-f5dd1316ee38
+		sourceLineageTag: employee_full_name
+		summarizeBy: none
+		sourceColumn: employee_full_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column legal_entity
+		dataType: string
+		lineageTag: 7e058a57-152a-4f7a-8c7e-005ad89b95b4
+		sourceLineageTag: legal_entity
+		summarizeBy: none
+		sourceColumn: legal_entity
+
+		annotation SummarizationSetBy = Automatic
+
+	column hire_date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 739068aa-e51f-4aa8-90b5-e05b1ee2d5f4
+		sourceLineageTag: hire_date
+		summarizeBy: none
+		sourceColumn: hire_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column termination_date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 79124421-5b54-4028-b395-06cd5a1950e0
+		sourceLineageTag: termination_date
+		summarizeBy: none
+		sourceColumn: termination_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column status_code
+		dataType: string
+		lineageTag: 0fca049c-c647-4719-920a-72fee72f3979
+		sourceLineageTag: status_code
+		summarizeBy: none
+		sourceColumn: status_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column _gold_modified_at
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 41ee62b2-3edb-4a84-abf4-fcdf022b67ec
+		sourceLineageTag: _gold_modified_at
+		summarizeBy: none
+		sourceColumn: _gold_modified_at
+
+		annotation SummarizationSetBy = Automatic
+
+	column _gold_pipeline_run_id
+		dataType: string
+		lineageTag: 33928d3a-b0b9-466b-8da3-941fd17797d4
+		sourceLineageTag: _gold_pipeline_run_id
+		summarizeBy: none
+		sourceColumn: _gold_pipeline_run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column employee_number
+		dataType: string
+		lineageTag: de6877ab-e9cf-4ca2-b460-bd66f5e75967
+		sourceLineageTag: employee_number
+		summarizeBy: none
+		sourceColumn: employee_number
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_employee = entity
+		mode: directLake
+		source
+			entityName: dim_employee
+			schemaName: gold
+			expressionSource: 'DirectLake - LH_Corp_DataHub'
+

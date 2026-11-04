@@ -1,0 +1,32 @@
+relationship 3cea1de5-5c2c-76fc-989f-62a39013e750
+	fromColumn: fact_profitability_metrics.transaction_date
+	toColumn: dim_calendar.date
+
+relationship f72d7b6e-9c79-c8cc-3705-d477d95bd904
+	fromColumn: fact_revenue_metrics.transaction_date
+	toColumn: dim_calendar.date
+
+relationship ab244a31-abc6-8224-903b-d8355f35c906
+	fromColumn: fact_profitability_metrics.project_key
+	toColumn: dim_project.project_key
+
+relationship 9fa5b961-e33e-3509-bdbc-eddad0480399
+	fromColumn: fact_revenue_metrics.project_key
+	toColumn: dim_project.project_key
+
+relationship f2b0a6f2-cf45-01aa-7a2a-aa1e4e97e717
+	fromColumn: dim_employee_history.ukg_employee_id
+	toColumn: dim_employee.employee_number
+
+relationship 9815a73a-8615-80d4-4799-11318bd0d75a
+	fromColumn: fact_profitability_metrics.ukg_employee_id
+	toColumn: dim_employee.ukg_employee_id
+
+relationship e6b9bf05-ec85-a1cd-1e3e-bc7954b9ebda
+	fromColumn: fact_profitability_metrics.org_key
+	toColumn: dim_organization.org_key
+
+relationship 42da39d6-6ad1-2fb4-c2bf-7500de3d55ca
+	fromColumn: fact_revenue_metrics.org_key
+	toColumn: dim_organization.org_key
+

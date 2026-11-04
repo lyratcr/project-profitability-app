@@ -1,0 +1,318 @@
+table fact_profitability_metrics
+	lineageTag: 2526af11-79bf-49d5-b047-693607e4c0df
+	sourceLineageTag: [gold].[fact_profitability_metrics]
+
+	column transaction_date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 661146dc-0519-41b0-a362-f6fce35bf7b8
+		sourceLineageTag: transaction_date
+		summarizeBy: none
+		sourceColumn: transaction_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column synerion_emp_id
+		dataType: string
+		lineageTag: 7759d832-4780-4c24-a651-b209a6be1fa9
+		sourceLineageTag: synerion_emp_id
+		summarizeBy: none
+		sourceColumn: synerion_emp_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column ukg_employee_id
+		dataType: string
+		lineageTag: aec46a1e-de93-46e0-8326-7f80793b6550
+		sourceLineageTag: ukg_employee_id
+		summarizeBy: none
+		sourceColumn: ukg_employee_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column employee_full_name
+		dataType: string
+		lineageTag: 8409f23d-f77c-4972-9cdd-9558b6bb2870
+		sourceLineageTag: employee_full_name
+		summarizeBy: none
+		sourceColumn: employee_full_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column employee_reporting_category
+		dataType: string
+		lineageTag: a114c1ac-7015-4b09-84fa-029329b0929a
+		sourceLineageTag: employee_reporting_category
+		summarizeBy: none
+		sourceColumn: employee_reporting_category
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_name
+		dataType: string
+		lineageTag: c6ab4ba8-1354-490a-a8da-259f9e9fee96
+		sourceLineageTag: project_name
+		summarizeBy: none
+		sourceColumn: project_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column task_name
+		dataType: string
+		lineageTag: 0b866f6e-24f0-4b08-a437-99b72120c65c
+		sourceLineageTag: task_name
+		summarizeBy: none
+		sourceColumn: task_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column pay_category_description
+		dataType: string
+		lineageTag: 39ce8369-3724-49a5-a60a-fd3170b31d02
+		sourceLineageTag: pay_category_description
+		summarizeBy: none
+		sourceColumn: pay_category_description
+
+		annotation SummarizationSetBy = Automatic
+
+	column worked_hours
+		dataType: decimal
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		lineageTag: da288388-c22c-433b-8da5-4ce342919f27
+		sourceLineageTag: worked_hours
+		summarizeBy: sum
+		sourceColumn: worked_hours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	column actual_cost_usd
+		dataType: double
+		lineageTag: 1ab4dfdf-80df-4020-be5b-da7366531888
+		sourceLineageTag: actual_cost_usd
+		summarizeBy: sum
+		sourceColumn: actual_cost_usd
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column _gold_modified_at
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: 8636a38c-3880-4500-ab67-9bac38816670
+		sourceLineageTag: _gold_modified_at
+		summarizeBy: none
+		sourceColumn: _gold_modified_at
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column _gold_pipeline_run_id
+		dataType: string
+		isHidden
+		lineageTag: d331ecce-b082-4caa-813d-c70574329200
+		sourceLineageTag: _gold_pipeline_run_id
+		summarizeBy: none
+		sourceColumn: _gold_pipeline_run_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_key
+		dataType: string
+		lineageTag: 8525251f-a148-4c30-a934-c09acb18f60b
+		sourceLineageTag: project_key
+		summarizeBy: none
+		sourceColumn: project_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column employee_L1
+		dataType: string
+		lineageTag: bc43648d-f669-44b2-a477-0437bbb9a78a
+		sourceLineageTag: employee_L1
+		summarizeBy: none
+		sourceColumn: employee_L1
+
+		annotation SummarizationSetBy = Automatic
+
+	column employee_L2
+		dataType: string
+		lineageTag: 1477cfc5-1ca5-4690-bd0d-abb2abad870e
+		sourceLineageTag: employee_L2
+		summarizeBy: none
+		sourceColumn: employee_L2
+
+		annotation SummarizationSetBy = Automatic
+
+	column employee_L3
+		dataType: string
+		lineageTag: a4eb4cbd-8d32-46da-b166-d6d741bf7110
+		sourceLineageTag: employee_L3
+		summarizeBy: none
+		sourceColumn: employee_L3
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_company
+		dataType: string
+		lineageTag: 6cf48863-db39-4dbf-b45f-47741cb8959f
+		sourceLineageTag: project_company
+		summarizeBy: none
+		sourceColumn: project_company
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_customer
+		dataType: string
+		lineageTag: a93a82e5-e1d5-4338-b4b4-34a7b216a446
+		sourceLineageTag: project_customer
+		summarizeBy: none
+		sourceColumn: project_customer
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_industry
+		dataType: string
+		lineageTag: 4630ae5c-5d0a-484e-b6ec-e7c62ef95497
+		sourceLineageTag: project_industry
+		summarizeBy: none
+		sourceColumn: project_industry
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_service_line
+		dataType: string
+		lineageTag: 6684a065-1f6e-4ac0-b10f-df4e78553c10
+		sourceLineageTag: project_service_line
+		summarizeBy: none
+		sourceColumn: project_service_line
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_L1
+		dataType: string
+		lineageTag: a9c2caba-5d1d-48a8-b654-4173dddacac4
+		sourceLineageTag: project_L1
+		summarizeBy: none
+		sourceColumn: project_L1
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_L2
+		dataType: string
+		lineageTag: ed30e30b-4cb6-47ff-8b02-7998a0620d62
+		sourceLineageTag: project_L2
+		summarizeBy: none
+		sourceColumn: project_L2
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_L3
+		dataType: string
+		lineageTag: 28268016-ba87-448a-8103-1fdafa7580e2
+		sourceLineageTag: project_L3
+		summarizeBy: none
+		sourceColumn: project_L3
+
+		annotation SummarizationSetBy = Automatic
+
+	column subtask_category
+		dataType: string
+		lineageTag: e2d97b0b-3f81-4fce-bb67-365782b88b46
+		sourceLineageTag: subtask_category
+		summarizeBy: none
+		sourceColumn: subtask_category
+
+		annotation SummarizationSetBy = Automatic
+
+	column employee_country
+		dataType: string
+		lineageTag: 5deb20e9-b5d2-4627-949b-97c139fa67de
+		sourceLineageTag: employee_country
+		summarizeBy: none
+		sourceColumn: employee_country
+
+		annotation SummarizationSetBy = Automatic
+
+	column project_country
+		dataType: string
+		lineageTag: 70999a48-4b08-4026-8bb5-b0feb52aa63b
+		sourceLineageTag: project_country
+		summarizeBy: none
+		sourceColumn: project_country
+
+		annotation SummarizationSetBy = Automatic
+
+	column intercompany_flag
+		dataType: string
+		lineageTag: b00dc1c6-f932-41ae-b81a-9dd266e5e563
+		sourceLineageTag: intercompany_flag
+		summarizeBy: none
+		sourceColumn: intercompany_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column intercompany_flow
+		dataType: string
+		lineageTag: 784638a4-9470-4e5c-b838-238dc0f0839e
+		sourceLineageTag: intercompany_flow
+		summarizeBy: none
+		sourceColumn: intercompany_flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column cross_charge_flag
+		dataType: string
+		lineageTag: 0300be56-1230-4530-91e9-3dfcf6dd1fd5
+		sourceLineageTag: cross_charge_flag
+		summarizeBy: none
+		sourceColumn: cross_charge_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column cross_charge_flow
+		dataType: string
+		lineageTag: 81ea1f97-543d-4797-96bb-01ca5c344a75
+		sourceLineageTag: cross_charge_flow
+		summarizeBy: none
+		sourceColumn: cross_charge_flow
+
+		annotation SummarizationSetBy = Automatic
+
+	column pay_category_id
+		dataType: int64
+		lineageTag: 44cf504e-1629-4fd8-89e4-5dc01d0596dd
+		sourceLineageTag: pay_category_id
+		summarizeBy: none
+		sourceColumn: pay_category_id
+
+		changedProperty = FormatString
+
+		changedProperty = SummarizeBy
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column org_key
+		dataType: string
+		lineageTag: 5082a2d8-d1aa-411c-95eb-b7ed562a3078
+		sourceLineageTag: org_key
+		summarizeBy: none
+		sourceColumn: org_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_profitability_metrics = entity
+		mode: directLake
+		source
+			entityName: fact_profitability_metrics
+			schemaName: gold
+			expressionSource: 'DirectLake - LH_Corp_DataHub'
+
