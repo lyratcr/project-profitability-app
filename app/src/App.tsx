@@ -5,13 +5,23 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-import { SmokePage } from "./components/smoke-page.component";
+import { AppHeader } from "./components/app-header.component";
+import { PagePlaceholder } from "./components/page-placeholder.component";
+import { useHashRoute } from "./hooks/use-hash-route";
 
-// Phase 0: the smoke page only. The app shell and pages P1–P6 replace it in Phase 2.
-// EmptyStatePreview.tsx and empty-state-preview-world-map.png are no longer imported;
-// Ion removes them by hand (repo rule: Claude doesn't delete files).
+// App shell (build plan 2.1): top bar with data freshness, page tabs and hash routes.
+// Pages P1–P6 replace PagePlaceholder in Phases 3–4.
 function App() {
-    return <SmokePage />;
+    const { page } = useHashRoute();
+
+    return (
+        <div className="min-h-full bg-background">
+            <AppHeader current={page} />
+            <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-8">
+                <PagePlaceholder page={page} />
+            </main>
+        </div>
+    );
 }
 
 export default App;
