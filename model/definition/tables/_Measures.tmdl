@@ -1240,6 +1240,25 @@ table _Measures
 		displayFolder: _app\Data health
 		lineageTag: feea6d63-5170-4141-872f-4ae048c2ea01
 
+	/// ADDED 2026-11-04 (Fabric app): Synerion hours in the 28 days before the first date of the selected period (the 4 weeks before the selected week).
+	measure 'Hours Previous 4 Weeks_app' =
+			VAR _start = MIN ( dim_calendar[date] )
+			RETURN
+			    CALCULATE (
+			        [Synerion Hours_app],
+			        REMOVEFILTERS ( dim_calendar ),
+			        DATESBETWEEN ( dim_calendar[date], _start - 28, _start - 1 )
+			    )
+		formatString: #,0
+		displayFolder: _app\Projects
+		lineageTag: caeef1fa-38d0-4461-8084-1a1b50cc01a8
+
+	/// ADDED 2026-11-04 (Fabric app): 1 when there are hours in the previous 4 weeks but none in the selected period; blank otherwise. Use per person and project.
+	measure 'Missing This Week_app' = IF ( [Hours Previous 4 Weeks_app] > 0 && COALESCE ( [Synerion Hours_app], 0 ) = 0, 1 )
+		formatString: 0
+		displayFolder: _app\Projects
+		lineageTag: 066350ab-2bcb-48f2-957d-510cd43453e4
+
 	column Column
 		isHidden
 		formatString: 0
