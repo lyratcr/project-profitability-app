@@ -58,7 +58,11 @@
   - `HierarchyMatrix` / `buildMatrix` take several value columns (`values`, per-column formats). `trendWindow` in `lib/weeks.ts`, `dateRangeArg` in `lib/filters.ts`.
   - Checks: 282 unit tests, lint, build; `validate:visual` 4/4 (trend and shrinkage, project and employee view, with and without L1 = BPO); every query run on Fabric first. Checked in Ion's Chrome (dark, desktop): October 2026 all orgs 271,203 h / +1.5% / 93.6% / 2,519 / 3,357; L1 = BPO employee view 171,790 h / −1.0% / 92.3% / 1,859 / 1,658, RCM 59,451, BOS 52,542; drill Parallon › projects; same as DAX. Mobile width not verified (the Chrome window can't be resized from here, #16).
   - Merged (PR #12) and deployed from `main` @ `ed962d8` on 2026-11-04; checked live, same numbers as DAX.
-- [ ] 3.2 P2 Headcount Overview
+- [x] 3.2 P2 Headcount Overview
+  - 2026-11-04: page `#/headcount` (`components/headcount-page.component.tsx`, queries in `queries/headcount/`, one per visual), employee org throughout. Headcount = people who logged time (#7 still open with Adan; the page says so). KPI cards: last-week headcount with MoM, people with hours in the period, contractors share (Contractor + GT Contractor, sliced in the query). Monthly trend: last 12 months ending with the period (`monthWindow` in `lib/filters.ts`), stacked by reporting category with a fixed color per category, months in the query's order. By country: bars with share. By organization: master hierarchy with headcount and people with hours, the model's subtotals.
+  - Model: `Headcount (Last Week)_app` moved to Sunday–Saturday weeks (the week that holds the period's last day with hours) with the employee-org mapping, and `Headcount (Last Week) MoM %_app` created, after Ion's approval (`08_app_measures.md` § 9). TMDL re-exported.
+  - `describeMonthComparison` (MoM wording) in `lib/filters.ts`; P1 uses `numberCell` and it too.
+  - Checks: 294 unit tests, lint, build; `validate:visual` 4/4 (trend and country, with and without L1 = BPO); every query run on Fabric first. Checked in Ion's Chrome (dark, desktop): October 2026 1,561 / +1.2% / 1,634 / 6.1%, Costa Rica 66.6%; L1 = BPO 992 / 1,041, Costa Rica 75.4%; same as DAX. Mobile not verified (#16).
 - [ ] 3.3 P3 FTE Overview
 - [ ] 3.4 P4 Intercompany & Cross-Charge (February 2026 = 223,641 h in both views)
 - [ ] 3.5 P5 Revenue & Capacity Yield

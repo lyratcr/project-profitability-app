@@ -39,8 +39,8 @@
 
 ### P2 · Headcount Overview (`/headcount`)
 **Purpose:** how many people over time.
-- **KPI cards:** `[Headcount (Last Week)_app]` with MoM; `[People With Hours_app]` in the period; contractors share.
-- **Monthly trend:** `[Headcount (Last Week)_app]` by `dim_calendar[year_month]` (each month shows its last week with data), stacked by `employee_reporting_category`.
+- **KPI cards:** `[Headcount (Last Week)_app]` (Sunday–Saturday week that holds the period's last day with hours) with `[Headcount (Last Week) MoM %_app]`; `[People With Hours (Employee Org)_app]` in the period; contractors share (Contractor + GT Contractor; Ion 2026-11-04).
+- **Monthly trend:** last 12 months ending with the period (Ion 2026-11-04), `[Headcount (Last Week)_app]` by `dim_calendar[year_month]` (each month shows its last week with data), stacked by `employee_reporting_category`.
 - **By country** (`employee_country`) and **by organization** (`employee_L1-L3` through the master hierarchy).
 - *Pending decision:* headcount = people who logged time (current measures) or active employees in UKG (needs a new measure on `dim_employee` hire/termination dates).
 

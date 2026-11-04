@@ -9,6 +9,8 @@ import {
     applyOrgToOptions,
     coercePeriod,
     dateRangeArg,
+    describeMonthComparison,
+    monthWindow,
     daxString,
     describePeriod,
     filterArgs,
@@ -254,5 +256,26 @@ describe("dateRangeArg", () => {
         expect(dateRangeArg(new Date(2026, 4, 3), new Date(2026, 9, 31))).toBe(
             "KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 5, 3 ), DATE ( 2026, 10, 31 ) ) )",
         );
+    });
+});
+
+describe("monthWindow", () => {
+    it("covers 12 calendar months ending with the period's last month", () => {
+        expect(monthWindow(new Date(2026, 9, 31))).toEqual({ start: new Date(2025, 10, 1), end: new Date(2026, 9, 31) });
+    });
+
+    it("crosses the year and takes another month count", () => {
+        expect(monthWindow(new Date(2026, 1, 28), 6)).toEqual({ start: new Date(2025, 8, 1), end: new Date(2026, 1, 28) });
+    });
+});
+
+describe("describeMonthComparison", () => {
+    it("names the previous month for a month, across the year", () => {
+        expect(describeMonthComparison(monthPeriod(2026, 10))).toBe("vs September 2026");
+        expect(describeMonthComparison(monthPeriod(2026, 1))).toBe("vs December 2025");
+    });
+
+    it("describes other periods as the same days a month earlier", () => {
+        expect(describeMonthComparison(parsePeriod("q:2026-Q3")!)).toBe("vs the same days one month earlier");
     });
 });

@@ -1,0 +1,15 @@
+{
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+    "description": "P2 last-week headcount by employee country, largest first, labelled with the share.",
+    "encoding": {
+        "y": { "field": "Country", "type": "nominal", "title": null, "sort": { "field": "Headcount", "order": "descending" } },
+        "x": { "field": "Headcount", "type": "quantitative" }
+    },
+    "layer": [
+        { "mark": "bar" },
+        {
+            "mark": { "type": "text", "align": "left", "dx": 4, "limit": 0 },
+            "encoding": { "text": { "field": "Share", "type": "quantitative" } }
+        }
+    ]
+}

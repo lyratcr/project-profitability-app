@@ -1,10 +1,10 @@
 import { useMemo, type ReactElement } from "react";
-import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { describeFilterContext } from "@/lib/filter-context";
-import { dateRangeArg, describePeriod, filterArgs, monthPeriod, type FilterKey, type FilterOptions, type FilterState } from "@/lib/filters";
+import { dateRangeArg, describeMonthComparison, describePeriod, filterArgs, type FilterKey, type FilterOptions, type FilterState } from "@/lib/filters";
 import type { MatrixSpec } from "@/lib/matrix";
 import { ORG_VIEW_HINT, ORG_VIEW_LABEL, type OrgView } from "@/lib/org-view";
+import { numberCell } from "@/lib/query-table";
 import type { PageDef } from "@/lib/routes";
 import { toDataTable } from "@/lib/to-data-table";
 import { cn } from "@/lib/utils";
@@ -56,23 +56,6 @@ const CUSTOMER_SPEC: MatrixSpec = {
 };
 
 const VALUE_FORMATS = ["#,0", "0.0%"] as const;
-
-/** One value from a single-row KPI query; null when the column or value is missing (shown as —). */
-function kpiValue(table: QueryTable, raw: string): number | null {
-    const i = table.columns.findIndex((c) => c.name === raw);
-    const v = i >= 0 ? table.rows[0]?.[i] : null;
-    return typeof v === "number" && Number.isFinite(v) ? v : null;
-}
-
-/** What the MoM measure compares to, in words. */
-function comparedTo(filters: FilterState): string {
-    const { period } = filters;
-    if (period.kind === "month") {
-        const prev = new Date(period.start.getFullYear(), period.start.getMonth() - 1, 1);
-        return `vs ${describePeriod(monthPeriod(prev.getFullYear(), prev.getMonth() + 1))}`;
-    }
-    return "vs the same days one month earlier";
-}
 
 /**
  * P1 Effort Distribution (build plan 3.1, docs/05_app_design.md § 3): where the hours go. One query per
@@ -134,22 +117,22 @@ export function EffortPage({ page, filters, options, view, onViewChange, today =
                             <KpiTile
                                 title="Synerion hours"
                                 subtitle={`${periodText} · ${ORG_VIEW_LABEL[view]}`}
-                                value={kpiValue(table, kpiColumns.hours)}
+                                value={numberCell(table, kpiColumns.hours)}
                                 format="#,0"
-                                change={{ value: kpiValue(table, kpiColumns.hoursMoM), format: "0.0%", comparedTo: comparedTo(filters) }}
+                                change={{ value: numberCell(table, kpiColumns.hoursMoM), format: "0.0%", comparedTo: describeMonthComparison(filters.period) }}
                                 favorable="neither"
                             />
                             <KpiTile
                                 title="Productive share"
                                 subtitle="Excl. holiday and time off"
-                                value={kpiValue(table, kpiColumns.productiveShare)}
+                                value={numberCell(table, kpiColumns.productiveShare)}
                                 format="0.0%"
                             />
-                            <KpiTile title="Overtime hours" subtitle="Pay category Overtime" value={kpiValue(table, kpiColumns.overtime)} format="#,0" />
+                            <KpiTile title="Overtime hours" subtitle="Pay category Overtime" value={numberCell(table, kpiColumns.overtime)} format="#,0" />
                             <KpiTile
                                 title="Time off + holiday"
                                 subtitle="Pay categories Time Off and Holiday"
-                                value={kpiValue(table, kpiColumns.timeOffHoliday)}
+                                value={numberCell(table, kpiColumns.timeOffHoliday)}
                                 format="#,0"
                             />
                         </div>

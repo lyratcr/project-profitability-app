@@ -1,0 +1,16 @@
+// P2 headcount by organization: master hierarchy L1 > L2 > L3 mapped to the employee org, with the model's
+// subtotals (distinct people are not additive). Grouped by dim_hierarchy_master: the measures' TREATAS would
+// replace a filter on the fact's own org columns.
+EVALUATE
+SUMMARIZECOLUMNS (
+    ROLLUPADDISSUBTOTAL (
+        dim_hierarchy_master[L1], "IsL1Total",
+        dim_hierarchy_master[L2], "IsL2Total",
+        dim_hierarchy_master[L3], "IsL3Total"
+    ),
+    /* @filters */
+    "Headcount", [Headcount (Last Week)_app],
+    "People", [People With Hours (Employee Org)_app]
+)
+// Largest first: a subtotal always comes before its children, so the matrix keeps this order.
+ORDER BY [Headcount] DESC
