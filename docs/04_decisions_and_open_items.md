@@ -31,6 +31,7 @@ NY Municipal Credit"`, `"Access Corporation  "`), and 3 revenue customers have n
 
 ## Log
 
+2026-11-04 | Release | Global filters | `npx rayfin up` from `main` @ `86eb203` (PR #8, approved by Ion) to `_Corporate DCOE Backend Dev`. Checked live in Ion's Chrome: L1 = BPO narrows to 48 customers / 91 projects, + Parallon to 6 projects; header dates live | Ion + Claude
 2026-11-04 | Decision | Filters | Ion: the Project list also follows the selected Customer (hours `project_customer`, revenue `financial_customer`); changing the customer resets the project; Customer and Project are disabled while their lists reload, so a stale list is never selectable | Ion + Claude
 2026-11-04 | Decision | Filters | Ion: Customer and Project lists follow the selected L1 > L2 > L3. A customer or project belongs to an org through the project's org (hours `project_L*`, revenue `financial_L*`), read straight from the fact columns; a selected customer or project outside the new org is dropped | Ion + Claude
 2026-11-04 | Change | Model | Ion approved; created `Synerion Hours (Employee Org)_app`, `Synerion Hours (Project Org)_app`, `People With Hours (Employee Org)_app`, `People With Hours (Project Org)_app`; updated `Planned Revenue_app`, `Planned Hours_app`, `Billed Hours_app` to follow the master hierarchy through the financial org; re-validated; TMDL re-exported; closes #19 | Ion + Claude
