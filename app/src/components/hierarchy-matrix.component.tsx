@@ -1,0 +1,67 @@
+import { useMemo, type ReactElement } from "react";
+import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
+import { DataGrid, type GridColumnDef, type Row } from "@microsoft/fabric-datagrid";
+import { formatValue, type DataTable } from "@microsoft/fabric-visuals-core";
+import { useThemeContext } from "@/hooks/theme.context";
+import { buildMatrix, type MatrixSpec } from "@/lib/matrix";
+
+interface HierarchyMatrixProps {
+    table: QueryTable;
+    spec: MatrixSpec;
+    /** Header of the row-label column, e.g. "Organization (employee)". */
+    rowHeader: string;
+    /** Format string of the measure in the cells (from the query metadata). */
+    format?: string;
+    title: string;
+    subtitle?: string;
+    /** Expand the first level on load. */
+    expandFirstLevel?: boolean;
+}
+
+const show = (value: unknown, format?: string) => (value === null || value === undefined ? "" : String(formatValue(value, format)));
+
+/**
+ * Matrix with expandable rows (build plan 2.4): levels as a tree, an optional pivot (e.g. months) as
+ * columns, and the model's grand total in the totals row. Every number comes from the query.
+ */
+export function HierarchyMatrix({ table, spec, rowHeader, format, title, subtitle, expandFirstLevel = false }: HierarchyMatrixProps): ReactElement {
+    const { theme } = useThemeContext();
+    const matrix = useMemo(() => buildMatrix(table, spec), [table, spec]);
+
+    const columns: GridColumnDef[] = matrix.columns.map((c) =>
+        c.id === "label"
+            ? { id: "label", header: rowHeader, minWidth: 180 }
+            : { id: c.id, header: c.header, numericStyling: true, cellRenderer: (value) => show(value, format) },
+    );
+
+    const rows: Row[] = useMemo(() => {
+        const toRow = (r: (typeof matrix.rows)[number]): Row => {
+            const { _children, depth, ...rest } = r;
+            const row: Row = { ...(rest as Row) };
+            if (_children) {
+                row._children = _children.map(toRow);
+                row._expanded = expandFirstLevel && depth === 1;
+            }
+            return row;
+        };
+        return matrix.rows.map(toRow);
+    }, [matrix, expandFirstLevel]);
+
+    const totals: DataTable | undefined = matrix.totals
+        ? {
+              columns: [{ name: "label" }, ...matrix.columns.slice(1).map((c) => ({ name: c.id, format }))],
+              rows: [["Total", ...matrix.columns.slice(1).map((c) => matrix.totals![c.id])]],
+          }
+        : undefined;
+
+    return (
+        <DataGrid
+            data={rows}
+            columns={columns}
+            grandTotals={totals ? { position: "bottom", data: totals } : undefined}
+            capabilities={{ disableFiltering: true }}
+            theme={theme}
+            header={{ title, subtitle }}
+        />
+    );
+}
