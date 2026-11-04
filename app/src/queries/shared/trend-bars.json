@@ -1,0 +1,15 @@
+{
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+    "description": "Trend, one series: bars per period with value labels. Fields are set by trendSpec().",
+    "encoding": {
+        "x": { "field": "__x", "type": "ordinal", "title": null, "sort": { "field": "__xSort", "order": "ascending" } },
+        "y": { "field": "__y", "type": "quantitative" }
+    },
+    "layer": [
+        { "mark": "bar" },
+        {
+            "mark": { "type": "text", "style": "labelVertical" },
+            "encoding": { "text": { "field": "__y", "type": "quantitative" } }
+        }
+    ]
+}

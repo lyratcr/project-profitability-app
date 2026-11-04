@@ -1,0 +1,10 @@
+{
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+    "description": "Trend, several series: stacked bars per period, colored by a category. Fields are set by trendSpec().",
+    "mark": "bar",
+    "encoding": {
+        "x": { "field": "__x", "type": "ordinal", "title": null, "sort": { "field": "__xSort", "order": "ascending" } },
+        "y": { "field": "__y", "type": "quantitative", "stack": "zero" },
+        "color": { "field": "__color", "type": "nominal" }
+    }
+}

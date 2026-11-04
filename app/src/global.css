@@ -28,6 +28,19 @@
   --text-data-label--font-weight: var(--font-weight-regular);
   --text-kpi-value: var(--text-600);
   --text-kpi-value--font-weight: var(--font-weight-bold);
+
+  /* Categorical data colors for charts (VegaVisual reads --color-data-1..10). Ink navy first, then
+     hues far apart; each >= 3.8:1 on the light card/page backgrounds. Dark versions in .dark. */
+  --color-data-1: #1f4f86;
+  --color-data-2: #1f8a7d;
+  --color-data-3: #b26b00;
+  --color-data-4: #7a4fa6;
+  --color-data-5: #c23b4f;
+  --color-data-6: #4d7d2a;
+  --color-data-7: #2b7bb9;
+  --color-data-8: #9a4b2a;
+  --color-data-9: #5c6570;
+  --color-data-10: #b0457f;
 }
 
 @theme {
@@ -176,6 +189,18 @@
     --color-brand-foreground: #8fb8ea;
     --color-hover:            rgba(255, 255, 255, 0.06);
     --color-emphasis-foreground: #f5f7fa;
+
+    /* Data colors, dark: each >= 6.8:1 on the dark card/page backgrounds. */
+    --color-data-1: #8fb8ea;
+    --color-data-2: #5fd3c2;
+    --color-data-3: #f2c46d;
+    --color-data-4: #c4a1ec;
+    --color-data-5: #f08a99;
+    --color-data-6: #9ccd74;
+    --color-data-7: #7cc0f0;
+    --color-data-8: #e09a72;
+    --color-data-9: #aab3bd;
+    --color-data-10: #eb9ac4;
   }
 }
 
