@@ -1067,7 +1067,28 @@ table _Measures
 		lineageTag: 4448c581-ae73-46ef-b9b4-9cc7430710e1
 
 	/// ADDED 2026-11-04 (Fabric app): People who logged time in the last week with data inside the period.
-	measure 'Headcount (Last Week)_app' = [Operational Headcount (Last Week)]
+	/// FIXED 2026-11-04 (Fabric app): People who logged time in the Sunday–Saturday week that holds the last day with hours in the period (may run past the period end); follows the master hierarchy through the employee org.
+	measure 'Headcount (Last Week)_app' =
+			VAR _last = CALCULATE ( MAX ( fact_profitability_metrics[transaction_date] ), ALLEXCEPT ( fact_profitability_metrics, dim_calendar ) )
+			VAR _start = _last - WEEKDAY ( _last, 1 ) + 1
+			RETURN
+			    IF (
+			        ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+			        CALCULATE (
+			            DISTINCTCOUNT ( fact_profitability_metrics[ukg_employee_id] ),
+			            REMOVEFILTERS ( dim_calendar ),
+			            DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ),
+			            TREATAS (
+			                SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+			                fact_profitability_metrics[employee_L1], fact_profitability_metrics[employee_L2], fact_profitability_metrics[employee_L3]
+			            )
+			        ),
+			        CALCULATE (
+			            DISTINCTCOUNT ( fact_profitability_metrics[ukg_employee_id] ),
+			            REMOVEFILTERS ( dim_calendar ),
+			            DATESBETWEEN ( dim_calendar[date], _start, _start + 6 )
+			        )
+			    )
 		formatString: #,0
 		displayFolder: _app\People
 		lineageTag: 61a2e1ab-ceea-48a4-a231-58049eceb17d
@@ -1403,6 +1424,14 @@ table _Measures
 		formatString: 0.0%
 		displayFolder: _app\Hours
 		lineageTag: cac49a04-13fd-442f-b17c-b915f324d77b
+
+	/// ADDED 2026-11-04 (Fabric app): Change in last-week headcount vs the same period one month earlier (numeric).
+	measure 'Headcount (Last Week) MoM %_app' =
+			VAR _lm = CALCULATE ( [Headcount (Last Week)_app], DATEADD ( dim_calendar[date], -1, MONTH ) )
+			RETURN DIVIDE ( [Headcount (Last Week)_app] - _lm, _lm )
+		formatString: 0.0%
+		displayFolder: _app\People
+		lineageTag: 04acb14a-0388-4d60-a9ac-4a8a71130741
 
 	column Column
 		isHidden

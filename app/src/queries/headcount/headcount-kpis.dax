@@ -1,0 +1,14 @@
+// P2 KPI cards: last-week headcount with MoM, people with hours in the period, contractors share.
+// Headcount = people who logged time (open item #7 is still open with Adan). Employee org throughout.
+// Contractors = employee_reporting_category Contractor + GT Contractor (Ion, 2026-11-04), sliced here.
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "Headcount", [Headcount (Last Week)_app],
+    "HeadcountMoM", [Headcount (Last Week) MoM %_app],
+    "People", [People With Hours (Employee Org)_app],
+    "ContractorsShare", DIVIDE (
+        CALCULATE ( [Headcount (Last Week)_app], KEEPFILTERS ( fact_profitability_metrics[employee_reporting_category] IN { "Contractor", "GT Contractor" } ) ),
+        [Headcount (Last Week)_app]
+    )
+)

@@ -1,0 +1,9 @@
+// P2 last-week headcount by employee country, with share.
+EVALUATE
+SUMMARIZECOLUMNS (
+    fact_profitability_metrics[employee_country],
+    /* @filters */
+    "Headcount", [Headcount (Last Week)_app],
+    "Share", DIVIDE ( [Headcount (Last Week)_app], CALCULATE ( [Headcount (Last Week)_app], ALLSELECTED () ) )
+)
+ORDER BY [Headcount] DESC

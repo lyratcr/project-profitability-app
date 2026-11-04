@@ -97,6 +97,15 @@ export function describePeriod(period: Period): string {
     }
 }
 
+/** What a `… MoM %_app` measure compares the period to (DATEADD one month back), in words. */
+export function describeMonthComparison(period: Period): string {
+    if (period.kind === "month") {
+        const prev = new Date(period.start.getFullYear(), period.start.getMonth() - 1, 1);
+        return `vs ${describePeriod(monthPeriod(prev.getFullYear(), prev.getMonth() + 1))}`;
+    }
+    return "vs the same days one month earlier";
+}
+
 // ---------------------------------------------------------------- filter state
 
 export interface OrgSelection {
@@ -350,4 +359,18 @@ export function applyCustomerToOptions(query: string, customer: string | undefin
         out = out.replace(marker, customer === undefined ? "" : `, KEEPFILTERS ( TREATAS ( { ${daxString(customer)} }, ${column} ) )`);
     }
     return out;
+}
+
+// ---------------------------------------------------------------- trend windows
+
+/** Months shown by a monthly trend (P2: Ion, 2026-11-04). */
+export const TREND_MONTHS = 12;
+
+/**
+ * Window of a monthly trend that ends with the period: `count` whole calendar months, the last one being the
+ * month that holds the period's last day (that month runs to the period end).
+ */
+export function monthWindow(periodEnd: Date, count = TREND_MONTHS): { start: Date; end: Date } {
+    const start = new Date(periodEnd.getFullYear(), periodEnd.getMonth() - (count - 1), 1);
+    return { start, end: new Date(periodEnd.getFullYear(), periodEnd.getMonth(), periodEnd.getDate()) };
 }

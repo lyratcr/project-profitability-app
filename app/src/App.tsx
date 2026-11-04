@@ -7,6 +7,7 @@
 
 import { AppHeader } from "./components/app-header.component";
 import { EffortPage } from "./components/effort-page.component";
+import { HeadcountPage } from "./components/headcount-page.component";
 import { FilterBar } from "./components/filter-bar.component";
 import { PagePlaceholder } from "./components/page-placeholder.component";
 import { useGlobalFilters } from "./hooks/use-global-filters";
@@ -15,7 +16,7 @@ import { readOrgView, writeOrgView } from "./lib/org-view";
 import { pageHref } from "./lib/routes";
 
 // App shell (build plan 2.1–2.2): top bar with data freshness, page tabs, hash routes and global filters.
-// Pages P1–P6 replace PagePlaceholder in Phases 3–4 (P1 Effort: 3.1).
+// Pages P1–P6 replace PagePlaceholder in Phases 3–4 (P1 Effort: 3.1, P2 Headcount: 3.2).
 function App() {
     const route = useHashRoute();
     const { page } = route;
@@ -46,6 +47,8 @@ function App() {
                                 window.location.hash = pageHref(page, writeOrgView(route.params, view));
                             }}
                         />
+                    ) : page.id === "headcount" ? (
+                        <HeadcountPage page={page} filters={filters.state} options={filters.options} />
                     ) : (
                         <PagePlaceholder page={page} filters={filters.state} options={filters.options} />
                     )}

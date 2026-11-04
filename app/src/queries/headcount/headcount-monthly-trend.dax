@@ -1,0 +1,12 @@
+// P2 monthly trend: each month's last-week headcount, stacked by employee reporting category.
+// dim_calendar[year_month] is text ("2026 Oct"); the query orders by year_month_number and the chart keeps that order.
+// The app sends the 12-month window (lib/filters.ts monthWindow) instead of the period.
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_calendar[year_month],
+    dim_calendar[year_month_number],
+    fact_profitability_metrics[employee_reporting_category],
+    /* @filters */
+    "Headcount", [Headcount (Last Week)_app]
+)
+ORDER BY dim_calendar[year_month_number]
