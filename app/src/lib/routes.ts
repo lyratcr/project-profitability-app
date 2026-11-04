@@ -22,7 +22,7 @@ export interface PageDef {
 // Organization (master hierarchy L1 > L2 > L3) is required on every page but Projects (Ion, 2026-11-04);
 // pages must use the measures that react to it (open item #19).
 // Country is not offered on Yield: revenue has no employee country.
-// Project Progress gets its week selector in task 2.3.
+// Project Progress works by Monday–Sunday week (task 2.3, lib/weeks.ts) instead of a period.
 export type PageId = "effort" | "headcount" | "fte" | "flows" | "yield" | "projects";
 
 export const PAGES: readonly PageDef[] = [
@@ -31,7 +31,7 @@ export const PAGES: readonly PageDef[] = [
     { id: "fte", path: "/fte", label: "FTE", title: "FTE Overview", purpose: "How the people are allocated.", task: "3.3", filters: ["period", "org", "country", "customer", "project"], periodKinds: ["month", "quarter", "ytd", "range"] },
     { id: "flows", path: "/flows", label: "Flows", title: "Intercompany & Cross-Charge", purpose: "Hours that cross countries or areas.", task: "3.4", filters: ["period", "org", "country", "customer", "project"], periodKinds: ["month", "quarter", "ytd", "range"] },
     { id: "yield", path: "/yield", label: "Yield", title: "Revenue & Capacity Yield", purpose: "Revenue produced per unit of capacity.", task: "3.5", filters: ["period", "org", "customer", "project"], periodKinds: ["month"] },
-    { id: "projects", path: "/projects", label: "Projects", title: "Project Progress", purpose: "Progress of my projects against plan, and the Monday timesheet review.", task: "4.1", filters: ["project"], periodKinds: [] },
+    { id: "projects", path: "/projects", label: "Projects", title: "Project Progress", purpose: "Progress of my projects against plan, and the Monday timesheet review.", task: "4.1", filters: ["week", "project"], periodKinds: [] },
 ];
 
 export const DEFAULT_PAGE: PageDef = PAGES[0];

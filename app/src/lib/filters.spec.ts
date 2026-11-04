@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { thisWeek } from "./weeks";
 import {
     FILTERS_PLACEHOLDER,
     ORG_OPTION_MARKERS,
@@ -99,6 +100,7 @@ describe("readFilters / writeFilters", () => {
         });
         expect(readFilters(params, today, options)).toEqual({
             period: monthPeriod(2026, 9),
+            week: thisWeek(today),
             org: { l1: "BPO", l2: "BOS", l3: "POD1" },
             country: "Costa Rica",
             customer: "Access Corporation  ",
@@ -108,17 +110,17 @@ describe("readFilters / writeFilters", () => {
 
     it("drops unknown values, broken hierarchy paths and bad periods", () => {
         const params = new URLSearchParams({ period: "m:2026-13", country: "Narnia", customer: 'x" ) )', project: "NOPE", l1: "BPO", l2: "XXX", l3: "POD1" });
-        expect(readFilters(params, today, options)).toEqual({ period: lastCompleteMonth(today), org: { l1: "BPO" } });
+        expect(readFilters(params, today, options)).toEqual({ period: lastCompleteMonth(today), week: thisWeek(today), org: { l1: "BPO" } });
     });
 
     it("resolves only the period while options are loading", () => {
         const params = new URLSearchParams({ period: "q:2026-Q3", country: "Costa Rica" });
-        expect(readFilters(params, today, null)).toEqual({ period: parsePeriod("q:2026-Q3"), org: {} });
+        expect(readFilters(params, today, null)).toEqual({ period: parsePeriod("q:2026-Q3"), week: thisWeek(today), org: {} });
     });
 
     it("round-trips state and removes 'All' keys", () => {
         const start = new URLSearchParams({ period: "m:2026-09", country: "Colombia", other: "keep" });
-        const next = writeFilters(start, { period: parsePeriod("ytd:2026-09")!, org: {}, project: "PAR-401-01" });
+        const next = writeFilters(start, { period: parsePeriod("ytd:2026-09")!, week: thisWeek(today), org: {}, project: "PAR-401-01" });
         expect(next.get("period")).toBe("ytd:2026-09");
         expect(next.has("country")).toBe(false);
         expect(next.get("project")).toBe("PAR-401-01");
@@ -136,13 +138,13 @@ describe("DAX helper", () => {
     });
 
     it("builds the period as a dim_calendar[date] range", () => {
-        expect(filterArgs({ period: monthPeriod(2026, 9), org: {} }, all)).toEqual([
+        expect(filterArgs({ period: monthPeriod(2026, 9), week: thisWeek(today), org: {} }, all)).toEqual([
             "KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 9, 1 ), DATE ( 2026, 9, 30 ) ) )",
         ]);
     });
 
     it("filters customer and project on both facts (open item #1) and country on hours", () => {
-        const args = filterArgs({ period: monthPeriod(2026, 9), org: {}, country: "Costa Rica", customer: "Access Corporation  ", project: "PAR-401-01" }, all);
+        const args = filterArgs({ period: monthPeriod(2026, 9), week: thisWeek(today), org: {}, country: "Costa Rica", customer: "Access Corporation  ", project: "PAR-401-01" }, all);
         expect(args).toContain('KEEPFILTERS ( TREATAS ( { "Costa Rica" }, fact_profitability_metrics[employee_country] ) )');
         expect(args).toContain('KEEPFILTERS ( TREATAS ( { "Access Corporation  " }, fact_profitability_metrics[project_customer] ) )');
         expect(args).toContain('KEEPFILTERS ( TREATAS ( { "Access Corporation  " }, fact_revenue_metrics[financial_customer] ) )');
@@ -152,7 +154,7 @@ describe("DAX helper", () => {
     });
 
     it("applies the master hierarchy level by level", () => {
-        const args = filterArgs({ period: monthPeriod(2026, 9), org: { l1: "BPO", l2: "BOS" } }, new Set<FilterKey>(["org"]));
+        const args = filterArgs({ period: monthPeriod(2026, 9), week: thisWeek(today), org: { l1: "BPO", l2: "BOS" } }, new Set<FilterKey>(["org"]));
         expect(args).toEqual([
             'KEEPFILTERS ( TREATAS ( { "BPO" }, dim_hierarchy_master[L1] ) )',
             'KEEPFILTERS ( TREATAS ( { "BOS" }, dim_hierarchy_master[L2] ) )',
@@ -160,7 +162,7 @@ describe("DAX helper", () => {
     });
 
     it("applies only the filters the page uses", () => {
-        const args = filterArgs({ period: monthPeriod(2026, 9), org: { l1: "BPO" }, country: "Colombia" }, new Set<FilterKey>(["period"]));
+        const args = filterArgs({ period: monthPeriod(2026, 9), week: thisWeek(today), org: { l1: "BPO" }, country: "Colombia" }, new Set<FilterKey>(["period"]));
         expect(args).toHaveLength(1);
     });
 
@@ -218,5 +220,30 @@ describe("customer-dependent project list", () => {
 
     it("refuses queries without both markers", () => {
         expect(() => applyCustomerToOptions("EVALUATE x", "A")).toThrow(/exactly one/);
+    });
+});
+
+describe("week filter", () => {
+    it("reads the week from the URL and falls back to the default week", () => {
+        expect(readFilters(new URLSearchParams({ week: "w:2026-10-26" }), today, null).week.token).toBe("w:2026-10-26");
+        expect(readFilters(new URLSearchParams({ week: "w:2026-10-27" }), today, null).week.token).toBe("w:2026-11-02");
+        // Monday morning: the review week (last week) is the default
+        expect(readFilters(new URLSearchParams(), new Date(2026, 10, 2, 9), null).week.token).toBe("w:2026-10-26");
+    });
+
+    it("writes the week token", () => {
+        const state = readFilters(new URLSearchParams({ week: "w:2026-10-19" }), today, null);
+        expect(writeFilters(new URLSearchParams(), state).get("week")).toBe("w:2026-10-19");
+    });
+
+    it("sends a past week as Monday–Sunday and the current week up to today", () => {
+        const past = readFilters(new URLSearchParams({ week: "w:2026-10-26" }), today, null);
+        expect(filterArgs(past, new Set<FilterKey>(["week"]))).toEqual([
+            "KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 10, 26 ), DATE ( 2026, 11, 1 ) ) )",
+        ]);
+        const current = readFilters(new URLSearchParams(), today, null);
+        expect(filterArgs(current, new Set<FilterKey>(["week"]))).toEqual([
+            "KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 11, 2 ), DATE ( 2026, 11, 4 ) ) )",
+        ]);
     });
 });

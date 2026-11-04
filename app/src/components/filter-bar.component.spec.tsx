@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { thisWeek } from "@/lib/weeks";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { monthPeriod, type FilterOptions, type FilterState } from "@/lib/filters";
 import { PAGES } from "@/lib/routes";
@@ -17,7 +18,7 @@ const options: FilterOptions = {
     projects: [{ key: "PAR-401-01", name: "PAR-401-01 Project" }],
 };
 const page = (id: string) => PAGES.find((p) => p.id === id)!;
-const state: FilterState = { period: monthPeriod(2026, 10), org: {} };
+const state: FilterState = { period: monthPeriod(2026, 10), week: thisWeek(today), org: {} };
 
 function renderBar(pageId: string, overrides: Partial<Parameters<typeof FilterBar>[0]> = {}) {
     const onChange = vi.fn();
@@ -116,4 +117,16 @@ describe("FilterBar", () => {
         expect(screen.getByLabelText("Customer")).not.toBeDisabled();
         expect(screen.getByLabelText("Project")).toBeDisabled();
     });
+
+    it("shows a week selector on Projects and no period", () => {
+        const onChange = renderBar("projects");
+        expect(screen.queryByLabelText("Period")).toBeNull();
+        const week = screen.getByLabelText("Week") as HTMLSelectElement;
+        expect(week.value).toBe("w:2026-11-02");
+        expect(week.options[0].text).toBe("This week (Nov 2 – Nov 4, to date)");
+        expect(week.options[1].text).toBe("Last week (Oct 26 – Nov 1, 2026)");
+        fireEvent.change(week, { target: { value: "w:2026-10-26" } });
+        expect(onChange.mock.calls.at(-1)![0].week.token).toBe("w:2026-10-26");
+    });
 });
+

@@ -12,6 +12,7 @@ import {
     type PeriodKind,
 } from "@/lib/filters";
 import type { PageDef } from "@/lib/routes";
+import { describeWeek, weekChoices } from "@/lib/weeks";
 
 interface FilterBarProps {
     page: PageDef;
@@ -136,6 +137,26 @@ export function FilterBar({
                         </Field>
                     )}
                 </>
+            )}
+
+            {shows("week") && (
+                <Field label="Week" id={`${id}-week`}>
+                    <select
+                        id={`${id}-week`}
+                        className={controlClass}
+                        value={state.week.token}
+                        onChange={(e) => {
+                            const next = weekChoices(today).find((w) => w.token === e.target.value);
+                            if (next) set({ week: next });
+                        }}
+                    >
+                        {(weekChoices(today).some((w) => w.token === state.week.token) ? weekChoices(today) : [state.week, ...weekChoices(today)]).map((w) => (
+                            <option key={w.token} value={w.token}>
+                                {describeWeek(w, today)}
+                            </option>
+                        ))}
+                    </select>
+                </Field>
             )}
 
             {shows("org") && (

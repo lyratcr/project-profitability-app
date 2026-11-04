@@ -35,4 +35,11 @@ describe("routes", () => {
         expect(yieldPage.periodKinds).toEqual(["month"]);
         expect(yieldPage.filters).not.toContain("country");
     });
+
+    it("gives Projects a week selector instead of a period", () => {
+        const projects = PAGES.find((p) => p.id === "projects")!;
+        expect(projects.filters).toEqual(["week", "project"]);
+        for (const p of PAGES) expect(p.filters.includes("week")).toBe(p.id === "projects");
+    });
 });
+

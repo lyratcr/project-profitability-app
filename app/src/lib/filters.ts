@@ -1,3 +1,5 @@
+import { defaultWeek, parseWeek, type Week } from "./weeks";
+
 /**
  * Global filters (docs/05_app_design.md § 2) and the DAX filter helper (build plan 2.2).
  *
@@ -105,13 +107,15 @@ export interface OrgSelection {
 
 export interface FilterState {
     period: Period;
+    /** Monday–Sunday week (P6); defaults to the review week during the Monday review, else this week. */
+    week: Week;
     org: OrgSelection;
     country?: string;
     customer?: string;
     project?: string;
 }
 
-export type FilterKey = "period" | "org" | "country" | "customer" | "project";
+export type FilterKey = "period" | "week" | "org" | "country" | "customer" | "project";
 
 /** Option lists loaded from the model; the whitelist for every non-period filter. */
 export interface FilterOptions {
@@ -121,7 +125,7 @@ export interface FilterOptions {
     projects: ReadonlyArray<{ key: string; name: string | null }>;
 }
 
-const PARAM = { period: "period", l1: "l1", l2: "l2", l3: "l3", country: "country", customer: "customer", project: "project" } as const;
+const PARAM = { period: "period", week: "week", l1: "l1", l2: "l2", l3: "l3", country: "country", customer: "customer", project: "project" } as const;
 
 /**
  * Reads filter state from the hash query. Values not found in `options` are dropped, so nothing
@@ -130,7 +134,8 @@ const PARAM = { period: "period", l1: "l1", l2: "l2", l3: "l3", country: "countr
  */
 export function readFilters(params: URLSearchParams, today: Date, options: FilterOptions | null): FilterState {
     const period = parsePeriod(params.get(PARAM.period)) ?? lastCompleteMonth(today);
-    const state: FilterState = { period, org: {} };
+    const week = parseWeek(params.get(PARAM.week), today) ?? defaultWeek(today);
+    const state: FilterState = { period, week, org: {} };
     if (!options) return state;
 
     state.org = readOrg(params, options.org);
@@ -149,6 +154,7 @@ export function writeFilters(params: URLSearchParams, state: FilterState): URLSe
     const next = new URLSearchParams(params);
     const set = (key: string, value: string | undefined) => (value === undefined ? next.delete(key) : next.set(key, value));
     set(PARAM.period, state.period.token);
+    set(PARAM.week, state.week.token);
     set(PARAM.l1, state.org.l1);
     set(PARAM.l2, state.org.l1 ? state.org.l2 : undefined);
     set(PARAM.l3, state.org.l1 && state.org.l2 ? state.org.l3 : undefined);
@@ -186,6 +192,9 @@ export function filterArgs(state: FilterState, applies: ReadonlySet<FilterKey>):
 
     if (applies.has("period")) {
         args.push(`KEEPFILTERS ( DATESBETWEEN ( ${FILTER_COLUMNS.date}, ${daxDate(state.period.start)}, ${daxDate(state.period.end)} ) )`);
+    }
+    if (applies.has("week")) {
+        args.push(`KEEPFILTERS ( DATESBETWEEN ( ${FILTER_COLUMNS.date}, ${daxDate(state.week.start)}, ${daxDate(state.week.end)} ) )`);
     }
     if (applies.has("org")) {
         const levels = [state.org.l1, state.org.l2, state.org.l3];
