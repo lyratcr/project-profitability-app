@@ -133,16 +133,7 @@ export function readFilters(params: URLSearchParams, today: Date, options: Filte
     const state: FilterState = { period, org: {} };
     if (!options) return state;
 
-    const l1 = params.get(PARAM.l1) ?? undefined;
-    const l2 = params.get(PARAM.l2) ?? undefined;
-    const l3 = params.get(PARAM.l3) ?? undefined;
-    if (l1 && options.org.some(([a]) => a === l1)) {
-        state.org.l1 = l1;
-        if (l2 && options.org.some(([a, b]) => a === l1 && b === l2)) {
-            state.org.l2 = l2;
-            if (l3 && options.org.some(([a, b, c]) => a === l1 && b === l2 && c === l3)) state.org.l3 = l3;
-        }
-    }
+    state.org = readOrg(params, options.org);
 
     const country = params.get(PARAM.country);
     if (country !== null && options.countries.includes(country)) state.country = country;
@@ -280,4 +271,49 @@ export function toYmd(date: Date): string {
 
 export function fromYmd(text: string): Date | null {
     return parseYmd(text);
+}
+
+// ---------------------------------------------------------------- org-dependent option lists
+
+/** The selected L1 > L2 > L3, kept only along a path that exists in the master hierarchy. */
+export function readOrg(params: URLSearchParams, org: FilterOptions["org"]): OrgSelection {
+    const out: OrgSelection = {};
+    const l1 = params.get(PARAM.l1) ?? undefined;
+    const l2 = params.get(PARAM.l2) ?? undefined;
+    const l3 = params.get(PARAM.l3) ?? undefined;
+    if (l1 && org.some(([a]) => a === l1)) {
+        out.l1 = l1;
+        if (l2 && org.some(([a, b]) => a === l1 && b === l2)) {
+            out.l2 = l2;
+            if (l3 && org.some(([a, b, c]) => a === l1 && b === l2 && c === l3)) out.l3 = l3;
+        }
+    }
+    return out;
+}
+
+/** Markers in the customer and project option queries, and the fact columns that carry the project's org. */
+export const ORG_OPTION_MARKERS = {
+    hours: { marker: "/* @hours-org */", columns: ["fact_profitability_metrics[project_L1]", "fact_profitability_metrics[project_L2]", "fact_profitability_metrics[project_L3]"] },
+    revenue: { marker: "/* @revenue-org */", columns: ["fact_revenue_metrics[financial_L1]", "fact_revenue_metrics[financial_L2]", "fact_revenue_metrics[financial_L3]"] },
+} as const;
+
+/**
+ * Narrows an option query to the selected org: each marker becomes extra CALCULATETABLE filters on
+ * the fact's own org columns (not dim_hierarchy_master, so combos missing from it, open item #21, still count).
+ * `org` must already be validated with `readOrg`.
+ */
+export function applyOrgToOptions(query: string, org: OrgSelection): string {
+    const path: string[] = [];
+    for (const level of [org.l1, org.l2, org.l3]) {
+        if (level === undefined) break;
+        path.push(level);
+    }
+    let out = query;
+    for (const { marker, columns } of Object.values(ORG_OPTION_MARKERS)) {
+        const count = out.split(marker).length - 1;
+        if (count !== 1) throw new Error(`Option query must contain exactly one ${marker} marker (found ${count}).`);
+        const filters = path.map((value, i) => `, KEEPFILTERS ( TREATAS ( { ${daxString(value)} }, ${columns[i]} ) )`).join("");
+        out = out.replace(marker, filters);
+    }
+    return out;
 }

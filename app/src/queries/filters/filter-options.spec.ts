@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ORG_OPTION_MARKERS } from "@/lib/filters";
 import { countryOptions, customerOptions, optionColumns, orgOptions, projectOptions } from "./filter-options";
 
 describe("filter option query factories", () => {
@@ -23,6 +24,19 @@ describe("filter option query factories", () => {
         for (const raw of Object.values(optionColumns)) {
             expect(all[raw]).toBeDefined();
             expect(all[raw].name).not.toMatch(/[[\].]/);
+        }
+    });
+
+    it("narrow customers and projects to the selected org and leave no markers", () => {
+        for (const f of [customerOptions({ l1: "BPO" }), projectOptions({ l1: "BPO" })]) {
+            expect(f.query).toContain('TREATAS ( { "BPO" }, fact_profitability_metrics[project_L1] )');
+            expect(f.query).toContain('TREATAS ( { "BPO" }, fact_revenue_metrics[financial_L1] )');
+        }
+        for (const f of [customerOptions(), projectOptions()]) {
+            expect(f.query).not.toContain(ORG_OPTION_MARKERS.hours.marker);
+            expect(f.query).not.toContain(ORG_OPTION_MARKERS.revenue.marker);
+            expect(f.query).not.toContain("fact_profitability_metrics[project_L1] )");
+            expect(f.query).not.toContain("fact_revenue_metrics[financial_L1] )");
         }
     });
 });

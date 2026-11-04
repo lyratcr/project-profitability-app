@@ -14,9 +14,9 @@ export interface GlobalFilters {
 
 /** Filter state from the URL, validated against the model's own values. */
 export function useGlobalFilters(route: Route, today: Date = new Date()): GlobalFilters {
-    const { options, isLoading, error } = useFilterOptions();
     const todayKey = today.toDateString();
     const paramsKey = route.params.toString();
+    const { options, isLoading, error } = useFilterOptions(route.params, route.page.filters.includes("org"));
 
     const kinds = route.page.periodKinds;
     const state = useMemo(() => {

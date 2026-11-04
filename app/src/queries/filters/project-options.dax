@@ -1,13 +1,11 @@
 // Filter options: project keys in either fact, with the name from the hours fact (blank for revenue-only projects).
 // Until open item #1 is fixed, project filters go to the fact project_key columns instead of dim_project.
+// The markers take the selected L1 > L2 > L3 as the project's org (hours: project_L*, revenue: financial_L*),
+// so the list only shows that org's projects. With no org selected they are removed.
 DEFINE
-    VAR _keys =
-        DISTINCT (
-            UNION (
-                DISTINCT ( fact_profitability_metrics[project_key] ),
-                DISTINCT ( fact_revenue_metrics[project_key] )
-            )
-        )
+    VAR _hours = CALCULATETABLE ( DISTINCT ( fact_profitability_metrics[project_key] ) /* @hours-org */ )
+    VAR _revenue = CALCULATETABLE ( DISTINCT ( fact_revenue_metrics[project_key] ) /* @revenue-org */ )
+    VAR _keys = DISTINCT ( UNION ( _hours, _revenue ) )
 EVALUATE
 ADDCOLUMNS (
     FILTER ( _keys, NOT ISBLANK ( [project_key] ) && [project_key] <> "" ),

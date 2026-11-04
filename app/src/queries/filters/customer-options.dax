@@ -1,13 +1,11 @@
 // Filter options: customers in either fact (hours: project_customer; revenue: financial_customer).
 // Until open item #1 is fixed, customer filters go to these fact columns instead of dim_project.
+// The markers take the selected L1 > L2 > L3 as the project's org (hours: project_L*, revenue: financial_L*),
+// so the list only shows customers of that org. With no org selected they are removed.
 DEFINE
-    VAR _customers =
-        DISTINCT (
-            UNION (
-                DISTINCT ( fact_profitability_metrics[project_customer] ),
-                DISTINCT ( fact_revenue_metrics[financial_customer] )
-            )
-        )
+    VAR _hours = CALCULATETABLE ( DISTINCT ( fact_profitability_metrics[project_customer] ) /* @hours-org */ )
+    VAR _revenue = CALCULATETABLE ( DISTINCT ( fact_revenue_metrics[financial_customer] ) /* @revenue-org */ )
+    VAR _customers = DISTINCT ( UNION ( _hours, _revenue ) )
 EVALUATE
 FILTER ( _customers, NOT ISBLANK ( [project_customer] ) && [project_customer] <> "" )
 ORDER BY [project_customer]

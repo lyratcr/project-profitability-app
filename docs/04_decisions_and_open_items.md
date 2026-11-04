@@ -31,6 +31,7 @@ NY Municipal Credit"`, `"Access Corporation  "`), and 3 revenue customers have n
 
 ## Log
 
+2026-11-04 | Decision | Filters | Ion: Customer and Project lists follow the selected L1 > L2 > L3. A customer or project belongs to an org through the project's org (hours `project_L*`, revenue `financial_L*`), read straight from the fact columns; a selected customer or project outside the new org is dropped | Ion + Claude
 2026-11-04 | Change | Model | Ion approved; created `Synerion Hours (Employee Org)_app`, `Synerion Hours (Project Org)_app`, `People With Hours (Employee Org)_app`, `People With Hours (Project Org)_app`; updated `Planned Revenue_app`, `Planned Hours_app`, `Billed Hours_app` to follow the master hierarchy through the financial org; re-validated; TMDL re-exported; closes #19 | Ion + Claude
 2026-11-04 | Finding | Tooling | The project `.mcp.json` Power BI modeling server (`@latest`) hung twice for 30 min (a DAX query and a measure create; nothing was applied). The desktop extension `powerbi-modeling-mcp` worked; Ion may want to restart or pin the project server | Claude
 2026-11-04 | Proposal | `_app` measures | 4 new org-aware hours/people measures (employee and project org) and financial-org versions of `Planned Revenue_app`, `Planned Hours_app`, `Billed Hours_app` (`08_app_measures.md` § 6), validated, pending Ion's approval | Claude

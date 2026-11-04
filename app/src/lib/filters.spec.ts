@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
     FILTERS_PLACEHOLDER,
+    ORG_OPTION_MARKERS,
     applyFilters,
+    applyOrgToOptions,
     coercePeriod,
     daxString,
     describePeriod,
@@ -11,6 +13,7 @@ import {
     parsePeriod,
     periodChoices,
     readFilters,
+    readOrg,
     writeFilters,
     type FilterKey,
     type FilterOptions,
@@ -168,5 +171,32 @@ describe("DAX helper", () => {
     it("refuses queries without exactly one marker", () => {
         expect(() => applyFilters("EVALUATE ROW ( \"x\", 1 )", [])).toThrow(/exactly one/);
         expect(() => applyFilters(`${FILTERS_PLACEHOLDER} ${FILTERS_PLACEHOLDER}`, [])).toThrow(/exactly one/);
+    });
+});
+
+describe("org-dependent option lists", () => {
+    const query = `VAR _h = CALCULATETABLE ( DISTINCT ( t[c] ) ${ORG_OPTION_MARKERS.hours.marker} )
+VAR _r = CALCULATETABLE ( DISTINCT ( u[c] ) ${ORG_OPTION_MARKERS.revenue.marker} )`;
+
+    it("reads the org only along a valid L1 > L2 > L3 path", () => {
+        expect(readOrg(new URLSearchParams({ l1: "BPO", l2: "BOS", l3: "POD1" }), options.org)).toEqual({ l1: "BPO", l2: "BOS", l3: "POD1" });
+        expect(readOrg(new URLSearchParams({ l1: "BPO", l2: "MGMT" }), options.org)).toEqual({ l1: "BPO" });
+        expect(readOrg(new URLSearchParams({ l2: "BOS" }), options.org)).toEqual({});
+    });
+
+    it("removes the markers when no org is selected", () => {
+        expect(applyOrgToOptions(query, {})).toBe("VAR _h = CALCULATETABLE ( DISTINCT ( t[c] )  )\nVAR _r = CALCULATETABLE ( DISTINCT ( u[c] )  )");
+    });
+
+    it("filters hours on project org and revenue on financial org, level by level", () => {
+        const out = applyOrgToOptions(query, { l1: "BPO", l2: "BOS" });
+        expect(out).toContain('t[c] ) , KEEPFILTERS ( TREATAS ( { "BPO" }, fact_profitability_metrics[project_L1] ) ), KEEPFILTERS ( TREATAS ( { "BOS" }, fact_profitability_metrics[project_L2] ) ) )');
+        expect(out).toContain('u[c] ) , KEEPFILTERS ( TREATAS ( { "BPO" }, fact_revenue_metrics[financial_L1] ) ), KEEPFILTERS ( TREATAS ( { "BOS" }, fact_revenue_metrics[financial_L2] ) ) )');
+        expect(out).not.toMatch(/dim_hierarchy_master/);
+    });
+
+    it("escapes org values and refuses queries without both markers", () => {
+        expect(applyOrgToOptions(query, { l1: 'A"B' })).toContain('{ "A""B" }');
+        expect(() => applyOrgToOptions("EVALUATE x", {})).toThrow(/exactly one/);
     });
 });
