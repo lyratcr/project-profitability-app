@@ -668,3 +668,63 @@ DIVIDE (
     [Synerion Hours (Project Org)_app]
 )
 ```
+
+## 9. Headcount on Sunday–Saturday weeks (open item #22, P2): CREATED 2026-11-04
+
+`Headcount (Last Week)_app` points to the original `[Operational Headcount (Last Week)]`, which finds "the last week" with `dim_calendar[year_week]`: Monday-based ISO weeks with broken year-end labels (#22). October 2026 counts Mon Oct 26 – Sun Nov 1 (1,562) and December 2025 jumps to 1,767. P2 needs it on Auxis weeks (Sunday–Saturday). Nothing else uses the `_app` measure (`Revenue per Head_app` uses the original). Updated / created in the Dev model after Ion's approval (`State = Ready`); re-run against the model measures with identical values (Dec 2025 1,326; Sep 2026 1,543; Oct 2026 1,561 / +1.1666%; Oct 2026 L1 = BPO 992 / −1.1952%). The original `Operational Headcount (Last Week)` is unchanged (the Power BI report uses it).
+
+The week is the Sunday–Saturday week that holds **the last day with hours in the period** (option A). It can run past the period end, like the original: September 2026 = Sep 27 – Oct 3. The alternative, the last complete week ending inside the period (option B), was dropped: for a month in progress (November 2026, hours to Nov 3) it returns October's week, outside the period. The last day ignores every filter on the fact except the calendar (`ALLEXCEPT`), so stacked categories, countries and orgs share one week.
+
+| Measure | Action | Folder | Format |
+|---|---|---|---|
+| **Headcount (Last Week)_app** | UPDATE | `_app\People` | `#,0` |
+| **Headcount (Last Week) MoM %_app** | NEW | `_app\People` | `0.0%` |
+
+### Validation (query-scoped, 2026-11-04)
+
+| Month | Original (`year_week`) | Proposed | Week | Independent check (DISTINCTCOUNT of `ukg_employee_id` in the week) |
+|---|---|---|---|---|
+| Dec 2025 | 1,767 | 1,326 | Dec 28 – Jan 3 | 1,326 ✓ |
+| Sep 2026 | 1,544 | 1,543 | Sep 27 – Oct 3 | 1,543 ✓ |
+| Oct 2026 | 1,562 | 1,561 | Oct 25 – 31 | 1,561 ✓ |
+| Oct 2026, L1 = BPO (employee org) | — | 992 | Oct 25 – 31 | 992 ✓ (fact `employee_L1`) |
+
+MoM, October 2026: all orgs +1.17% = (1,561 − 1,543) / 1,543 ✓; L1 = BPO −1.20% = (992 − 1,004) / 1,004 ✓. Contractors (Contractor + GT Contractor, sliced in the query) 95 ✓.
+
+### DAX
+
+#### Headcount (Last Week)_app (UPDATE)
+
+Description: `FIXED 2026-11-04 (Fabric app): People who logged time in the Sunday–Saturday week that holds the last day with hours in the period (may run past the period end); follows the master hierarchy through the employee org.`
+
+```dax
+VAR _last = CALCULATE ( MAX ( fact_profitability_metrics[transaction_date] ), ALLEXCEPT ( fact_profitability_metrics, dim_calendar ) )
+VAR _start = _last - WEEKDAY ( _last, 1 ) + 1
+RETURN
+    IF (
+        ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+        CALCULATE (
+            DISTINCTCOUNT ( fact_profitability_metrics[ukg_employee_id] ),
+            REMOVEFILTERS ( dim_calendar ),
+            DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ),
+            TREATAS (
+                SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+                fact_profitability_metrics[employee_L1], fact_profitability_metrics[employee_L2], fact_profitability_metrics[employee_L3]
+            )
+        ),
+        CALCULATE (
+            DISTINCTCOUNT ( fact_profitability_metrics[ukg_employee_id] ),
+            REMOVEFILTERS ( dim_calendar ),
+            DATESBETWEEN ( dim_calendar[date], _start, _start + 6 )
+        )
+    )
+```
+
+#### Headcount (Last Week) MoM %_app (NEW)
+
+Description: `ADDED 2026-11-04 (Fabric app): Change in last-week headcount vs the same period one month earlier (numeric).`
+
+```dax
+VAR _lm = CALCULATE ( [Headcount (Last Week)_app], DATEADD ( dim_calendar[date], -1, MONTH ) )
+RETURN DIVIDE ( [Headcount (Last Week)_app] - _lm, _lm )
+```
