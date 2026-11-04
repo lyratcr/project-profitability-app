@@ -416,7 +416,9 @@ No row is flagged while having hours in the week.
 
 **Note for P6:** on the current (partial) week the flag means "nothing logged *yet* this week" (15 people on a Monday). The page should label it that way for the current week, and use the full last week for the Monday review.
 
-## 6. Master-hierarchy-aware measures (open item #19): PROPOSED, pending Ion's approval
+## 6. Master-hierarchy-aware measures (open item #19): CREATED 2026-11-04
+
+Created and updated in the Dev model after Ion's approval (all `State = Ready`, formats and folders as below). Re-run against the model measures: same values as the validation table (no org: hours 267,322, people 1,605, plan $6,103,163; L1 = BPO: employee-org hours 173,552, project-org hours 171,716, plan $3,426,309, planned hours 2,977, billed hours 3,378). `Planned Revenue_app`, `Planned Hours_app` and `Billed Hours_app` keep their ADDED text and gain a FIXED line.
 
 `dim_hierarchy_master` has no relationships and serves both views (Ion, 2026-11-04). Each measure maps it with `TREATAS` to the org that fits it, like the existing headcount (employee org), cross-charge (project org) and revenue (financial org) measures. With no org selected, every measure returns its unfiltered value. Pages choose the employee-org or project-org version per visual (P1 "where the people sit" vs "where the work is billed").
 
