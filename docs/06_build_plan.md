@@ -33,7 +33,8 @@
 
 ## Phase 1 — Model layer (needs Ion's approval of the DAX)
 
-- [ ] 1.1 Create the `_app` measures in `03_measure_review.md` § 3 (skill `model-change`), validate, export TMDL.
+- [x] 1.1 Create the `_app` measures in `03_measure_review.md` § 3 (skill `model-change`), validate, export TMDL.
+  - 2026-11-04: 33 measures created in `_Measures` → `_app\<topic>` after Ion's approval; DAX, formats and validated values in `docs/08_app_measures.md`. Validated before and after creation (Sep 2026 and week of 2026-10-05; identical). TMDL re-exported. `Customer Rank by Revenue Growth_app / Decline_app` wait for open item #1.
 - [ ] 1.2 Propose `Hours Previous 4 Weeks_app` and `Missing This Week_app` for the P6 flag.
 
 ## Phase 2 — App shell

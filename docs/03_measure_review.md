@@ -44,7 +44,7 @@
 
 **To confirm with Finance:** that Backlog is the plan (estimate at completion) and not only the unbilled remainder.
 
-## 3. The `_app` layer: clear names for the app (to create after Ion approves)
+## 3. The `_app` layer: clear names for the app (created 2026-11-04; final DAX in `08_app_measures.md`)
 
 Ion asked for names that say what each number is. Originals are **not renamed**: the existing Power BI report binds to them by name and would break. Instead every measure the app uses gets an `_app` version in table `_Measures`, folder `_app\<topic>`. Where the original logic is right, the `_app` measure just points to it, so the DAX lives in one place.
 

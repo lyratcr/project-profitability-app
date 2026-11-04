@@ -1028,6 +1028,218 @@ table _Measures
 		displayFolder: New
 		lineageTag: 3c2f96e7-6d6c-4bdb-b6e5-e36805e5cc50
 
+	/// ADDED 2026-11-04 (Fabric app): Hours logged in Synerion (all pay categories).
+	measure 'Synerion Hours_app' = [Total Worked Hours]
+		formatString: #,0
+		displayFolder: _app\Hours
+		lineageTag: 3748a4d5-d6b3-4983-9b46-d40043d0f23c
+
+	/// ADDED 2026-11-04 (Fabric app): Change in Synerion hours vs the same period one month earlier (numeric).
+	measure 'Synerion Hours MoM %_app' =
+			VAR _lm = CALCULATE ( [Synerion Hours_app], DATEADD ( dim_calendar[date], -1, MONTH ) )
+			RETURN DIVIDE ( [Synerion Hours_app] - _lm, _lm )
+		formatString: 0.0%
+		displayFolder: _app\Hours
+		lineageTag: 234148a0-23ee-4961-a05f-b902f63863d4
+
+	/// ADDED 2026-11-04 (Fabric app): Hours other areas' people logged on this area's projects.
+	measure 'Cross-Charge Hours Received_app' = [Cross-Charge Hours In]
+		formatString: #,0
+		displayFolder: _app\Hours
+		lineageTag: 78d3e33f-0f2e-44f4-843e-b451d624508b
+
+	/// ADDED 2026-11-04 (Fabric app): Hours this area's people logged on other areas' projects.
+	measure 'Cross-Charge Hours Lent_app' = [Cross-Charge Hours Out]
+		formatString: #,0
+		displayFolder: _app\Hours
+		lineageTag: e2cf7c8e-ec77-40dd-8636-cdcf7c4bd843
+
+	/// ADDED 2026-11-04 (Fabric app): Received minus lent cross-charge hours.
+	measure 'Net Cross-Charge Hours_app' = [Net Cross-Charge Hours]
+		formatString: #,0;-#,0;0
+		displayFolder: _app\Hours
+		lineageTag: d7274907-cb5a-491a-994f-61db51f4cab1
+
+	/// ADDED 2026-11-04 (Fabric app): Distinct people who logged time in the period.
+	measure 'People With Hours_app' = [Active Headcount]
+		formatString: #,0
+		displayFolder: _app\People
+		lineageTag: 4448c581-ae73-46ef-b9b4-9cc7430710e1
+
+	/// ADDED 2026-11-04 (Fabric app): People who logged time in the last week with data inside the period.
+	measure 'Headcount (Last Week)_app' = [Operational Headcount (Last Week)]
+		formatString: #,0
+		displayFolder: _app\People
+		lineageTag: 61a2e1ab-ceea-48a4-a231-58049eceb17d
+
+	/// ADDED 2026-11-04 (Fabric app): Allocation FTE in the last week with data: each person's time split across projects (a person totals 1).
+	measure 'Allocated FTE (Last Week)_app' = [Operational FTE (Last Week)]
+		formatString: #,0.0
+		displayFolder: _app\People
+		lineageTag: 6a79ec23-13b4-4187-a33e-fb991c78b75b
+
+	/// ADDED 2026-11-04 (Fabric app): Change in allocated FTE vs one month earlier (numeric).
+	measure 'Allocated FTE MoM %_app' =
+			VAR _lm = CALCULATE ( [Allocated FTE (Last Week)_app], DATEADD ( dim_calendar[date], -1, MONTH ) )
+			RETURN DIVIDE ( [Allocated FTE (Last Week)_app] - _lm, _lm )
+		formatString: 0.0%
+		displayFolder: _app\People
+		lineageTag: 385c0289-77f7-4e97-896c-b9f7ed307a37
+
+	/// ADDED 2026-11-04 (Fabric app): Share of a person's hours on the row's project.
+	measure 'Time Allocation %_app' = [FTE Time Allocation %]
+		formatString: 0.0%
+		displayFolder: _app\People
+		lineageTag: 37aafcca-5338-4054-865b-2d76a1eefedf
+
+	/// ADDED 2026-11-04 (Fabric app): Actual-scenario revenue (USD); follows the master hierarchy when it is filtered.
+	measure 'Actual Revenue_app' = [Total Revenue (Master Hierarchy)]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue
+		lineageTag: 6f07d1dc-644a-4c8f-b81e-937e4915cb74
+
+	/// ADDED 2026-11-04 (Fabric app): Actual revenue one month earlier.
+	measure 'Actual Revenue Last Month_app' = [Last Month Revenue (Master Hierarchy)]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue
+		lineageTag: 6c7ca7f7-645c-4faa-87d1-f66cca5d583c
+
+	/// ADDED 2026-11-04 (Fabric app): Actual revenue change vs one month earlier (USD).
+	measure 'Actual Revenue MoM $_app' = [Revenue MoM $ (Master Hierarchy)]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue
+		lineageTag: bc2729b9-67ae-4450-8da0-17871223d4cc
+
+	/// ADDED 2026-11-04 (Fabric app): Actual revenue change vs one month earlier (numeric).
+	measure 'Actual Revenue MoM %_app' =
+			VAR _lm = [Actual Revenue Last Month_app]
+			RETURN DIVIDE ( [Actual Revenue_app] - _lm, _lm )
+		formatString: 0.0%
+		displayFolder: _app\Revenue
+		lineageTag: 18a52965-dc28-4dcd-9d1c-54e8f275ef65
+
+	/// ADDED 2026-11-04 (Fabric app): Actual revenue / allocated FTE (last week). Monthly context only.
+	measure 'Revenue per FTE_app' = [Revenue per FTE]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Yield
+		lineageTag: d78fc6aa-11e7-4e94-8a97-984d3dfb9254
+
+	/// ADDED 2026-11-04 (Fabric app): Revenue per FTE x 12. Valid for a single month only.
+	measure 'Annualized Revenue per FTE_app' = [Annualized Revenue per FTE]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Yield
+		lineageTag: 5573c208-fd0b-4614-890c-2c4ced5fc929
+
+	/// ADDED 2026-11-04 (Fabric app): Actual revenue / headcount (last week). Monthly context only.
+	measure 'Revenue per Head_app' = [Revenue per Headcount]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Yield
+		lineageTag: b1c7fc84-c0e8-4f9b-bfc3-6a00745c1996
+
+	/// ADDED 2026-11-04 (Fabric app): Change in revenue per FTE vs one month earlier (numeric).
+	measure 'Revenue per FTE MoM %_app' =
+			VAR _lm = CALCULATE ( [Revenue per FTE_app], DATEADD ( dim_calendar[date], -1, MONTH ) )
+			RETURN DIVIDE ( [Revenue per FTE_app] - _lm, _lm )
+		formatString: 0.0%
+		displayFolder: _app\Yield
+		lineageTag: 0db3fccd-8656-44f2-b7aa-3c8fd5653668
+
+	/// ADDED 2026-11-04 (Fabric app): Actual revenue over the project's life (ignores the date filter).
+	measure 'Revenue Billed to Date_app' = [LTD Actual Revenue]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Projects
+		lineageTag: 698d15c7-39f3-4a52-8b3e-03859550be65
+
+	/// ADDED 2026-11-04 (Fabric app): Whole plan (Backlog scenario, all dates).
+	measure 'Total Planned Revenue_app' = [LTD Backlog]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Projects
+		lineageTag: 2cbd579c-5043-43fe-bfda-09b9590bce0a
+
+	/// ADDED 2026-11-04 (Fabric app): Plan minus billed to date.
+	measure 'Revenue Left to Bill_app' = [Remaining Backlog]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Projects
+		lineageTag: a5e65791-fd96-49c2-83e0-e3280d6b27ca
+
+	/// ADDED 2026-11-04 (Fabric app): Billed to date / total plan.
+	measure 'Billing Progress %_app' = [Project Progress %]
+		formatString: 0.0%
+		displayFolder: _app\Projects
+		lineageTag: 8ae4a9c6-5f35-4ec9-adc4-65cab3235319
+
+	/// ADDED 2026-11-04 (Fabric app): Last date in the plan (Backlog), whole project life. Unlike the original, it ignores the date filter.
+	measure 'Plan End Date_app' = CALCULATE ( [Project End Date], REMOVEFILTERS ( 'dim_calendar' ) )
+		formatString: yyyy-mm-dd
+		displayFolder: _app\Projects
+		lineageTag: c5c3ea8e-9a93-42cc-90ad-e79a0eb2d7a7
+
+	/// ADDED 2026-11-04 (Fabric app): Plan (Backlog) revenue in the selected period.
+	measure 'Planned Revenue_app' = CALCULATE ( SUM ( fact_revenue_metrics[actual_revenue_usd] ), fact_revenue_metrics[scenario] = "Backlog" )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Projects
+		lineageTag: 8d7499e1-d1a4-46d2-91c3-5d1b9c7d1d0f
+
+	/// ADDED 2026-11-04 (Fabric app): Plan (Backlog) hours in the selected period.
+	measure 'Planned Hours_app' = CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Backlog" )
+		formatString: #,0
+		displayFolder: _app\Projects
+		lineageTag: 5ee51671-206b-40cf-8c8e-ab6482001937
+
+	/// ADDED 2026-11-04 (Fabric app): Hours integrated into Project Operations (Actual) in the period.
+	measure 'Billed Hours_app' = CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Actual" )
+		formatString: #,0
+		displayFolder: _app\Projects
+		lineageTag: bb6aae7e-1ae0-41f7-81b1-f54f1e97dfed
+
+	/// ADDED 2026-11-04 (Fabric app): Actual minus planned revenue. Monthly or longer periods only.
+	measure 'Revenue vs Plan_app' = [Actual Revenue_app] - [Planned Revenue_app]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Projects
+		lineageTag: 657483db-2c52-42ab-a0f4-e0dd757849d7
+
+	/// ADDED 2026-11-04 (Fabric app): Actual / planned revenue. Monthly or longer periods only.
+	measure 'Revenue vs Plan %_app' = DIVIDE ( [Actual Revenue_app], [Planned Revenue_app] )
+		formatString: 0.0%
+		displayFolder: _app\Projects
+		lineageTag: 2e215692-3dfe-499b-a99b-5e04634c6130
+
+	/// ADDED 2026-11-04 (Fabric app): Synerion minus planned hours. Project level only.
+	measure 'Hours vs Plan_app' = [Synerion Hours_app] - [Planned Hours_app]
+		formatString: #,0;-#,0;0
+		displayFolder: _app\Projects
+		lineageTag: d3a499be-fdd8-4038-90d0-0f48f37eb8f3
+
+	/// ADDED 2026-11-04 (Fabric app): Synerion / planned hours. Project level only; blank without plan hours.
+	measure 'Hours vs Plan %_app' = DIVIDE ( [Synerion Hours_app], [Planned Hours_app] )
+		formatString: 0.0%
+		displayFolder: _app\Projects
+		lineageTag: d8d1c450-ce90-4cc4-82dd-312688486347
+
+	/// ADDED 2026-11-04 (Fabric app): Hours in Synerion not yet integrated into Project Operations.
+	measure 'Hours Not Yet Billed_app' = [Synerion Hours_app] - [Billed Hours_app]
+		formatString: #,0;-#,0;0
+		displayFolder: _app\Projects
+		lineageTag: e2971c0c-a547-47eb-866e-a1a304ed0dc7
+
+	/// ADDED 2026-11-04 (Fabric app): Last day with Synerion hours loaded.
+	measure 'Last Synerion Date_app' = CALCULATE ( MAX ( fact_profitability_metrics[transaction_date] ), REMOVEFILTERS () )
+		formatString: yyyy-mm-dd
+		displayFolder: _app\Data health
+		lineageTag: 31cf5317-146c-45d3-95df-0572f5d9f14e
+
+	/// ADDED 2026-11-04 (Fabric app): Last day with T&M actuals (follows the hours integration); other revenue types are posted with future dates.
+	measure 'Last Revenue Date_app' =
+			CALCULATE (
+			    MAX ( fact_revenue_metrics[transaction_date] ),
+			    fact_revenue_metrics[scenario] = "Actual",
+			    fact_revenue_metrics[revenue_type] = "T&M",
+			    REMOVEFILTERS ()
+			)
+		formatString: yyyy-mm-dd
+		displayFolder: _app\Data health
+		lineageTag: feea6d63-5170-4141-872f-4ae048c2ea01
+
 	column Column
 		isHidden
 		formatString: 0
