@@ -27,6 +27,7 @@
 
 ## Log
 
+2026-11-04 | Release | App shell | `npx rayfin up` from `main` @ `d5d78c6` (PRs #1–#6 merged, approved by Ion) to `_Corporate DCOE Backend Dev`, app https://epic-acorn-69682d5614-eastus2.webapp.fabricapps.net. Checked in Ion's Chrome: live data dates, direct link `#/flows`, Google Fonts load (no CSP block) | Ion + Claude
 2026-11-04 | Decision | Routing | Hash routes (`#/effort`, page state in the hash query) so deep links work on Fabric static hosting without server rewrites | Claude
 2026-11-04 | Decision | Stale-data warning | Hours are "not current" when `Last Synerion Date_app` is before the Sunday ending the last complete Mon–Sun week, using the viewer's local date | Claude
 2026-11-04 | Change | Model | Ion approved; `Hours Previous 4 Weeks_app` and `Missing This Week_app` created in `_app\Projects`, validated before and after creation, TMDL re-exported. Phase 1 done except the 2 rank measures (#1) | Ion + Claude
