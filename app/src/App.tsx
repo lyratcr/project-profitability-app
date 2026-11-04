@@ -5,12 +5,13 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-import { EmptyStatePreview } from "./EmptyStatePreview";
+import { SmokePage } from "./components/smoke-page.component";
 
-// Replace `<EmptyStatePreview />` with your dashboard, remove the import
-// above, and delete `EmptyStatePreview.tsx` and `empty-state-preview-world-map.png`.
+// Phase 0: the smoke page only. The app shell and pages P1–P6 replace it in Phase 2.
+// EmptyStatePreview.tsx and empty-state-preview-world-map.png are no longer imported;
+// Ion removes them by hand (repo rule: Claude doesn't delete files).
 function App() {
-    return <EmptyStatePreview />;
+    return <SmokePage />;
 }
 
 export default App;

@@ -24,6 +24,7 @@
 
 ## Log
 
+2026-11-04 | Finding | Tooling | The Rayfin dataapp template (CLI 1.36.2) has no Playwright validation and can't render locally before the first `rayfin up` (no backend env vars; `rayfin dev` provisions the item). Browser validation for 0.5 moves to right after the first deploy; CLAUDE.md's "Playwright before rayfin up" rule applies from then on | Claude
 2026-11-04 | Decision | Smoke baseline | September 2026 actual revenue baseline is $6,033,393 (Ion confirmed); closes open item #15 and task 0.4 | Ion
 2026-11-04 | Finding | Smoke query | Sep 2026 Synerion hours 267,322 match; actual revenue $6,033,393 (+$1,430 vs 2026-11-03 figure) after the 2026-11-04 09:14 EST refresh; open item #15 | Claude
 2026-11-04 | Decision | Connector | `profitmodel` points to the Dev model (`_Corporate DCOE Backend Dev`, item 48ad695a-…); the same model also exists in the prod and Test workspaces | Ion + Claude
