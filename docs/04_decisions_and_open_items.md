@@ -20,10 +20,11 @@
 | 12 | `dim_employee_history` relates on `ukg_employee_id` → `dim_employee[employee_number]` | Not used by the app | Data engineering | Open |
 | 13 | Silver merge key `synerion_emp_id` isn't unique (fine while full load) | Only if incremental is turned on | Data engineering | Note |
 | 14 | `TODAY()` in DAX is UTC on the service; the app passes week windows instead | P6 | — | Decided |
-| 15 | Smoke check: September 2026 actual revenue now $6,033,393 vs $6,031,963 noted on 2026-11-03 (+$1,430); hours unchanged. Confirm the new baseline for reconciliations | Task 0.4 sign-off | Ion | Open (found 2026-11-04) |
+| 15 | Smoke check: September 2026 actual revenue now $6,033,393 vs $6,031,963 noted on 2026-11-03 (+$1,430); hours unchanged. Confirm the new baseline for reconciliations | Task 0.4 sign-off | Ion | Closed 2026-11-04: Ion confirmed $6,033,393 |
 
 ## Log
 
+2026-11-04 | Decision | Smoke baseline | September 2026 actual revenue baseline is $6,033,393 (Ion confirmed); closes open item #15 and task 0.4 | Ion
 2026-11-04 | Finding | Smoke query | Sep 2026 Synerion hours 267,322 match; actual revenue $6,033,393 (+$1,430 vs 2026-11-03 figure) after the 2026-11-04 09:14 EST refresh; open item #15 | Claude
 2026-11-04 | Decision | Connector | `profitmodel` points to the Dev model (`_Corporate DCOE Backend Dev`, item 48ad695a-…); the same model also exists in the prod and Test workspaces | Ion + Claude
 2026-11-03 | Decision | Naming | Originals are not renamed (the Power BI report binds to them); the app uses `_app` measures with clear names, most of them pointing to the original | Ion + Claude

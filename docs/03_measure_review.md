@@ -104,7 +104,7 @@ Last Synerion Date_app     = CALCULATE ( MAX ( fact_profitability_metrics[transa
 Last Revenue Date_app      = CALCULATE ( MAX ( fact_revenue_metrics[transaction_date] ), fact_revenue_metrics[scenario] = "Actual", REMOVEFILTERS () )
 ```
 
-Check, September 2026 (all projects): actual revenue $6,031,963 · planned revenue $6,099,926 · Synerion hours 267,322 · planned hours 30,779 · billed hours 30,784 · hours MoM +4.4% · revenue MoM +3.8% · last Synerion date 2026-10-17.
+Check, September 2026 (all projects): actual revenue $6,033,393 (updated 2026-11-04 after the Project Ops refresh; was $6,031,963) · planned revenue $6,099,926 · Synerion hours 267,322 · planned hours 30,779 · billed hours 30,784 · hours MoM +4.4% · revenue MoM +3.8% · last Synerion date 2026-10-17.
 
 Notes:
 - Hours vs plan compares at **project** level: the plan has no employee. Company-wide, Synerion hours include internal and non-billable time, so the ratio only means something per project.

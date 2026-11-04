@@ -1,5 +1,5 @@
 // Phase 0 smoke query (build plan task 0.4).
-// Expected for September 2026: Synerion hours 267,322 · actual revenue $6,031,963.
+// Expected for September 2026: Synerion hours 267,322 · actual revenue $6,033,393 (baseline confirmed 2026-11-04).
 // Revenue uses the Actual scenario explicitly (the original [Total Revenue] adds Backlog).
 EVALUATE
 SUMMARIZECOLUMNS (

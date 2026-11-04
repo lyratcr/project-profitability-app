@@ -20,8 +20,8 @@
   - 2026-11-04: template `dataapp`, project `project-real-profitability`. `rayfin init` refuses a non-empty folder without `--overwrite`, so it was scaffolded in a temp folder and copied in without overwriting (`app/README.md` kept). `tsc`, 137 template tests and lint pass.
 - [x] 0.3 Add the `fabric-semanticmodel` connector to `SM_Corp_Project_Real_Profitability` (alias `profitmodel`, operation `executeQuery`). Commit `app/rayfin/.env.example`, never `.env`.
   - 2026-11-04: Dev model item `48ad695a-a31f-4f3a-852b-7bd2f3bbc39e` (the same model name also exists in `_Corporate DCOE Backend` and `_Corporate DCOE Backend Test`; not used). `app/.gitignore` re-includes `rayfin/.env.example`.
-- [ ] 0.4 Smoke query: September 2026 `[Total Worked Hours]` = 267,322 and actual revenue = $6,031,963.
-  - 2026-11-04 (`app/src/queries/smoke/smoke.dax`, model refresh 11/04/2026 09:14 EST): hours **267,322.28 ✓**; actual revenue **$6,033,393.35 ✗** (+$1,430.39 vs expected). Explicit `scenario = "Actual"` and `[Total Revenue (Master Hierarchy)]` agree. Every September row was reloaded today (full load), so the change can't be isolated by load date. Pending: Ion confirms the new figure as the baseline (likely a Project Ops change since 2026-11-03).
+- [x] 0.4 Smoke query: September 2026 `[Total Worked Hours]` = 267,322 and actual revenue = $6,033,393 (baseline confirmed by Ion 2026-11-04; was $6,031,963).
+  - 2026-11-04 (`app/src/queries/smoke/smoke.dax`, model refresh 11/04/2026 09:14 EST): hours **267,322.28 ✓**; actual revenue **$6,033,393.35 ✗** (+$1,430.39 vs expected). Explicit `scenario = "Actual"` and `[Total Revenue (Master Hierarchy)]` agree. Every September row was reloaded today (full load), so the change can't be isolated by load date. Ion confirmed $6,033,393 as the September 2026 baseline on 2026-11-04 (open item #15 closed).
 - [ ] 0.5 First deploy of a page showing the smoke result; Ion shares it with a non-builder to check viewer access (Build + Read on the model).
 - [ ] 0.6 Export the model as TMDL into `model/` (skill `export-model`).
 
