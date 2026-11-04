@@ -1,0 +1,26 @@
+table info_gold_profitability_refresh
+	lineageTag: 76955119-ffc8-4469-972a-00db3838c36a
+	sourceLineageTag: [gold].[info_gold_profitability_refresh]
+
+	column LastRefresh
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: 9387cb7a-645f-4f44-8468-b33575ff7a14
+		sourceLineageTag: LastRefresh
+		summarizeBy: none
+		sourceColumn: LastRefresh
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition info_gold_profitability_refresh = entity
+		mode: directLake
+		source
+			entityName: info_gold_profitability_refresh
+			schemaName: gold
+			expressionSource: 'DirectLake - LH_Corp_DataHub'
+
+	changedProperty = IsHidden
+

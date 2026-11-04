@@ -1,0 +1,1046 @@
+table _Measures
+	lineageTag: e09f2c71-3f18-43b9-9e82-f099f35c71e2
+
+	measure 'Last Refresh Date' =
+			
+			VAR _date = MAX(info_gold_profitability_refresh[LastRefresh])
+			RETURN
+			FORMAT(_date, "MM/dd/yyyy hh:mm")& " EST"
+		lineageTag: d0ec32d0-04e6-4d4a-98c0-f03881e7d586
+
+	measure 'Total Worked Hours' = SUM(fact_profitability_metrics[worked_hours])
+		formatString: #,0
+		displayFolder: Worked Hours
+		lineageTag: 4b34d052-5fe3-49db-beac-f4b459ab49d2
+
+	measure 'Active Headcount' =
+			
+			DISTINCTCOUNT(fact_profitability_metrics[ukg_employee_id])
+		formatString: #,0
+		lineageTag: 644a4781-df0f-4526-84f7-0f3e03145d2a
+
+	measure 'Operational Headcount (Last Week)' = ```
+			
+			// 1. Retrieve the latest transaction date currently visible in the fact table. 
+			// This automatically handles both filtered (specific month) and unfiltered (all-time) states perfectly.
+			VAR MaxFactDate = MAX('fact_profitability_metrics'[transaction_date])
+			
+			// 2. Identify the unique Year-Week identifier (e.g., "2026 W04") for that specific max date.
+			VAR TargetYearWeek = 
+			    CALCULATE(
+			        MAX('dim_calendar'[year_week]),
+			        'dim_calendar'[date] = MaxFactDate,
+			        REMOVEFILTERS('dim_calendar')
+			    )
+			
+			RETURN
+			// 3. Calculate distinct headcount overriding the calendar filter, now supporting L1, L2, and L3 filtering.
+			IF(
+			    ISFILTERED('dim_Hierarchy_Master'[L1]) || ISFILTERED('dim_Hierarchy_Master'[L2]) || ISFILTERED('dim_Hierarchy_Master'[L3]),
+			    CALCULATE(
+			        DISTINCTCOUNT('fact_profitability_metrics'[ukg_employee_id]),
+			        REMOVEFILTERS('dim_calendar'),
+			        'dim_calendar'[year_week] = TargetYearWeek,
+			        TREATAS(
+			            SUMMARIZE('dim_Hierarchy_Master', 'dim_Hierarchy_Master'[L1], 'dim_Hierarchy_Master'[L2], 'dim_Hierarchy_Master'[L3]),
+			            'fact_profitability_metrics'[employee_L1],
+			            'fact_profitability_metrics'[employee_L2],
+			            'fact_profitability_metrics'[employee_L3]
+			        )
+			    ),
+			    CALCULATE(
+			        DISTINCTCOUNT('fact_profitability_metrics'[ukg_employee_id]),
+			        REMOVEFILTERS('dim_calendar'),
+			        'dim_calendar'[year_week] = TargetYearWeek
+			    )
+			)
+			```
+		formatString: #,0
+		lineageTag: 5b22cfc7-aa33-4725-ac7a-098d4d1e0f67
+
+	measure 'Total Revenue' = SUM('fact_revenue_metrics'[actual_revenue_usd])
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: 8c77e852-7f47-436f-b41a-fa43c95d2ec7
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Total Cost' = SUM(fact_profitability_metrics[actual_cost_usd])
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: c1013efa-34b2-44f0-a6ba-52a78228ba9b
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Margin $' = [Total Revenue] - [Total Cost]
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: 9170b1c2-c83f-48ff-b338-75483686f8ca
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Margin %' = ```
+			
+			DIVIDE(
+			    [Margin $], 
+			    [Total Revenue],
+			     0
+			)
+			```
+		formatString: 0%;-0%;0%
+		lineageTag: e4024d62-af81-4df1-bc89-26851fd42c4d
+
+	measure 'Total Revenue (Master Hierarchy)' = ```
+			
+			// 1. Check if the visual is using the master organization hierarchy
+			IF(
+			    ISFILTERED('dim_Hierarchy_Master'[L1]) || ISFILTERED('dim_Hierarchy_Master'[L2]) || ISFILTERED('dim_Hierarchy_Master'[L3]),
+			    
+			    // 2. TRUE BRANCH: Calculate Actual Revenue using virtual relationships (TREATAS)
+			    CALCULATE(
+			        SUM('fact_revenue_metrics'[actual_revenue_usd]),
+			        'fact_revenue_metrics'[scenario] = "Actual", // <--- THE FIX: Ignore Backlog
+			        TREATAS(
+			            SUMMARIZE('dim_Hierarchy_Master', 'dim_Hierarchy_Master'[L1], 'dim_Hierarchy_Master'[L2], 'dim_Hierarchy_Master'[L3]),
+			            'fact_revenue_metrics'[financial_L1],
+			            'fact_revenue_metrics'[financial_L2],
+			            'fact_revenue_metrics'[financial_L3]
+			        )
+			    ),
+			    
+			    // 3. FALSE BRANCH: Standard sum if no hierarchy is filtered
+			    CALCULATE(
+			        SUM('fact_revenue_metrics'[actual_revenue_usd]),
+			        'fact_revenue_metrics'[scenario] = "Actual" 
+			    )
+			)
+			```
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Revenue
+		lineageTag: bfff428d-2c6d-4f2a-9451-21faab87dabc
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Hours MoM %' = ```
+			
+			
+			VAR _CM = [Total Worked Hours]
+			VAR _LM = 
+			    CALCULATE(
+			        [Total Worked Hours], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			VAR _perc = DIVIDE(_CM - _LM, _LM)
+			VAR _percformat = FORMAT(_perc, "+0.0%;-0.0%;0.0%" )
+			
+			RETURN
+			
+			IF(
+			    _perc > 0,
+			    UNICHAR(129157) & " " & _percformat,
+			    UNICHAR(129158) & " " & _percformat
+			)
+			```
+		displayFolder: Worked Hours
+		lineageTag: 26ed758b-6991-49f5-9a90-0934af3a0e57
+
+	measure 'Revenue per Headcount' = ```
+			
+			// Executive KPI: Divides the master-filtered revenue by the operational headcount of the last week.
+			DIVIDE(
+			    [Total Revenue (Master Hierarchy)], 
+			    [Operational Headcount (Last Week)], 
+			    0
+			)
+			```
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: b8197853-1778-4f93-b558-e5bb1c3358a8
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Operational FTE (Last Week)' = ```
+			
+			// 1. Identify the latest transaction date and its corresponding Year-Week.
+			VAR MaxFactDate = MAX('fact_profitability_metrics'[transaction_date])
+			
+			VAR TargetYearWeek = 
+			    CALCULATE(
+			        MAX('dim_calendar'[year_week]),
+			        'dim_calendar'[date] = MaxFactDate,
+			        REMOVEFILTERS('dim_calendar')
+			    )
+			
+			// 2. We evaluate everything inside the RETURN so the TREATAS filter applies FIRST
+			RETURN
+			    IF(
+			        ISFILTERED('dim_Hierarchy_Master'[L1]) || ISFILTERED('dim_Hierarchy_Master'[L2]) || ISFILTERED('dim_Hierarchy_Master'[L3]),
+			        
+			        // --- TRUE BRANCH: The visual is using the Master Hierarchy ---
+			        CALCULATE(
+			            // The SUMX is now inside the CALCULATE, forcing it to respect the virtual relationship
+			            SUMX(
+			                VALUES('fact_profitability_metrics'[ukg_employee_id]),
+			                
+			                VAR CurrentEmployee = 'fact_profitability_metrics'[ukg_employee_id]
+			                
+			                VAR ContextHours = 
+			                    CALCULATE(
+			                        SUM('fact_profitability_metrics'[worked_hours]),
+			                        REMOVEFILTERS('dim_calendar'),
+			                        'dim_calendar'[year_week] = TargetYearWeek
+			                    )
+			                    
+			                VAR TotalWeekHours = 
+			                    CALCULATE(
+			                        SUM('fact_profitability_metrics'[worked_hours]),
+			                        REMOVEFILTERS('dim_project'),
+			                        REMOVEFILTERS('dim_Hierarchy_Master'),
+			                        REMOVEFILTERS('fact_profitability_metrics'),
+			                        'fact_profitability_metrics'[ukg_employee_id] = CurrentEmployee,
+			                        REMOVEFILTERS('dim_calendar'),
+			                        'dim_calendar'[year_week] = TargetYearWeek
+			                    )
+			                    
+			                RETURN
+			                    DIVIDE(ContextHours, TotalWeekHours, BLANK())
+			            ),
+			            // The Virtual Relationship (TREATAS) applies before the SUMX executes
+			            TREATAS(
+			                SUMMARIZE('dim_Hierarchy_Master', 'dim_Hierarchy_Master'[L1], 'dim_Hierarchy_Master'[L2], 'dim_Hierarchy_Master'[L3]),
+			                'fact_profitability_metrics'[employee_L1],
+			                'fact_profitability_metrics'[employee_L2],
+			                'fact_profitability_metrics'[employee_L3]
+			            )
+			        ),
+			        
+			        // --- FALSE BRANCH: No Master Hierarchy in the visual, calculate normally ---
+			        SUMX(
+			            VALUES('fact_profitability_metrics'[ukg_employee_id]),
+			            
+			            VAR CurrentEmployee = 'fact_profitability_metrics'[ukg_employee_id]
+			            
+			            VAR ContextHours = 
+			                CALCULATE(
+			                    SUM('fact_profitability_metrics'[worked_hours]),
+			                    REMOVEFILTERS('dim_calendar'),
+			                    'dim_calendar'[year_week] = TargetYearWeek
+			                )
+			                
+			            VAR TotalWeekHours = 
+			                CALCULATE(
+			                    SUM('fact_profitability_metrics'[worked_hours]),
+			                    REMOVEFILTERS('dim_project'),
+			                    REMOVEFILTERS('dim_Hierarchy_Master'),
+			                    REMOVEFILTERS('fact_profitability_metrics'),
+			                    'fact_profitability_metrics'[ukg_employee_id] = CurrentEmployee,
+			                    REMOVEFILTERS('dim_calendar'),
+			                    'dim_calendar'[year_week] = TargetYearWeek
+			                )
+			                
+			            RETURN
+			                DIVIDE(ContextHours, TotalWeekHours, BLANK())
+			        )
+			    )
+			```
+		formatString: #,0
+		displayFolder: FTE
+		lineageTag: 061298de-be9f-4022-8962-96c9376ec079
+
+	measure 'Revenue per FTE' = ```
+			
+			DIVIDE(
+			    [Total Revenue (Master Hierarchy)], 
+			    [Operational FTE (Last Week)], 
+			    0
+			)
+			```
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Revenue per FTE
+		lineageTag: d7a9e10d-ee29-47eb-bc66-db3fccdb205e
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'FTE Time Allocation %' = ```
+			
+			// 1. Calculate hours logged by the employee strictly within the current visual context 
+			// (e.g., specific Project, Customer, or L3 department).
+			VAR ContextHours = SUM('fact_profitability_metrics'[worked_hours])
+			
+			// 2. Calculate the total hours logged by the same employee across the entire filtered period.
+			// REMOVEFILTERS is used to bypass structural project and organizational hierarchy constraints,
+			// ensuring the denominator captures the true 100% of the employee's effort for the selected timeframe.
+			VAR TotalEmployeeHours = 
+			    CALCULATE(
+			        SUM('fact_profitability_metrics'[worked_hours]),
+			        REMOVEFILTERS('dim_project'),
+			        REMOVEFILTERS('dim_Hierarchy_Master')
+			    )
+			
+			RETURN
+			    // 3. Compute the fractional time allocation for the current row.
+			    DIVIDE(ContextHours, TotalEmployeeHours, 0)
+			```
+		formatString: 0%;-0%;0%
+		lineageTag: 3d40521b-0141-4d96-8cc5-8eea52ebca12
+
+	measure 'Annualized Revenue per FTE' = ```
+			
+			VAR MonthlyRevenuePerFTE = 
+			    DIVIDE(
+			        [Total Revenue (Master Hierarchy)], 
+			        [Operational FTE (Last Week)], 
+			        BLANK()
+			    )
+			
+			RETURN
+			    MonthlyRevenuePerFTE * 12
+			```
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Annualized Revenue per FTE
+		lineageTag: 1b2c58e1-e7be-4f3e-b8f2-481530af7ad3
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Last Month Hours' = ```
+			
+			
+			VAR _LM = 
+			    CALCULATE(
+			        [Total Worked Hours], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			RETURN
+			"vs " & FORMAT(_LM,"#,##0") & " Last Month"
+			```
+		displayFolder: Worked Hours
+		lineageTag: dc79c7fd-fa4d-4879-b15a-dd5e5b0057ff
+
+	measure 'Operational FTE % (Last Week)' = ```
+			
+			// 1. Identify the latest transaction date and its corresponding Year-Week.
+			VAR MaxFactDate = MAX('fact_profitability_metrics'[transaction_date])
+			
+			VAR TargetYearWeek = 
+			    CALCULATE(
+			        MAX('dim_calendar'[year_week]),
+			        'dim_calendar'[date] = MaxFactDate,
+			        REMOVEFILTERS('dim_calendar')
+			    )
+			
+			// 2. Iterate over each unique employee to calculate their proportional FTE.
+			VAR CalculateProportionalFTE = 
+			    SUMX(
+			        VALUES('fact_profitability_metrics'[ukg_employee_id]),
+			        
+			        VAR CurrentEmployee = 'fact_profitability_metrics'[ukg_employee_id]
+			        
+			        // 3. Hours worked by the employee in the specific project/segment for the target week.
+			        VAR ContextHours = 
+			            CALCULATE(
+			                SUM('fact_profitability_metrics'[worked_hours]),
+			                REMOVEFILTERS('dim_calendar'),
+			                'dim_calendar'[year_week] = TargetYearWeek
+			            )
+			            
+			        // 4. Total hours worked by the employee across ALL projects and departments for the target week.
+			        // REMOVEFILTERS on dimensions ensures we capture the employee's true 100% capacity as the denominator.
+			        VAR TotalWeekHours = 
+			            CALCULATE(
+			                SUM('fact_profitability_metrics'[worked_hours]),
+			                REMOVEFILTERS('dim_project'),
+			                REMOVEFILTERS('dim_Hierarchy_Master'),
+			                REMOVEFILTERS('fact_profitability_metrics'),
+			                'fact_profitability_metrics'[ukg_employee_id] = CurrentEmployee,
+			                REMOVEFILTERS('dim_calendar'),
+			                'dim_calendar'[year_week] = TargetYearWeek
+			            )
+			            
+			        RETURN
+			            // Al retornar BLANK(), Power BI ocultará automáticamente los proyectos sin horas.
+			            DIVIDE(ContextHours, TotalWeekHours, BLANK())
+			    )
+			
+			// 5. Apply the virtual relationship for the Master Hierarchy if active in the visual context.
+			RETURN
+			    IF(
+			        ISFILTERED('dim_Hierarchy_Master'[L1]) || ISFILTERED('dim_Hierarchy_Master'[L2]) || ISFILTERED('dim_Hierarchy_Master'[L3]),
+			        CALCULATE(
+			            CalculateProportionalFTE,
+			            TREATAS(
+			                SUMMARIZE('dim_Hierarchy_Master', 'dim_Hierarchy_Master'[L1], 'dim_Hierarchy_Master'[L2], 'dim_Hierarchy_Master'[L3]),
+			                'fact_profitability_metrics'[employee_L1],
+			                'fact_profitability_metrics'[employee_L2],
+			                'fact_profitability_metrics'[employee_L3]
+			            )
+			        ),
+			        CalculateProportionalFTE
+			    )
+			```
+		formatString: 0%;-0%;0%
+		displayFolder: FTE
+		lineageTag: 309e8ac3-58a2-43e8-be03-78bdf90faf91
+
+	measure CF = ```
+			
+			
+			VAR _CM = [Total Worked Hours]
+			VAR _LM = 
+			    CALCULATE(
+			        [Total Worked Hours], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			VAR _perc = DIVIDE(_CM - _LM, _LM)
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    _perc > 0, "Green",
+			    _perc < 0, "Red",
+			    "Grey"
+			)
+			```
+		displayFolder: Worked Hours
+		lineageTag: dbfe5078-dd1d-4315-b579-4feeb36cd7c2
+
+	measure 'Last Month Revenue' = ```
+			
+			
+			VAR _LM = 
+			    CALCULATE(
+			        [Total Revenue (Master Hierarchy)], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			RETURN
+			"vs " & FORMAT(_LM,"#,##0") & " Last Month"
+			```
+		displayFolder: Revenue
+		lineageTag: ac3a90ac-d5d2-466a-87e1-7f83b3de97a4
+
+	measure 'Revenue MoM %' = ```
+			
+			
+			VAR _CM = [Total Revenue (Master Hierarchy)]
+			VAR _LM = 
+			    CALCULATE(
+			        [Total Revenue (Master Hierarchy)], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			VAR _perc = DIVIDE(_CM - _LM, _LM)
+			VAR _percformat = FORMAT(_perc, "+0.0%;-0.0%;0.0%" )
+			
+			RETURN
+			
+			IF(
+			    _perc > 0,
+			    UNICHAR(129157) & " " & _percformat,
+			    UNICHAR(129158) & " " & _percformat
+			)
+			```
+		displayFolder: Revenue
+		lineageTag: cb265687-d223-45a6-8044-1feaeca69d9a
+
+	measure 'CF Revenue' = ```
+			
+			
+			VAR _CM = [Total Revenue (Master Hierarchy)]
+			VAR _LM = 
+			    CALCULATE(
+			        [Total Revenue (Master Hierarchy)], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			VAR _perc = DIVIDE(_CM - _LM, _LM)
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    _perc > 0, "Green",
+			    _perc < 0, "Red",
+			    "Grey"
+			)
+			```
+		displayFolder: Revenue
+		lineageTag: 233b2562-9125-44b5-84b7-6f4421aca645
+
+	measure 'LTD Actual Revenue' = ```
+			
+			// Calculates the Life-to-Date (LTD) actual revenue.
+			// REMOVEFILTERS ignores page-level date slicers (e.g., 'This Week') 
+			// to ensure the full historical amount is captured.
+			CALCULATE(
+			    SUM(fact_revenue_metrics[actual_revenue_usd]),
+			    fact_revenue_metrics[scenario] = "Actual",
+			    REMOVEFILTERS('dim_calendar')
+			)
+			```
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: 502280f3-d474-4a90-85aa-4d919543f834
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Remaining Backlog' =
+			
+			[LTD Backlog] - [LTD Actual Revenue]
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: c6df1b94-a47a-4eb4-859c-4fcb1e14d11d
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Total Contract Value' =
+			
+			// Computes the Total Estimate at Completion (EAC) or Total Contract Value
+			// by adding historical actuals and remaining backlog.
+			[LTD Actual Revenue] + [Remaining Backlog]
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: 68f83291-fd03-495d-80b6-b00253dd28ac
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Project Progress %' =
+			
+			// Calculates the financial completion percentage of the project.
+			// The DIVIDE function safely handles potential division by zero errors.
+			DIVIDE(
+			    [LTD Actual Revenue],
+			    [LTD Backlog],
+			    0
+			)
+		formatString: 0%;-0%;0%
+		lineageTag: e8c87225-2866-44f2-be8f-a62bc5d7f881
+
+	measure 'Last Month FTEs' = ```
+			
+			
+			VAR _LM = 
+			    CALCULATE(
+			        [Operational FTE (Last Week)], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			RETURN
+			"vs " & FORMAT(_LM,"#,##0") & " Last Month"
+			```
+		displayFolder: FTE
+		lineageTag: bbb1be6d-0ea2-4606-afac-6fcb70e0cec9
+
+	measure 'Operational FTE (Last Week) LIGHT' = ```
+			
+			// 1. Identify the latest transaction date and its corresponding Year-Week to establish the current reporting period.
+			VAR MaxFactDate = MAX('fact_profitability_metrics'[transaction_date])
+			
+			VAR TargetYearWeek = 
+			    CALCULATE(
+			        MAX('dim_calendar'[year_week]),
+			        'dim_calendar'[date] = MaxFactDate,
+			        REMOVEFILTERS('dim_calendar')
+			    )
+			
+			RETURN
+			    // 2. Iterate over each unique employee to accurately calculate their individual proportional FTE.
+			    SUMX(
+			        VALUES('fact_profitability_metrics'[ukg_employee_id]),
+			        
+			        VAR CurrentEmployee = 'fact_profitability_metrics'[ukg_employee_id]
+			        
+			        // 3. Calculate the hours logged by the employee strictly within the current visual context (Project) for the target week.
+			        VAR ContextHours = 
+			            CALCULATE(
+			                SUM('fact_profitability_metrics'[worked_hours]),
+			                REMOVEFILTERS('dim_calendar'),
+			                'dim_calendar'[year_week] = TargetYearWeek
+			            )
+			            
+			        // 4. Calculate the total baseline hours worked by the employee across ALL projects for the target week.
+			        // REMOVEFILTERS on the project dimension ensures we capture the employee's true 100% weekly capacity as the denominator.
+			        VAR TotalWeekHours = 
+			            CALCULATE(
+			                SUM('fact_profitability_metrics'[worked_hours]),
+			                REMOVEFILTERS('dim_project'),
+			                REMOVEFILTERS('fact_profitability_metrics'),
+			                'fact_profitability_metrics'[ukg_employee_id] = CurrentEmployee,
+			                REMOVEFILTERS('dim_calendar'),
+			                'dim_calendar'[year_week] = TargetYearWeek
+			            )
+			            
+			        RETURN
+			            // 5. Compute the proportional FTE. Returning BLANK() instead of 0 ensures empty rows are automatically hidden in the matrix visual.
+			            DIVIDE(ContextHours, TotalWeekHours, BLANK())
+			    )
+			```
+		formatString: 0
+		displayFolder: FTE
+		lineageTag: d929d920-253d-4ad0-8cd4-cddc28e386ae
+
+	measure 'FTE MoM %' = ```
+			
+			
+			VAR _CM = [Operational FTE (Last Week)]
+			VAR _LM = 
+			    CALCULATE(
+			        [Operational FTE (Last Week)], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			VAR _perc = DIVIDE(_CM - _LM, _LM)
+			VAR _percformat = FORMAT(_perc, "+0.0%;-0.0%;0.0%" )
+			
+			RETURN
+			
+			IF(
+			    _perc > 0,
+			    UNICHAR(129157) & " " & _percformat,
+			    UNICHAR(129158) & " " & _percformat
+			)
+			```
+		displayFolder: FTE
+		lineageTag: 377f4a39-2257-47dd-b178-4a0dfbd921d4
+
+	measure 'CF FTE' = ```
+			
+			
+			VAR _CM = [Operational FTE (Last Week)]
+			VAR _LM = 
+			    CALCULATE(
+			        [Operational FTE (Last Week)], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			VAR _perc = DIVIDE(_CM - _LM, _LM)
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    _perc > 0, "Green",
+			    _perc < 0, "Red",
+			    "Grey"
+			)
+			```
+		displayFolder: FTE
+		lineageTag: 7a135dc2-2861-4f4f-afd2-74f2bb73880a
+
+	measure 'Last Month Rev / FTE' = ```
+			
+			
+			VAR _LM = 
+			    CALCULATE(
+			        [Revenue per FTE], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			RETURN
+			"vs " & FORMAT(_LM,"#,##0") & " Last Month"
+			```
+		displayFolder: Revenue per FTE
+		lineageTag: dccbec9f-d3b5-49a1-95aa-d63579efd3dc
+
+	measure 'Rev / FTE MoM %' = ```
+			
+			
+			VAR _CM = [Revenue per FTE]
+			VAR _LM = 
+			    CALCULATE(
+			        [Revenue per FTE], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			VAR _perc = DIVIDE(_CM - _LM, _LM)
+			VAR _percformat = FORMAT(_perc, "+0.0%;-0.0%;0.0%" )
+			
+			RETURN
+			
+			IF(
+			    _perc > 0,
+			    UNICHAR(129157) & " " & _percformat,
+			    UNICHAR(129158) & " " & _percformat
+			)
+			```
+		displayFolder: Revenue per FTE
+		lineageTag: bd9bc653-01f1-4485-8652-0a9f83a571ea
+
+	measure 'CF Rev / FTE' = ```
+			
+			
+			VAR _CM = [Revenue per FTE]
+			VAR _LM = 
+			    CALCULATE(
+			        [Revenue per FTE], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			VAR _perc = DIVIDE(_CM - _LM, _LM)
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    _perc > 0, "Green",
+			    _perc < 0, "Red",
+			    "Grey"
+			)
+			```
+		displayFolder: Revenue per FTE
+		lineageTag: 7be0bdeb-baf1-4419-af89-dcb817979a1c
+
+	measure 'Last Month Ann. Rev per FTE' = ```
+			
+			
+			VAR _LM = 
+			    CALCULATE(
+			        [Annualized Revenue per FTE], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			RETURN
+			"vs " & FORMAT(_LM,"#,##0") & " Last Month"
+			```
+		displayFolder: Annualized Revenue per FTE
+		lineageTag: 45d6bf68-28ad-4653-b4e5-fc351a2fcaa9
+
+	measure 'Ann. Rev per FTE MoM %' = ```
+			
+			
+			VAR _CM = [Annualized Revenue per FTE]
+			VAR _LM = 
+			    CALCULATE(
+			        [Annualized Revenue per FTE], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			VAR _perc = DIVIDE(_CM - _LM, _LM)
+			VAR _percformat = FORMAT(_perc, "+0.0%;-0.0%;0.0%" )
+			
+			RETURN
+			
+			IF(
+			    _perc > 0,
+			    UNICHAR(129157) & " " & _percformat,
+			    UNICHAR(129158) & " " & _percformat
+			)
+			```
+		displayFolder: Annualized Revenue per FTE
+		lineageTag: aa534372-ce83-4bdf-a111-b8726c00d0be
+
+	measure 'CF Ann. Rev per FTE' = ```
+			
+			
+			VAR _CM = [Annualized Revenue per FTE]
+			VAR _LM = 
+			    CALCULATE(
+			        [Annualized Revenue per FTE], 
+			        DATEADD('dim_calendar'[date], -1, MONTH)
+			    )
+			VAR _perc = DIVIDE(_CM - _LM, _LM)
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    _perc > 0, "Green",
+			    _perc < 0, "Red",
+			    "Grey"
+			)
+			```
+		displayFolder: Annualized Revenue per FTE
+		lineageTag: 0b6d5fb2-cc95-4597-9d83-8de179b63517
+
+	measure 'LTD Backlog' = ```
+			
+			// Calculates the Life-to-Date (LTD) actual revenue.
+			// REMOVEFILTERS ignores page-level date slicers (e.g., 'This Week') 
+			// to ensure the full historical amount is captured.
+			CALCULATE(
+			    SUM(fact_revenue_metrics[actual_revenue_usd]),
+			    fact_revenue_metrics[scenario] = "Backlog",
+			    REMOVEFILTERS('dim_calendar')
+			)
+			```
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: b5d3d534-f49e-476d-aed1-ca628e93c443
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Cross-Charge Hours In' =
+			
+			CALCULATE(
+			    [Total Worked Hours],
+			    fact_profitability_metrics[cross_charge_flag] = "Cross Charge",
+			    TREATAS(VALUES(dim_Hierarchy_Master[L1]), fact_profitability_metrics[project_L1])
+			)
+		formatString: #,0
+		displayFolder: New
+		lineageTag: dfe62f92-8c69-4d41-8ac3-bdf3312bddf9
+
+	measure 'Cross-Charge Hours Out' =
+			
+			CALCULATE(
+			    [Total Worked Hours],
+			    fact_profitability_metrics[cross_charge_flag] = "Cross Charge",
+			    TREATAS(VALUES(dim_Hierarchy_Master[L1]), fact_profitability_metrics[employee_L1])
+			)
+		formatString: #,0
+		displayFolder: New
+		lineageTag: 6c0778c2-77b7-4b84-b688-bbbb2dde14ec
+
+	measure 'Last Month Revenue (Master Hierarchy)' =
+			
+			CALCULATE(
+			    [Total Revenue (Master Hierarchy)],
+			    DATEADD('dim_calendar'[date], -1, MONTH)
+			)
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: New
+		lineageTag: 3ef2f771-264f-4789-ad82-45bef426b0db
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Net Cross-Charge Hours' =
+			
+			[Cross-Charge Hours In] - [Cross-Charge Hours Out]
+		formatString: #,0
+		displayFolder: New
+		lineageTag: 3ca047c9-3f03-4d9d-b6a5-592b71668320
+
+	measure 'Project End Date' =
+			
+			CALCULATE(
+			    MAX(fact_revenue_metrics[transaction_date]),
+			    fact_revenue_metrics[scenario] = "Backlog"
+			)
+		formatString: Short Date
+		displayFolder: New
+		lineageTag: d54f942e-8ac8-4612-944e-91c6d763907c
+
+	measure 'Project End Date Color' =
+			
+			VAR _endDate = [Project End Date]
+			VAR _daysLeft = DATEDIFF(TODAY(), _endDate, DAY)
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(_endDate), "#5a5457",
+			        _daysLeft < 0, "#9E2B2B",
+			        _daysLeft <= 30, "#9E2B2B",
+			        _daysLeft <= 90, "#C4843A",
+			        "#729b78"
+			    )
+		displayFolder: New
+		lineageTag: ff79128a-3f9e-4744-81fd-5efeb684d0c7
+
+	measure 'Project End Date Label' =
+			
+			VAR _endDate = [Project End Date]
+			VAR _daysLeft = DATEDIFF(TODAY(), _endDate, DAY)
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(_endDate), BLANK(),
+			        _daysLeft < 0, "Vencido",
+			        _daysLeft <= 30, "< 30 días",
+			        _daysLeft <= 90, "< 90 días",
+			        FORMAT(_endDate, "MMM DD, YYYY")
+			    )
+		displayFolder: New
+		lineageTag: c5d62681-7943-4b05-a77f-f9a6ad0499d4
+
+	measure 'Revenue MoM $ (Master Hierarchy)' =
+			
+			[Total Revenue (Master Hierarchy)] - [Last Month Revenue (Master Hierarchy)]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: New
+		lineageTag: 8f29cb67-106a-4af9-b770-15d203af3b34
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Revenue MoM Rank Bottom' =
+			
+			RANKX(
+			    ALLSELECTED(dim_project[project_customer]),
+			    [Revenue MoM $ (Master Hierarchy)],
+			    ,
+			    ASC,
+			    DENSE
+			)
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: New
+		lineageTag: c46d16d4-10eb-4e6f-bd13-5e781545975f
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Revenue MoM Rank Top' = ```
+			
+			RANKX(
+			    ALLSELECTED(dim_project[project_customer]),
+			    [Revenue MoM $ (Master Hierarchy)],
+			    ,
+			    DESC,
+			    DENSE
+			)   
+			```
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: New
+		lineageTag: b103550d-557c-4738-bd9b-137df91e56f6
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'SVG FTE MoM %' =
+			
+			VAR _CM = [Operational FTE (Last Week)]
+			VAR _LM = CALCULATE([Operational FTE (Last Week)], DATEADD('dim_calendar'[date], -1, MONTH))
+			VAR _perc = DIVIDE(_CM - _LM, _LM, 0)
+			VAR _percText = FORMAT(ABS(_perc), "0.0%")
+			VAR _color = SWITCH(TRUE(), _perc > 0, "#729b78", _perc < 0, "#9E2B2B", "#5a5457")
+			VAR _arrow = SWITCH(
+			    TRUE(),
+			    _perc > 0, "<polygon points='10,2 2,14 18,14' fill='" & _color & "'/>",
+			    _perc < 0, "<polygon points='2,2 18,2 10,14' fill='" & _color & "'/>",
+			    "<rect x='2' y='7' width='16' height='3' rx='1.5' fill='" & _color & "'/>"
+			)
+			VAR _sign = IF(_perc > 0, "+", IF(_perc < 0, "-", ""))
+			RETURN
+			"data:image/svg+xml;utf8," &
+			"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 20' width='140' height='40'>" &
+			"<g transform='translate(0,3)'>" & _arrow & "</g>" &
+			"<text x='24' y='14' font-family='sans-serif' font-size='12' font-weight='500' fill='" & _color & "'>" &
+			_sign & _percText &
+			"</text>" &
+			"</svg>"
+		displayFolder: New
+		lineageTag: b8762cc5-a04a-4bb1-9dad-c087d8c6ace0
+		dataCategory: ImageUrl
+
+	measure 'SVG Project End Date' = ```
+			
+			-- ============================================
+			-- CONFIGURACION DE TAMAÑO - Ajusta aqui
+			VAR _svgWidth = 129
+			VAR _svgHeight = 40
+			VAR _fontSize = 16
+			VAR _circleR = 10
+			VAR _circleX = 12
+			VAR _circleY = 15
+			VAR _textX = 30
+			VAR _textY = 23
+			-- ============================================
+			
+			VAR _endDate = [Project End Date]
+			VAR _daysLeft = DATEDIFF(TODAY(), _endDate, DAY)
+			VAR _color = 
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(_endDate), "#5a5457",
+			        _daysLeft < 0, "#9E2B2B",
+			        _daysLeft <= 30, "#9E2B2B",
+			        _daysLeft <= 90, "#C4843A",
+			        "#729b78"
+			    )
+			VAR _label = 
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(_endDate), "No backlog",
+			        _daysLeft < 0, "Vencido",
+			        _daysLeft <= 30, "< 30 dias",
+			        _daysLeft <= 90, "< 90 dias",
+			        FORMAT(_endDate, "MMM DD, YYYY")
+			    )
+			RETURN
+			"data:image/svg+xml;utf8," &
+			"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " & _svgWidth & " " & _svgHeight & "' width='" & _svgWidth & "' height='" & _svgHeight & "'>" &
+			"<circle cx='" & _circleX & "' cy='" & _circleY & "' r='" & _circleR & "' fill='" & _color & "'/>" &
+			"<text x='" & _textX & "' y='" & _textY & "' font-family='sans-serif' font-size='" & _fontSize & "' font-weight='500' fill='" & _color & "'>" &
+			_label &
+			"</text>" &
+			"</svg>"
+			```
+		displayFolder: New
+		lineageTag: 6279c5fa-d388-4624-a956-0b873fa85bbf
+		dataCategory: ImageUrl
+
+	measure 'SVG Revenue MoM %' =
+			
+			VAR _CM = [Total Revenue (Master Hierarchy)]
+			VAR _LM = [Last Month Revenue (Master Hierarchy)]
+			VAR _perc = DIVIDE(_CM - _LM, _LM, 0)
+			VAR _percText = FORMAT(ABS(_perc), "0.0%")
+			VAR _color = SWITCH(TRUE(), _perc > 0, "#729b78", _perc < 0, "#9E2B2B", "#5a5457")
+			VAR _arrow = SWITCH(
+			    TRUE(),
+			    _perc > 0, "<polygon points='10,2 2,14 18,14' fill='" & _color & "'/>",
+			    _perc < 0, "<polygon points='2,2 18,2 10,14' fill='" & _color & "'/>",
+			    "<rect x='2' y='7' width='16' height='3' rx='1.5' fill='" & _color & "'/>"
+			)
+			VAR _sign = IF(_perc > 0, "+", IF(_perc < 0, "-", ""))
+			RETURN
+			"data:image/svg+xml;utf8," &
+			"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 20' width='90' height='20'>" &
+			"<g transform='translate(0,3)'>" & _arrow & "</g>" &
+			"<text x='24' y='14' font-family='sans-serif' font-size='12' font-weight='500' fill='" & _color & "'>" &
+			_sign & _percText &
+			"</text>" &
+			"</svg>"
+		displayFolder: New
+		lineageTag: cf1c4170-6949-4bfb-ada2-a52978106985
+		dataCategory: ImageUrl
+
+	measure 'Validation Window Hours' = ```
+			
+			VAR _today = TODAY()
+			VAR _dayOfWeek = WEEKDAY(_today, 2) -- 1=Mon, 2=Tue... 7=Sun
+			VAR _isMonday = _dayOfWeek = 1
+			
+			-- Si es Lunes: mostrar semana pasada (Lun-Dom anterior)
+			-- Si es Mar-Dom: mostrar semana en curso (Lun de esta semana hasta hoy)
+			VAR _weekStart = 
+			    IF(
+			        _isMonday,
+			        _today - 7, -- Lunes de la semana pasada
+			        _today - _dayOfWeek + 1 -- Lunes de esta semana
+			    )
+			VAR _weekEnd = 
+			    IF(
+			        _isMonday,
+			        _today - 1, -- Domingo pasado
+			        _today -- Hasta hoy
+			    )
+			RETURN
+			CALCULATE(
+			    [Total Worked Hours],
+			    'dim_calendar'[date] >= _weekStart,
+			    'dim_calendar'[date] <= _weekEnd
+			)
+			```
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: New
+		lineageTag: 03d20d4e-7c03-4a00-95bd-f096c729939a
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Validation Window Label' = ```
+			
+			VAR _today = TODAY()
+			VAR _dayOfWeek = WEEKDAY(_today, 2)
+			VAR _isMonday = _dayOfWeek = 1
+			VAR _weekStart = 
+			    IF(
+			        _isMonday,
+			        _today - 7,
+			        _today - _dayOfWeek + 1
+			    )
+			VAR _weekEnd = 
+			    IF(
+			        _isMonday,
+			        _today - 1,
+			        _today
+			    )
+			VAR _label =
+			    IF(
+			        _isMonday,
+			        "Last Week: " & FORMAT(_weekStart, "MMM DD") & " - " & FORMAT(_weekEnd, "MMM DD"),
+			        "Current Week: " & FORMAT(_weekStart, "MMM DD") & " - " & FORMAT(_weekEnd, "MMM DD")
+			    )
+			RETURN _label
+			```
+		displayFolder: New
+		lineageTag: 3c2f96e7-6d6c-4bdb-b6e5-e36805e5cc50
+
+	column Column
+		isHidden
+		formatString: 0
+		lineageTag: 1d0a7c1a-f024-48fb-b562-4d3606e84c69
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Column]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = calculated
+		mode: import
+		source = 1
+
+	annotation PBI_Id = 2c9517e6aacc40838474359379ecb1d7
+

@@ -1,0 +1,44 @@
+table 'Analysis Type'
+	lineageTag: 23a58bfb-2ec6-4fd7-a948-27b2262243d7
+
+	column 'Analysis Type'
+		lineageTag: 2bef336c-d1aa-4d84-8649-0ed49d8fa673
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: 'Analysis Type Order'
+
+		relatedColumnDetails
+			groupByColumn: 'Analysis Type Fields'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Analysis Type Fields'
+		isHidden
+		lineageTag: 147deb43-81dd-495f-a600-f108914608fc
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: 'Analysis Type Order'
+
+		extendedProperty ParameterMetadata = {"version":3,"kind":2}
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Analysis Type Order'
+		isHidden
+		formatString: 0
+		lineageTag: 91a235e7-6a8b-4203-bda3-5a2dd9248ec7
+		summarizeBy: sum
+		sourceColumn: [Value3]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Analysis Type' = calculated
+		mode: import
+		source =
+				{
+				    ("Intercompany", NAMEOF('fact_profitability_metrics'[intercompany_flow]), 0),
+				    ("Cross Charge", NAMEOF('fact_profitability_metrics'[cross_charge_flow]), 1)
+				}
+
+	annotation PBI_Id = 4d34b7335c374f26a7a17eae7b28947a
+

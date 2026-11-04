@@ -1,0 +1,66 @@
+table dim_organization
+	lineageTag: c9cac8a3-8f63-4e49-ace7-1e232539940f
+	sourceLineageTag: [gold].[dim_organization]
+
+	column org_key
+		dataType: string
+		lineageTag: 81cd2023-d607-4c1c-b097-49559764f4e2
+		sourceLineageTag: org_key
+		summarizeBy: none
+		sourceColumn: org_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column L1
+		dataType: string
+		lineageTag: 1bbf5d25-0545-4f06-9d96-d4bd9a350078
+		sourceLineageTag: L1
+		summarizeBy: none
+		sourceColumn: L1
+
+		annotation SummarizationSetBy = Automatic
+
+	column L2
+		dataType: string
+		lineageTag: d1b0c63b-5e08-455f-99b0-90736ed2d479
+		sourceLineageTag: L2
+		summarizeBy: none
+		sourceColumn: L2
+
+		annotation SummarizationSetBy = Automatic
+
+	column L3
+		dataType: string
+		lineageTag: b473f884-d52d-4d86-bfd1-4ec879e6c8c1
+		sourceLineageTag: L3
+		summarizeBy: none
+		sourceColumn: L3
+
+		annotation SummarizationSetBy = Automatic
+
+	column _gold_modified_at
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: ed513478-7501-419c-aa8a-3f7290ad1212
+		sourceLineageTag: _gold_modified_at
+		summarizeBy: none
+		sourceColumn: _gold_modified_at
+
+		annotation SummarizationSetBy = Automatic
+
+	column _gold_pipeline_run_id
+		dataType: string
+		lineageTag: 64b57743-d208-4072-b8be-1e66b410ef29
+		sourceLineageTag: _gold_pipeline_run_id
+		summarizeBy: none
+		sourceColumn: _gold_pipeline_run_id
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_organization = entity
+		mode: directLake
+		source
+			entityName: dim_organization
+			schemaName: gold
+			expressionSource: 'DirectLake - LH_Corp_DataHub'
+
