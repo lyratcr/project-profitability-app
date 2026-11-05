@@ -1,0 +1,17 @@
+// P4 matrix: flow (the FLOW token = intercompany_flow or cross_charge_flow) > customer > project [> employee] × the
+// period's months, with the model's total column (IsMonthTotal) and grand total. Employee level only with a
+// customer or project selected (Ion, 2026-11-04: names allowed here; the full tree is ~27k rows for a year).
+// Employees are grouped by name and UKG id, so two people with the same name stay apart.
+EVALUATE
+SUMMARIZECOLUMNS (
+    ROLLUPADDISSUBTOTAL ( ROLLUPGROUP ( dim_calendar[year_month], dim_calendar[year_month_number] ), "IsMonthTotal" ),
+    ROLLUPADDISSUBTOTAL (
+        @FLOW@, "IsFlowTotal",
+        fact_profitability_metrics[project_customer], "IsCustomerTotal",
+        fact_profitability_metrics[project_name], "IsProjectTotal"/* @employee */
+    ),
+    /* @filters */
+    "Hours", [Synerion Hours (Employee Org)_app]
+)
+// Months in calendar order, then largest first: a subtotal always comes before its children.
+ORDER BY dim_calendar[year_month_number], [Hours] DESC

@@ -103,6 +103,48 @@ describe("buildMatrix", () => {
         expect(() => buildMatrix(t, { ...base, values: [{ raw: "[Hours]", header: "H" }], pivot: "[Hours]" })).toThrow(/can't pivot/);
     });
 
+    it("keeps two people with the same name apart through a level key", () => {
+        const t = {
+            columns: ["Project", "Employee", "EmployeeId", "[IsProjectTotal]", "[IsEmployeeTotal]", "[Hours]"].map((name) => ({ name })),
+            rows: [
+                ["P1", null, null, false, true, 300],
+                ["P1", "Maria Lopez", "A1", false, false, 160],
+                ["P1", "Maria Lopez", "B2", false, false, 140],
+            ],
+        } as unknown as QueryTable;
+        const m = buildMatrix(t, {
+            levels: ["Project", "Employee"],
+            flags: ["[IsProjectTotal]", "[IsEmployeeTotal]"],
+            levelKeys: [undefined, "EmployeeId"],
+            value: "[Hours]",
+        });
+        const people = m.rows[0]._children!;
+        expect(people.map((p) => [p.label, p.c0])).toEqual([
+            ["Maria Lopez", 160],
+            ["Maria Lopez", 140],
+        ]);
+        expect(new Set(people.map((p) => p._id)).size).toBe(2);
+    });
+
+    it("puts the model's total across the pivot in a last Total column", () => {
+        // Shape of a ROLLUPADDISSUBTOTAL ( ROLLUPGROUP ( month, month number ), "IsMonthTotal" ) query.
+        const t = {
+            columns: ["Month", "MonthNumber", "[IsMonthTotal]", "Flow", "[IsFlowTotal]", "[Hours]"].map((name) => ({ name })),
+            rows: [
+                [null, null, true, "CR -> USA", false, 280000],
+                ["2026 Feb", 202602, false, "CR -> USA", false, 140852],
+                ["2026 Jan", 202601, false, "CR -> USA", false, 139148],
+                [null, null, true, null, true, 450000],
+                ["2026 Jan", 202601, false, null, true, 226359],
+                ["2026 Feb", 202602, false, null, true, 223641],
+            ],
+        } as unknown as QueryTable;
+        const m = buildMatrix(t, { levels: ["Flow"], flags: ["[IsFlowTotal]"], value: "[Hours]", pivot: "Month", pivotSort: "MonthNumber", pivotTotalFlag: "[IsMonthTotal]" });
+        expect(m.columns.map((c) => c.header)).toEqual(["", "2026 Jan", "2026 Feb", "Total"]);
+        expect(m.rows[0]).toMatchObject({ label: "CR -> USA", c0: 139148, c1: 140852, c2: 280000 });
+        expect(m.totals).toEqual({ c0: 226359, c1: 223641, c2: 450000 });
+    });
+
     it("keeps BLANK values blank and labels real blank org values", () => {
         const withBlank = {
             columns,

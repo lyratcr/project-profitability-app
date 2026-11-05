@@ -1,0 +1,9 @@
+// P4 flow breakdown (decomposition tree, Ion 2026-11-04): hours by one level (the LEVEL token: origin, destination,
+// customer or project), filtered by the page filters and the values picked in the levels before it.
+EVALUATE
+SUMMARIZECOLUMNS (
+    @LEVEL@,
+    /* @filters */
+    "Hours", [Synerion Hours (Employee Org)_app]
+)
+ORDER BY [Hours] DESC
