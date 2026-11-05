@@ -1,0 +1,19 @@
+// P4 KPI cards: hours (employee org, Ion 2026-11-04), share that is intercompany and share that is cross-charge
+// (flag slices in DAX), and the area's cross-charge hours received, lent and net. The cross-charge measures work
+// at L1 only (the flag compares employee_L1 with project_L1): with an L2 or L3 selected they answer for its L1.
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "Hours", [Synerion Hours (Employee Org)_app],
+    "IntercompanyShare", DIVIDE (
+        CALCULATE ( [Synerion Hours (Employee Org)_app], KEEPFILTERS ( fact_profitability_metrics[intercompany_flag] = "Intercompany" ) ),
+        [Synerion Hours (Employee Org)_app]
+    ),
+    "CrossChargeShare", DIVIDE (
+        CALCULATE ( [Synerion Hours (Employee Org)_app], KEEPFILTERS ( fact_profitability_metrics[cross_charge_flag] = "Cross Charge" ) ),
+        [Synerion Hours (Employee Org)_app]
+    ),
+    "Received", [Cross-Charge Hours Received_app],
+    "Lent", [Cross-Charge Hours Lent_app],
+    "Net", [Net Cross-Charge Hours_app]
+)

@@ -7,6 +7,7 @@
 
 import { AppHeader } from "./components/app-header.component";
 import { EffortPage } from "./components/effort-page.component";
+import { FlowsPage } from "./components/flows-page.component";
 import { FtePage } from "./components/fte-page.component";
 import { HeadcountPage } from "./components/headcount-page.component";
 import { FilterBar } from "./components/filter-bar.component";
@@ -14,10 +15,11 @@ import { PagePlaceholder } from "./components/page-placeholder.component";
 import { useGlobalFilters } from "./hooks/use-global-filters";
 import { useHashRoute } from "./hooks/use-hash-route";
 import { readOrgView, writeOrgView } from "./lib/org-view";
+import { readFlowAnalysis, writeFlowAnalysis } from "./queries/flows";
 import { pageHref } from "./lib/routes";
 
 // App shell (build plan 2.1–2.2): top bar with data freshness, page tabs, hash routes and global filters.
-// Pages P1–P6 replace PagePlaceholder in Phases 3–4 (P1 Effort: 3.1, P2 Headcount: 3.2, P3 FTE: 3.3).
+// Pages P1–P6 replace PagePlaceholder in Phases 3–4 (P1 Effort: 3.1, P2 Headcount: 3.2, P3 FTE: 3.3, P4 Flows: 3.4).
 function App() {
     const route = useHashRoute();
     const { page } = route;
@@ -52,6 +54,16 @@ function App() {
                         <HeadcountPage page={page} filters={filters.state} options={filters.options} />
                     ) : page.id === "fte" ? (
                         <FtePage page={page} filters={filters.state} options={filters.options} />
+                    ) : page.id === "flows" ? (
+                        <FlowsPage
+                            page={page}
+                            filters={filters.state}
+                            options={filters.options}
+                            analysis={readFlowAnalysis(route.params)}
+                            onAnalysisChange={(analysis) => {
+                                window.location.hash = pageHref(page, writeFlowAnalysis(route.params, analysis));
+                            }}
+                        />
                     ) : (
                         <PagePlaceholder page={page} filters={filters.state} options={filters.options} />
                     )}

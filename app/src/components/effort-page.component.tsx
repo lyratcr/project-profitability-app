@@ -7,7 +7,6 @@ import { ORG_VIEW_HINT, ORG_VIEW_LABEL, type OrgView } from "@/lib/org-view";
 import { numberCell } from "@/lib/query-table";
 import type { PageDef } from "@/lib/routes";
 import { toDataTable } from "@/lib/to-data-table";
-import { cn } from "@/lib/utils";
 import { TREND_WEEKS, trendWindow } from "@/lib/weeks";
 import {
     byCustomerColumns,
@@ -23,6 +22,7 @@ import {
 import { HierarchyMatrix } from "./hierarchy-matrix.component";
 import { KpiTile } from "./kpi-tile.component";
 import { QueryStates } from "./query-states.component";
+import { SegmentedToggle } from "./segmented-toggle.component";
 import { TrendChart } from "./trend-chart.component";
 
 interface EffortPageProps {
@@ -107,7 +107,12 @@ export function EffortPage({ page, filters, options, view, onViewChange, today =
                     <p className="font-page-subtitle text-page-subtitle text-muted-foreground">{page.purpose}</p>
                     {context !== "" && <p className="mt-1 text-200 text-muted-foreground">{context}</p>}
                 </div>
-                <OrgViewToggle view={view} onChange={onViewChange} />
+                <SegmentedToggle
+                    label="Organization view"
+                    options={(["project", "employee"] as const).map((v) => ({ value: v, label: ORG_VIEW_LABEL[v], hint: ORG_VIEW_HINT[v] }))}
+                    value={view}
+                    onChange={onViewChange}
+                />
             </header>
 
             <div className="grid grid-cols-1 gap-grid sm:grid-cols-2 xl:grid-cols-4">
@@ -193,32 +198,5 @@ export function EffortPage({ page, filters, options, view, onViewChange, today =
                 </QueryStates>
             </div>
         </section>
-    );
-}
-
-function OrgViewToggle({ view, onChange }: { view: OrgView; onChange: (view: OrgView) => void }): ReactElement {
-    const views: OrgView[] = ["project", "employee"];
-    return (
-        <div role="radiogroup" aria-label="Organization view" className="flex flex-col gap-1">
-            <span className="text-200 leading-200 text-muted-foreground">Organization view</span>
-            <div className="inline-flex rounded-md border border-border bg-card p-0.5">
-                {views.map((v) => (
-                    <button
-                        key={v}
-                        type="button"
-                        role="radio"
-                        aria-checked={view === v}
-                        title={ORG_VIEW_HINT[v]}
-                        onClick={() => onChange(v)}
-                        className={cn(
-                            "rounded-sm px-3 py-1 text-200 focus-visible:outline-2 focus-visible:outline-ring",
-                            view === v ? "bg-brand text-on-brand" : "text-muted-foreground hover:bg-muted",
-                        )}
-                    >
-                        {ORG_VIEW_LABEL[v]}
-                    </button>
-                ))}
-            </div>
-        </div>
     );
 }

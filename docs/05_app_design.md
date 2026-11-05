@@ -54,10 +54,10 @@
 
 ### P4 · Intercompany & Cross-Charge (`/flows`)
 **Purpose:** hours that cross countries or areas. Replaces the "Analysis Type" field parameter.
-- **Toggle:** Intercompany (`intercompany_flow`: CR Local, COL → USA, CR → USA …) or Cross Charge (`cross_charge_flow`: BPO Direct, ITO → DTF …).
-- **Matrix:** flow (rows) × month (columns) of `[Synerion Hours_app]`, with a total column. Rows expand to customer → project → employee.
-- **KPI cards:** share of hours that are intercompany; share that are cross-charge; with an area selected, `[Cross-Charge Hours Received_app]`, `[Cross-Charge Hours Lent_app]` and `[Net Cross-Charge Hours_app]`.
-- **Flow diagram:** origin → destination (country or L1), width = hours.
+- **Toggle:** Intercompany (`intercompany_flow`: CR Local, COL → USA, CR → USA …) or Cross Charge (`cross_charge_flow`: BPO Direct, ITO → DTF …). Hours use the employee org (Ion, 2026-11-04).
+- **Matrix:** flow (rows) × the period's months (columns) of `[Synerion Hours (Employee Org)_app]`, with the model's total column. Rows expand to customer → project, and to employee (name) when a customer or project is selected (Ion, 2026-11-04; the full tree is ~27k rows a year).
+- **KPI cards:** share of hours that are intercompany; share that are cross-charge; with an L1 area selected, `[Cross-Charge Hours Received_app]`, `[Cross-Charge Hours Lent_app]` and `[Net Cross-Charge Hours_app]` (L1 only: with L2/L3 selected they show its L1, labelled).
+- **Flow breakdown** (instead of a Sankey, which Vega-Lite can't draw; Ion 2026-11-04): a decomposition tree, origin → destination (employee/project country, or employee/project L1) → customer → project; pick an item to open the next column.
 - Check: February 2026 must total 223,641 h in both views, as in the current report.
 
 ### P5 · Revenue & Capacity Yield (`/yield`)

@@ -29,6 +29,16 @@ export interface MatrixSpec {
     pivotSort?: string;
     /** Label for blank level values that are real data (not subtotals), e.g. people with no org. */
     blankLabel?: string;
+    /**
+     * Raw output names that identify each level's rows when the label isn't unique (e.g. the UKG id behind an
+     * employee name: two people can share a name). `undefined` for a level keeps the label as its key.
+     */
+    levelKeys?: readonly (string | undefined)[];
+    /**
+     * Raw output name of a ROLLUPADDISSUBTOTAL flag on the pivot (e.g. "[IsMonthTotal]"): its TRUE rows are the
+     * model's total across the pivot, shown as a last "Total" column.
+     */
+    pivotTotalFlag?: string;
 }
 
 export interface MatrixColumn {
@@ -73,34 +83,40 @@ export function buildMatrix(table: QueryTable, spec: MatrixSpec): Matrix {
     const valueIdx = index(table, spec.value!);
     const pivotIdx = spec.pivot ? index(table, spec.pivot) : -1;
     const sortIdx = spec.pivotSort ? index(table, spec.pivotSort) : -1;
+    const totalFlagIdx = spec.pivotTotalFlag ? index(table, spec.pivotTotalFlag) : -1;
+    const TOTAL_KEY = "__pivot_total__";
+    const pivotKey = (row: readonly unknown[]) => (totalFlagIdx >= 0 && row[totalFlagIdx] === true ? TOTAL_KEY : pivotIdx < 0 ? "" : String(row[pivotIdx] ?? ""));
 
-    // Pivot columns, ordered by the sort column when given, else by first appearance.
+    // Pivot columns, ordered by the sort column when given, else by first appearance; the model's total goes last.
     const pivotKeys: string[] = [];
     const pivotOrder = new Map<string, number>();
     for (const row of table.rows) {
-        const key = pivotIdx < 0 ? "" : String(row[pivotIdx] ?? "");
+        const key = pivotKey(row);
         if (!pivotOrder.has(key)) {
             pivotKeys.push(key);
-            pivotOrder.set(key, sortIdx < 0 ? pivotKeys.length : Number(row[sortIdx]));
+            pivotOrder.set(key, key === TOTAL_KEY ? Number.POSITIVE_INFINITY : sortIdx < 0 ? pivotKeys.length : Number(row[sortIdx]));
         }
     }
     pivotKeys.sort((a, b) => (pivotOrder.get(a) ?? 0) - (pivotOrder.get(b) ?? 0));
     const colId = new Map(pivotKeys.map((k, i) => [k, `c${i}`]));
-    const columns: MatrixColumn[] = [{ id: "label", header: "" }, ...pivotKeys.map((k, i) => ({ id: `c${i}`, header: k || "Value" }))];
+    const columns: MatrixColumn[] = [
+        { id: "label", header: "" },
+        ...pivotKeys.map((k, i) => ({ id: `c${i}`, header: k === TOTAL_KEY ? "Total" : k || "Value" })),
+    ];
 
-    const tree = createTree(spec, [...colId.values()]);
+    const tree = createTree(spec, [...colId.values()], table);
     let totals: Record<string, number | null> | null = null;
 
     for (const row of table.rows) {
         const depth = depthOf(row, flagIdx);
-        const column = colId.get(pivotIdx < 0 ? "" : String(row[pivotIdx] ?? ""))!;
+        const column = colId.get(pivotKey(row))!;
         const value = asNumber(row[valueIdx]);
         if (depth === 0) {
             totals ??= Object.fromEntries(pivotKeys.map((_, i) => [`c${i}`, null]));
             totals[column] = value;
             continue;
         }
-        tree.node(tree.path(row, levelIdx, depth))[column] = value;
+        tree.node(tree.path(row, depth))[column] = value;
     }
 
     return { columns, rows: tree.roots, totals };
@@ -116,14 +132,14 @@ function buildMultiValue(
     const valueIdx = values.map((v) => index(table, v.raw));
     const ids = values.map((_, i) => `c${i}`);
     const columns: MatrixColumn[] = [{ id: "label", header: "" }, ...values.map((v, i) => ({ id: ids[i], header: v.header }))];
-    const tree = createTree(spec, ids);
+    const tree = createTree(spec, ids, table);
     let totals: Record<string, number | null> | null = null;
 
     for (const row of table.rows) {
         const depth = depthOf(row, flagIdx);
         const cells = Object.fromEntries(ids.map((id, i) => [id, asNumber(row[valueIdx[i]])]));
         if (depth === 0) totals = cells;
-        else Object.assign(tree.node(tree.path(row, levelIdx, depth)), cells);
+        else Object.assign(tree.node(tree.path(row, depth)), cells);
     }
     return { columns, rows: tree.roots, totals };
 }
@@ -140,21 +156,28 @@ function depthOf(row: readonly unknown[], flagIdx: number[]): number {
     return depth;
 }
 
-function createTree(spec: MatrixSpec, columnIds: readonly string[]) {
+function createTree(spec: MatrixSpec, columnIds: readonly string[], table: QueryTable) {
     const nodes = new Map<string, MatrixRow>();
     const roots: MatrixRow[] = [];
     const blank = spec.blankLabel ?? "(blank)";
+    const levelIdx = spec.levels.map((l) => index(table, l));
+    const keyIdx = spec.levels.map((_, i) => (spec.levelKeys?.[i] ? index(table, spec.levelKeys[i]!) : -1));
+
+    interface Step {
+        label: string;
+        key: string;
+    }
 
     /**
      * Finds or creates the node for `path`, creating missing ancestors with empty cells. A parent can
      * be missing when the model returns BLANK for its subtotal in every column seen so far.
      */
-    function node(path: string[]): MatrixRow {
-        const id = path.join(" › ");
+    function node(path: Step[]): MatrixRow {
+        const id = path.map((p) => p.key).join(" › ");
         const existing = nodes.get(id);
         if (existing) return existing;
         const depth = path.length;
-        const created: MatrixRow = { _id: id, label: path[depth - 1], depth };
+        const created: MatrixRow = { _id: id, label: path[depth - 1].label, depth };
         for (const c of columnIds) created[c] = null;
         if (depth < spec.levels.length) created._children = [];
         nodes.set(id, created);
@@ -163,8 +186,13 @@ function createTree(spec: MatrixSpec, columnIds: readonly string[]) {
         return created;
     }
 
-    const path = (row: readonly unknown[], levelIdx: number[], depth: number) =>
-        levelIdx.slice(0, depth).map((i) => (row[i] === null || row[i] === undefined || row[i] === "" ? blank : String(row[i])));
+    const text = (v: unknown) => (v === null || v === undefined || v === "" ? null : String(v));
+    const path = (row: readonly unknown[], depth: number): Step[] =>
+        levelIdx.slice(0, depth).map((i, level) => {
+            const label = text(row[i]) ?? blank;
+            const key = keyIdx[level] >= 0 ? `${label}#${text(row[keyIdx[level]]) ?? ""}` : label;
+            return { label, key };
+        });
 
     return { node, path, roots };
 }
