@@ -1,0 +1,22 @@
+// P3 people detail, only with a customer or project selected (Ion, 2026-11-04): each person's hours in the
+// selection, the share of all their hours in the period (time allocation) and their last-week FTE in it.
+// Employee names are internal HR data, allowed here by the design; no rates or costs. Grouped by the UKG id
+// so people with the same name stay apart; the id is not returned.
+EVALUATE
+SELECTCOLUMNS (
+    SUMMARIZECOLUMNS (
+        fact_profitability_metrics[ukg_employee_id],
+        fact_profitability_metrics[employee_full_name],
+        fact_profitability_metrics[employee_country],
+        /* @filters */
+        "Hours", [Synerion Hours (Employee Org)_app],
+        "TimeAllocation", [Time Allocation %_app],
+        "FTE", [Allocated FTE (Last Week)_app]
+    ),
+    "Employee", fact_profitability_metrics[employee_full_name],
+    "Country", fact_profitability_metrics[employee_country],
+    "Hours", [Hours],
+    "TimeAllocation", [TimeAllocation],
+    "FTE", [FTE]
+)
+ORDER BY [Hours] DESC

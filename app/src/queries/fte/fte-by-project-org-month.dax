@@ -1,0 +1,16 @@
+// P3 matrix: allocation FTE by project org (fact project_L1 > L2 > L3, where the work is billed) and month.
+// Each month shows its last Sunday–Saturday week with hours. The measure maps the org filter to the employee
+// org, so grouping by the fact's project-org columns is safe. The app sends the 12-month window (monthWindow).
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_calendar[year_month],
+    dim_calendar[year_month_number],
+    ROLLUPADDISSUBTOTAL (
+        fact_profitability_metrics[project_L1], "IsL1Total",
+        fact_profitability_metrics[project_L2], "IsL2Total",
+        fact_profitability_metrics[project_L3], "IsL3Total"
+    ),
+    /* @filters */
+    "FTE", [Allocated FTE (Last Week)_app]
+)
+ORDER BY dim_calendar[year_month_number], [FTE] DESC

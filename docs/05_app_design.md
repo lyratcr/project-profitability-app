@@ -46,11 +46,11 @@
 
 ### P3 · FTE Overview (`/fte`)
 **Purpose:** how the people are allocated.
-- **KPI cards:** `[Allocated FTE (Last Week)_app]` with `[Allocated FTE MoM %_app]`.
-- **Allocated FTE by customer / project / project L1:** how many people each one really uses. One person split between two projects counts 0.5 in each.
-- **Matrix:** project L1 (rows) × month (columns) of `[Allocated FTE (Last Week)_app]`.
-- **People detail:** for a selected project, each person's `[Time Allocation %_app]`.
-- *Pending decision:* allocation FTE (current; total = headcount) vs capacity FTE (hours ÷ 40).
+- **FTE = allocation FTE** (Ion with Adan, 2026-11-04, #6): each person counts 1, split across projects by their share of the week's hours, in the last Sunday–Saturday week with hours. Not hours ÷ 40: people work night and special shifts.
+- **KPI cards:** `[Allocated FTE (Last Week)_app]` with `[Allocated FTE MoM %_app]`, next to `[Headcount (Last Week)_app]`.
+- **Allocated FTE by customer / project:** top 15 customers by FTE, with people for contrast. One person split between two projects counts 0.5 in each.
+- **Matrix:** project L1 > L2 > L3 (rows) × last 12 months (columns) of `[Allocated FTE (Last Week)_app]`.
+- **People detail:** with a customer or project selected (Ion, 2026-11-04), each person's hours, `[Time Allocation %_app]` and last-week FTE.
 
 ### P4 · Intercompany & Cross-Charge (`/flows`)
 **Purpose:** hours that cross countries or areas. Replaces the "Analysis Type" field parameter.

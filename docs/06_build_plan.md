@@ -64,7 +64,10 @@
   - `describeMonthComparison` (MoM wording) in `lib/filters.ts`; P1 uses `numberCell` and it too.
   - Checks: 294 unit tests, lint, build; `validate:visual` 4/4 (trend and country, with and without L1 = BPO); every query run on Fabric first. Checked in Ion's Chrome (dark, desktop): October 2026 1,561 / +1.2% / 1,634 / 6.1%, Costa Rica 66.6%; L1 = BPO 992 / 1,041, Costa Rica 75.4%; same as DAX. Mobile not verified (#16).
   - Merged (PR #14) and deployed from `main` @ `d665eb4` on 2026-11-04; checked live, same numbers as DAX.
-- [ ] 3.3 P3 FTE Overview
+- [x] 3.3 P3 FTE Overview
+  - 2026-11-04: page `#/fte` (`components/fte-page.component.tsx`, queries in `queries/fte/`). FTE = allocation FTE (#6 closed: Ion with Adan, the `Operational FTE % (Last Week)` logic; not hours ÷ 40, people work night and special shifts). KPI cards: allocated FTE with MoM next to last-week headcount. FTE by customer and project: top 15 customers by FTE with projects, FTE vs people. Matrix: project org L1 > L2 > L3 × the last 12 months, columns 120 px wide so month headers stay readable (`HierarchyMatrix` `valueWidth`; the grid ignores `minWidth`). People detail (names, country, hours, time allocation, last-week FTE) only with a customer or project selected (Ion); grouped by UKG id, id not shown; no rates or costs.
+  - Model: `Allocated FTE (Last Week)_app` (Sunday–Saturday week, org filter applied, the week's people) and `Time Allocation %_app` (denominator = all the person's hours in the period) updated after Ion's approval (`08_app_measures.md` § 10); applied with the desktop `powerbi-modeling-mcp` after the project server hung. TMDL re-exported.
+  - Checks: 303 unit tests, lint, build; every query run on Fabric first (P3 has no Vega charts, so `validate:visual` doesn't apply). Checked in Ion's Chrome (dark, desktop): October 2026 1,561.0 FTE / +1.2% / 1,561 headcount; Parallon 494.6 FTE / 497 people, Auxis 153.5 / 198; monthly totals = P2 headcount (1,393 … 1,561); PAR-401-01 people detail 108 people, the one split person 224 h / 63.6% / 0.60 FTE; same as DAX. Mobile not verified (#16).
 - [ ] 3.4 P4 Intercompany & Cross-Charge (February 2026 = 223,641 h in both views)
 - [ ] 3.5 P5 Revenue & Capacity Yield
 
