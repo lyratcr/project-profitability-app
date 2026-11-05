@@ -46,8 +46,14 @@ describe("P4 flows query factories", () => {
         const { query, column } = flowsTree({ analysis: "cross", level: 2, filters, picks: ["BPO", 'O"Brien'] });
         expect(column).toBe("fact_profitability_metrics[project_customer]");
         expect(code(query)).not.toMatch(/@LEVEL@|@filters/);
-        expect(query).toContain('KEEPFILTERS ( TREATAS ( { "BPO" }, fact_profitability_metrics[employee_L1] ) )');
+        expect(query).toContain('KEEPFILTERS ( TREATAS ( { "BPO" }, dim_hierarchy_master[L1] ) )');
         expect(query).toContain('KEEPFILTERS ( TREATAS ( { "O""Brien" }, fact_profitability_metrics[project_L1] ) )');
+    });
+
+    it("groups the cross-charge origin by the master hierarchy, which the employee-org measure maps", () => {
+        const { query, column } = flowsTree({ analysis: "cross", level: 0, filters });
+        expect(column).toBe("dim_hierarchy_master[L1]");
+        expect(code(query)).not.toContain("fact_profitability_metrics[employee_L1]");
     });
 
     it("rejects a tree level that doesn't match its picks", () => {
