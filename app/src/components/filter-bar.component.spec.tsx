@@ -40,7 +40,9 @@ function renderBar(pageId: string, overrides: Partial<Parameters<typeof FilterBa
 describe("FilterBar", () => {
     it("shows period, country, customer and project on Effort", () => {
         renderBar("effort");
-        expect(screen.getByLabelText("Period")).toHaveValue("month");
+        // Period kind is an Auxis chip group: the selected chip is pressed.
+        expect(screen.getByRole("button", { name: "Month", pressed: true })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Quarter", pressed: false })).toBeInTheDocument();
         expect(screen.getByLabelText("Month")).toHaveValue("m:2026-10");
         expect(screen.getByLabelText("Employee country")).toBeInTheDocument();
         expect(screen.getByLabelText("Customer")).toBeInTheDocument();
@@ -91,7 +93,7 @@ describe("FilterBar", () => {
 
     it("switches the period kind to the latest complete quarter", () => {
         const onChange = renderBar("effort");
-        fireEvent.change(screen.getByLabelText("Period"), { target: { value: "quarter" } });
+        fireEvent.click(screen.getByRole("button", { name: "Quarter" }));
         expect(onChange.mock.calls.at(-1)![0].period.token).toBe("q:2026-Q3");
     });
 

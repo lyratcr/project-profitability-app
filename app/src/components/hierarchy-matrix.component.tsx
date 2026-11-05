@@ -1,4 +1,4 @@
-import { useMemo, type ReactElement } from "react";
+import { useMemo, type ReactElement, type ReactNode } from "react";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { DataGrid, type GridColumnDef, type Row } from "@microsoft/fabric-datagrid";
 import { formatValue, type DataTable } from "@microsoft/fabric-visuals-core";
@@ -24,15 +24,47 @@ interface HierarchyMatrixProps {
      * Without it the grid fits every column into the container (and ignores minWidth).
      */
     valueWidth?: number;
+    /** No frame or header: the caller's card (e.g. AxCard) is the frame and carries the title. */
+    chromeless?: boolean;
+    /**
+     * Value columns (0-based, in `spec.values` order) that hold a 0–1 share: the cell adds an in-cell bar
+     * (design-system DataTable `.ax-bar`). Display only; the share itself comes from the model.
+     */
+    barColumns?: readonly number[];
 }
 
 const show = (value: unknown, format?: string) => (value === null || value === undefined ? "" : String(formatValue(value, format)));
+
+/** A formatted share with an in-cell bar; the bar length is the model's 0–1 share, clamped for display. */
+function ShareCell({ value, format }: { value: unknown; format?: string }): ReactNode {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "";
+    const width = `${Math.min(100, Math.max(0, value * 100))}%`;
+    return (
+        <span className="flex w-full items-center justify-end gap-2">
+            <span className="ax-bar flex-1" aria-hidden="true">
+                <span style={{ width }} />
+            </span>
+            <span className="tabular-nums">{show(value, format)}</span>
+        </span>
+    );
+}
 
 /**
  * Matrix with expandable rows (build plan 2.4): levels as a tree, an optional pivot (e.g. months) as
  * columns, and the model's grand total in the totals row. Every number comes from the query.
  */
-export function HierarchyMatrix({ table, spec, rowHeader, format, title, subtitle, expandFirstLevel = false, valueWidth }: HierarchyMatrixProps): ReactElement {
+export function HierarchyMatrix({
+    table,
+    spec,
+    rowHeader,
+    format,
+    title,
+    subtitle,
+    expandFirstLevel = false,
+    valueWidth,
+    chromeless = false,
+    barColumns = [],
+}: HierarchyMatrixProps): ReactElement {
     const { theme } = useThemeContext();
     const matrix = useMemo(() => buildMatrix(table, spec), [table, spec]);
 
@@ -45,7 +77,8 @@ export function HierarchyMatrix({ table, spec, rowHeader, format, title, subtitl
                   header: c.header,
                   numericStyling: true,
                   ...(valueWidth !== undefined ? { width: valueWidth, minWidth: valueWidth } : {}),
-                  cellRenderer: (value) => show(value, formatOf(i - 1)),
+                  cellRenderer: (value) =>
+                      barColumns.includes(i - 1) ? <ShareCell value={value} format={formatOf(i - 1)} /> : show(value, formatOf(i - 1)),
               },
     );
 
@@ -76,7 +109,7 @@ export function HierarchyMatrix({ table, spec, rowHeader, format, title, subtitl
             grandTotals={totals ? { position: "bottom", data: totals } : undefined}
             capabilities={{ disableFiltering: true }}
             theme={theme}
-            header={{ title, subtitle }}
+            {...(chromeless ? { chromeless: true } : { header: { title, subtitle } })}
         />
     );
 }

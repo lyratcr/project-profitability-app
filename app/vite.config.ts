@@ -53,6 +53,12 @@ export default defineConfig({
             '@': resolve(projectRoot, 'src'),
         }
     },
+    server: {
+        fs: {
+            // The Auxis design system lives next to the app (../design-system): tokens, component CSS and logos.
+            allow: [resolve(projectRoot, '..')],
+        },
+    },
     optimizeDeps: {
         include: ['@microsoft/fabric-visuals', '@microsoft/fabric-datagrid', '@microsoft/fabric-visuals-core'],
     },

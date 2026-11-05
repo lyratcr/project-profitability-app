@@ -1,3 +1,5 @@
+import { formatValue } from "@microsoft/fabric-visuals-core";
+
 /**
  * Presentation of a change value (e.g. a MoM % measure) that the model already computed.
  * Nothing here calculates a KPI: it only decides direction, wording and color.
@@ -30,4 +32,15 @@ export function presentChange(value: number | null, favorable: Favorable): Chang
     const tone: ChangeTone =
         favorable === "neither" ? "neutral" : (direction === "up") === (favorable === "increase") ? "positive" : "negative";
     return { tone, color: COLORS[tone], icon: direction === "up" ? "▲" : "▼", direction };
+}
+
+const MINUS = "−";
+
+/**
+ * A change value with its sign: "+1.5%" or the true minus "−1.0%" (design system: never rely on colour
+ * alone). Formats the absolute value with the measure's format, then adds the sign.
+ */
+export function signedChange(value: number, format?: string): string {
+    const text = String(formatValue(Math.abs(value), format));
+    return value > 0 ? `+${text}` : value < 0 ? `${MINUS}${text}` : text;
 }

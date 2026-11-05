@@ -7,10 +7,12 @@
 /* These tokens are consumed directly as CSS variables, so emit them
    even when no Tailwind utility references them. */
 @theme static {
-  --color-brand:            #1f3a5f;  /* branded surfaces (ink navy) */
-  --color-brand-foreground: #1f4f86;  /* brand-colored content on standard surfaces */
-  --color-hover:            rgba(31, 58, 95, 0.05);  /* row/cell hover surface in DataGrid + visuals */
-  --color-emphasis-foreground: #111827;  /* page and visual titles, KPI values */
+  /* Every colour below points at an Auxis design-system token (../design-system/tokens.css), which switches
+     with data-theme on <html>; no hex values here. */
+  --color-brand:            var(--accent);       /* branded surfaces: Cyber Yellow, earned (active, selected) */
+  --color-brand-foreground: var(--accent-ink);   /* gold text on light grounds */
+  --color-hover:            var(--surface-sunken);  /* row/cell hover surface in DataGrid + visuals */
+  --color-emphasis-foreground: var(--ink);       /* page and visual titles, KPI values */
   --font-page-title: var(--font-heading);
   --font-page-subtitle: var(--font-base);
   --font-visual-title: var(--font-heading);
@@ -29,46 +31,46 @@
   --text-kpi-value: var(--text-600);
   --text-kpi-value--font-weight: var(--font-weight-bold);
 
-  /* Categorical data colors for charts (VegaVisual reads --color-data-1..10). Ink navy first, then
-     hues far apart; each >= 3.8:1 on the light card/page backgrounds. Dark versions in .dark. */
-  --color-data-1: #1f4f86;
-  --color-data-2: #1f8a7d;
-  --color-data-3: #b26b00;
-  --color-data-4: #7a4fa6;
-  --color-data-5: #c23b4f;
-  --color-data-6: #4d7d2a;
-  --color-data-7: #2b7bb9;
-  --color-data-8: #9a4b2a;
-  --color-data-9: #5c6570;
-  --color-data-10: #b0457f;
+  /* Categorical data colors for charts (VegaVisual reads --color-data-1..10): the Auxis series in order,
+     chart-1 (gold, the main measure) to chart-6, then the remaining brand scale steps. */
+  --color-data-1: var(--chart-1);
+  --color-data-2: var(--chart-2);
+  --color-data-3: var(--chart-3);
+  --color-data-4: var(--chart-4);
+  --color-data-5: var(--chart-5);
+  --color-data-6: var(--chart-6);
+  --color-data-7: var(--yellow-500);
+  --color-data-8: var(--blue-500);
+  --color-data-9: var(--grey-300);
+  --color-data-10: var(--yellow-100);
 }
 
 @theme {
   /* Color tokens — light theme
      Usage: bg-*, text-*, border-* (e.g. bg-brand text-on-brand). */
-  --color-background: #f6f5f1;                                       /* page background (warm paper) */
-  --color-foreground: #1d2433;                                       /* default text */
+  --color-background: var(--bg-base);           /* page ground (the canvas gradient is on body) */
+  --color-foreground: var(--ink);               /* default text */
 
-  --color-card: #ffffff;                                             /* card and elevated surfaces */
+  --color-card: var(--surface);                 /* card and elevated surfaces */
 
-  --color-on-brand: #ffffff;                                         /* text/icons on brand surfaces */
+  --color-on-brand: var(--on-accent);           /* text/icons on brand (gold) surfaces */
 
-  --color-muted: #ecebe5;                                            /* subtle backgrounds */
-  --color-muted-foreground: #5d6470;                                 /* subdued text */
+  --color-muted: var(--surface-sunken);         /* wells, table headers, skeletons */
+  --color-muted-foreground: var(--ink-muted);   /* labels, subtitles, axes */
 
-  --color-accent: #efeee8;                                           /* accent highlights */
+  --color-accent: var(--surface-sunken);        /* subtle highlights */
 
-  --color-destructive: #b10e1c;                                      /* errors & destructive actions */
-  --color-destructive-foreground: #ffffff;
+  --color-destructive: var(--negative-ink);     /* errors & destructive actions */
+  --color-destructive-foreground: var(--surface);
 
-  --color-success: #0e700e;                                          /* success surfaces */
-  --color-success-foreground: #ffffff;
+  --color-success: var(--positive-ink);         /* success text */
+  --color-success-foreground: var(--surface);
 
-  --color-border: #dcd9cf;                                           /* default border */
-  --color-ring: #2f6db3;                                             /* focus rings */
+  --color-border: var(--line);                  /* hairlines inside cards */
+  --color-ring: var(--focus-ring);              /* focus rings */
 
-  --color-warning: #8a5a00;                                          /* stale-data and caution text */
-  --color-warning-surface: #fdf3dc;                                  /* stale-data banner background */
+  --color-warning: var(--accent-ink);           /* stale-data and caution text */
+  --color-warning-surface: var(--glow-gold);    /* stale-data banner background */
 
   --shadow-container-2:  var(--shadow-xs);
   --shadow-container-4:  var(--shadow-sm);
@@ -127,12 +129,10 @@
 
   /* Font Families
      Usage: font-* (e.g. font-heading, font-base) */
-  --font-heading: 'Source Serif 4', Georgia, 'Times New Roman', serif;          /* headings, titles, display text */
-  --font-base: 'IBM Plex Sans', 'Segoe UI', -apple-system, BlinkMacSystemFont,   /* body text, labels, UI controls */
-    'Helvetica Neue', sans-serif;
-  --font-monospace: 'IBM Plex Mono', Consolas, 'Courier New', monospace;         /* code, pre-formatted text */
-  --font-numeric: 'IBM Plex Sans', 'Segoe UI', -apple-system,                    /* KPI values, numeric displays */
-    BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  --font-heading: var(--font-display);   /* Auxis display face (Poppins): page titles, card titles */
+  --font-base: var(--font-sans);         /* Auxis data face (Segoe UI): body, labels, controls */
+  --font-monospace: Consolas, 'Courier New', monospace;
+  --font-numeric: var(--font-sans);      /* KPI values and numbers, tabular figures */
 
   /* Icon Sizes — 100-based scale
      Usage: icon-size-* custom utility (e.g. icon-size-200) */
@@ -159,49 +159,8 @@
     --radius-scale: 0.75; /* precise, ledger-like corners */
   }
 
-  .dark {
-    /* Color tokens — dark theme */
-    --color-background: #14181f;
-    --color-foreground: #e6e8ec;
-
-    --color-card: #1b2029;
-
-    --color-on-brand: #ffffff;
-
-    --color-muted: #10141a;
-    --color-muted-foreground: #9aa3af;
-
-    --color-accent: #232a35;
-
-    --color-destructive: #dc626d;
-    --color-destructive-foreground: #ffffff;
-
-    --color-success: #54b054;
-    --color-success-foreground: #ffffff;
-
-    --color-border: #2e3644;
-    --color-ring: #8fb8ea;
-
-    --color-warning: #f2c46d;
-    --color-warning-surface: #2e2410;
-
-    --color-brand:            #2f5f99;
-    --color-brand-foreground: #8fb8ea;
-    --color-hover:            rgba(255, 255, 255, 0.06);
-    --color-emphasis-foreground: #f5f7fa;
-
-    /* Data colors, dark: each >= 6.8:1 on the dark card/page backgrounds. */
-    --color-data-1: #8fb8ea;
-    --color-data-2: #5fd3c2;
-    --color-data-3: #f2c46d;
-    --color-data-4: #c4a1ec;
-    --color-data-5: #f08a99;
-    --color-data-6: #9ccd74;
-    --color-data-7: #7cc0f0;
-    --color-data-8: #e09a72;
-    --color-data-9: #aab3bd;
-    --color-data-10: #eb9ac4;
-  }
+  /* Dark theme: the Auxis tokens switch on [data-theme="dark"] (set with .dark by hooks/use-theme.ts), and
+     every colour above points at them, so no overrides are needed here. */
 }
 
 @layer base {
@@ -227,4 +186,28 @@ html,
 body,
 #root {
   height: 100%;
+}
+
+/* Auxis canvas: the page gradient (bg-base -> bg-deep, gold glow top-left, blue glow bottom-right). */
+body {
+  background: var(--ax-page-gradient);
+  background-attachment: fixed;
+}
+
+/* Narrow Auxis dropdowns for short org codes (L1–L3); the design-system .ax-select keeps a 180px minimum. */
+.ax-select.app-select-narrow {
+  min-width: 96px;
+}
+
+/* Long customer and project names: cap the Auxis dropdown so the filter row wraps instead of stretching. */
+.ax-select {
+  max-width: 320px;
+}
+
+/* Neutral delta pill inside the spotlight card: the design-system pill takes surface-sunken, which in the light
+   theme is a pale band under the spotlight's light text (low contrast). Use a mid grey from the brand scale so
+   the pill reads in both themes; up/down pills keep their own spotlight tokens. */
+.ax-spotlight .ax-pill:not(.ax-pill-up):not(.ax-pill-down) {
+  background: var(--grey-500);
+  color: var(--ink);
 }

@@ -1,0 +1,28 @@
+<!-- @dsCard group="Data display" height=330 subtitle="Column + line visual, chart series tokens" -->
+<!doctype html><html data-theme="light"><head><link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css"><meta charset="utf-8"></head><body>
+<div class="ax-page">
+<section class="ax-card">
+  <div class="ax-card-head">
+    <div><h3 class="ax-card-title">Revenue vs budget</h3><p class="ax-card-sub">Monthly · USD thousands</p></div>
+    <div class="ax-legend"><span><i style="background:var(--chart-1)"></i>Actual</span><span><i style="background:var(--chart-2)"></i>Budget</span></div>
+  </div>
+  <svg class="ax-chart" id="c" viewBox="0 0 640 180" width="100%" height="180" role="img" aria-label="Monthly actual revenue columns against a budget line"></svg>
+</section>
+</div>
+<script>
+(function(){
+  var a=[820,860,910,880,960,1010,990,1060,1120], b=[850,870,890,910,940,970,1000,1030,1060];
+  var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'], s=document.getElementById('c'), NS='http://www.w3.org/2000/svg';
+  var L=40,T=8,W=590,H=150,max=1200, x=function(i){return L+i*(W/a.length)}, y=function(v){return T+H-(v/max)*H};
+  function el(n,at){var e=document.createElementNS(NS,n);for(var k in at)e.setAttribute(k,at[k]);s.appendChild(e);return e}
+  var d=el('defs',{}); var g=document.createElementNS(NS,'linearGradient'); g.setAttribute('id','gold'); g.setAttribute('x1','0');g.setAttribute('y1','0');g.setAttribute('x2','0');g.setAttribute('y2','1');
+  [['0%','var(--yellow-100)'],['100%','var(--yellow-300)']].forEach(function(p){var st=document.createElementNS(NS,'stop');st.setAttribute('offset',p[0]);st.style.stopColor=p[1];g.appendChild(st)}); d.appendChild(g);
+  [0,400,800,1200].forEach(function(v){el('line',{x1:L,x2:L+W,y1:y(v),y2:y(v),'class':'ax-grid'});var t=el('text',{x:L-8,y:y(v)+3,'text-anchor':'end'});t.textContent=v?v/1000+'M':'0'});
+  var bw=(W/a.length)*0.46;
+  a.forEach(function(v,i){var cx=x(i)+W/a.length/2; el('rect',{x:cx-bw/2,y:y(v),width:bw,height:y(0)-y(v),rx:4,fill:'url(#gold)'}); var t=el('text',{x:cx,y:T+H+16,'text-anchor':'middle'});t.textContent=m[i]});
+  var p=b.map(function(v,i){return (i?'L':'M')+(x(i)+W/a.length/2)+' '+y(v)}).join(' ');
+  el('path',{d:p,fill:'none',stroke:'var(--chart-2)','stroke-width':2.5,'stroke-linecap':'round','stroke-linejoin':'round'});
+  b.forEach(function(v,i){el('circle',{cx:x(i)+W/a.length/2,cy:y(v),r:3.5,fill:'var(--surface)',stroke:'var(--chart-2)','stroke-width':2})});
+})();
+</script>
+</body></html>

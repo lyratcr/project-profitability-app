@@ -41,10 +41,12 @@ describe("AppHeader", () => {
 
     it("renders a tab per page and marks the current one", () => {
         renderHeader(5);
-        const links = screen.getAllByRole("link");
-        expect(links).toHaveLength(6);
-        expect(screen.getByRole("link", { current: "page" })).toHaveTextContent("Projects");
-        expect(screen.getByRole("link", { name: "Effort" })).toHaveAttribute("href", "#/effort");
+        // Auxis PageTabs: links with the tab role; the active one is selected and the current page.
+        const tabs = screen.getAllByRole("tab");
+        expect(tabs).toHaveLength(6);
+        expect(screen.getByRole("tab", { current: "page" })).toHaveTextContent("Projects");
+        expect(screen.getByRole("tab", { selected: true })).toHaveTextContent("Projects");
+        expect(screen.getByRole("tab", { name: "Effort" })).toHaveAttribute("href", "#/effort");
     });
 
     it("shows a loading placeholder for the data dates", () => {
@@ -91,6 +93,6 @@ describe("AppHeader", () => {
                 <AppHeader current={PAGES[0]} params={new URLSearchParams({ period: "m:2026-09", country: "Colombia" })} today={wednesday} />
             </ThemeContext.Provider>,
         );
-        expect(screen.getByRole("link", { name: "Yield" })).toHaveAttribute("href", "#/yield?period=m%3A2026-09&country=Colombia");
+        expect(screen.getByRole("tab", { name: "Yield" })).toHaveAttribute("href", "#/yield?period=m%3A2026-09&country=Colombia");
     });
 });

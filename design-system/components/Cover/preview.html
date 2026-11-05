@@ -1,0 +1,47 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html data-theme="light"><head><link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css"><meta charset="utf-8">
+<style>
+  html, body { margin: 0; height: 288px; }
+  .cv { position: relative; width: 960px; height: 288px; overflow: hidden; background: var(--ax-page-gradient); }
+  .cv svg { position: absolute; left: 0; top: 0; }
+  .slab { fill: var(--grey-700); }
+  [data-theme="dark"] .slab { fill: var(--grey-500); }
+  .gold { fill: var(--yellow-300); }
+  .cross { fill: var(--yellow-100); }
+  .sky { fill: var(--blue-300); }
+  .deep { fill: var(--blue-700); }
+  .dot { fill: var(--yellow-300); opacity: .55; }
+  .blk { rx: var(--radius-xs); }
+  .txt { position: absolute; left: 48px; bottom: 40px; max-width: 440px; }
+  .nm { font-family: var(--font-display); font-weight: 600; font-size: 64px; line-height: .95; letter-spacing: -1.5px; color: var(--ink); margin: 0; }
+  .tg { font-family: var(--font-sans); font-size: 14px; line-height: 20px; color: var(--ink-muted); margin: 16px 0 0; }
+</style></head>
+<body>
+<div class="cv">
+  <!--
+    blocks: grey-700 slab 240×192, yellow-300 240×192, yellow-100 crossing 80×96, blue-300 128×80, blue-700 64×64 (multiples of space-4/space-6); radius-xs corners
+    arrangement: charcoal and gold slabs cross like the logo's "x", their overlap lifted to yellow-100 the way the logomark lightens where grey meets yellow; blue satellites at the foot, slabs bleeding top and right
+    pattern: a dot grid at space-6 pitch on the charcoal slab, the precise data grid of a dashboard canvas ("precise, technical → dot grid"), in yellow-300
+    scales: space-4 16, space-6 32, space-7 48; radius-xs 4
+  -->
+  <svg width="960" height="288" viewBox="0 0 960 288" aria-hidden="true">
+    <rect class="slab blk" x="560" y="-8" width="240" height="200"/>
+    <g>
+      <circle class="dot" cx="584" cy="24" r="2.5"/><circle class="dot" cx="616" cy="24" r="2.5"/><circle class="dot" cx="648" cy="24" r="2.5"/><circle class="dot" cx="680" cy="24" r="2.5"/><circle class="dot" cx="712" cy="24" r="2.5"/>
+      <circle class="dot" cx="584" cy="56" r="2.5"/><circle class="dot" cx="616" cy="56" r="2.5"/><circle class="dot" cx="648" cy="56" r="2.5"/><circle class="dot" cx="680" cy="56" r="2.5"/><circle class="dot" cx="712" cy="56" r="2.5"/>
+      <circle class="dot" cx="584" cy="88" r="2.5"/><circle class="dot" cx="616" cy="88" r="2.5"/><circle class="dot" cx="648" cy="88" r="2.5"/><circle class="dot" cx="680" cy="88" r="2.5"/>
+      <circle class="dot" cx="584" cy="120" r="2.5"/><circle class="dot" cx="616" cy="120" r="2.5"/><circle class="dot" cx="648" cy="120" r="2.5"/><circle class="dot" cx="680" cy="120" r="2.5"/>
+      <circle class="dot" cx="584" cy="152" r="2.5"/><circle class="dot" cx="616" cy="152" r="2.5"/><circle class="dot" cx="648" cy="152" r="2.5"/><circle class="dot" cx="680" cy="152" r="2.5"/>
+    </g>
+    <rect class="gold blk" x="720" y="96" width="248" height="200"/>
+    <rect class="cross" x="720" y="96" width="80" height="96"/>
+    <rect class="sky blk" x="496" y="208" width="128" height="88"/>
+    <rect class="deep blk" x="640" y="224" width="64" height="72"/>
+  </svg>
+  <div class="txt">
+    <h1 class="nm">Auxis<br>Dashboards</h1>
+    <p class="tg">Gold-on-charcoal design system for Power BI and Fabric apps.</p>
+  </div>
+</div>
+</body></html>

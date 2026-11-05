@@ -27,8 +27,10 @@ export function useAppTheme() {
     });
 
     useEffect(() => {
-        // Sync the .dark class on <html> for Tailwind dark mode
+        // Sync the .dark class on <html> for Tailwind dark mode, and data-theme for the Auxis tokens
+        // (design-system/tokens.css switches every token on [data-theme="dark"]).
         document.documentElement.classList.toggle("dark", isDark);
+        document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
     }, [isDark]);
 
     useEffect(() => {

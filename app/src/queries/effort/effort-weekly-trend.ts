@@ -32,6 +32,9 @@ export function effortWeeklyTrend(params: EffortParams = {}) {
     } as const;
 }
 
+/** Synerion pay categories, main first (the colour order of the chart). */
+export const PAY_CATEGORIES = ["Regular Time", "Overtime", "Holiday", "Time Off"] as const;
+
 /**
  * The shared stacked trend with two changes. Weeks keep the query's order (ORDER BY start_of_week_sun,
  * `sort: null`): VegaVisual's stacked-bar overlay orders the x labels alphabetically and ignores a sort
@@ -40,9 +43,13 @@ export function effortWeeklyTrend(params: EffortParams = {}) {
  */
 function weeklySpec(): VisualizationSpec {
     const spec = trendSpec({ kind: "stacked", x: "Week", xSort: "WeekKey", y: "Hours", color: "PayCategory" }) as VisualizationSpec & {
-        encoding: { x: Record<string, unknown> };
+        encoding: { x: Record<string, unknown>; color: Record<string, unknown> };
     };
+    // Transparent ground: the Auxis card (ax-card gradient) is the only surface behind the chart.
+    (spec as Record<string, unknown>).background = "transparent";
     spec.encoding.x.sort = null;
+    // Auxis series order: the main measure (Regular Time) takes chart-1 (gold), then the others.
+    spec.encoding.color.scale = { domain: [...PAY_CATEGORIES] };
     spec.encoding.x.axis = { labelAngle: -45, labelLimit: 0 };
     return spec;
 }

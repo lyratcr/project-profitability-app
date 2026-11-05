@@ -12,6 +12,7 @@
 
 ## 2. Global elements
 
+- **Look and feel:** the Auxis Dashboards design system in `design-system/` (read its `CLAUDE.md` and `README.md`): tokens only, `ax-` components (AppShell, PageTabs, Slicer, KpiCard, ChartCard, DataTable, StatusBadge), one spotlight KPI and one accent bar per page, light and dark.
 - **Top bar:** app name, page tabs, "Data through" from `[Last Synerion Date_app]` (hours) and `[Last Revenue Date_app]` (revenue), and model refresh from `[Last Refresh Date]`. If the Synerion date is earlier than the Saturday that ends the last complete Sunday–Saturday week, show a warning: "Hours are not current: last day loaded is …".
 - **Global filters → DAX:**
 
