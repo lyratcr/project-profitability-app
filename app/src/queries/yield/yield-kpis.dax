@@ -1,0 +1,13 @@
+// P5 KPI cards for one month (the page is monthly by design): actual revenue with MoM, project-org allocation FTE,
+// Adan's revenue per FTE with MoM, and annualized revenue per FTE (Ion, 2026-11-05; #8 closed). Under an org
+// filter, revenue follows the financial org and FTE the project org: both describe the selected org's projects.
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "Revenue", [Actual Revenue_app],
+    "RevenueMoM", [Actual Revenue MoM %_app],
+    "FTE", [Allocated FTE (Last Week, Project Org)_app],
+    "RevenuePerFTE", [Revenue per FTE_app],
+    "RevenuePerFTEMoM", [Revenue per FTE MoM %_app],
+    "Annualized", [Annualized Revenue per FTE_app]
+)

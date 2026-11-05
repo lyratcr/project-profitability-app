@@ -1,0 +1,15 @@
+// P5 customers whose actual revenue dropped most vs the previous month (bottom 10 by the change). Ranked with a
+// TOPN in this query until the customer rank measures exist (open item #1).
+EVALUATE
+TOPN (
+    10,
+    SUMMARIZECOLUMNS (
+        fact_revenue_metrics[financial_customer],
+        /* @filters */
+        "Revenue", [Actual Revenue_app],
+        "LastMonth", [Actual Revenue Last Month_app],
+        "Change", [Actual Revenue MoM $_app]
+    ),
+    [Change], ASC
+)
+ORDER BY [Change] ASC

@@ -1,0 +1,18 @@
+// P5 by organization: master hierarchy L1 > L2 > L3 with the model's subtotals. Revenue maps it to the financial
+// org, FTE to the project org (#21: project-org combos missing from the hierarchy lose their FTE here).
+EVALUATE
+SUMMARIZECOLUMNS (
+    ROLLUPADDISSUBTOTAL (
+        dim_hierarchy_master[L1], "IsL1Total",
+        dim_hierarchy_master[L2], "IsL2Total",
+        dim_hierarchy_master[L3], "IsL3Total"
+    ),
+    /* @filters */
+    "Revenue", [Actual Revenue_app],
+    "FTE", [Allocated FTE (Last Week, Project Org)_app],
+    "RevenuePerFTE", [Revenue per FTE_app],
+    "Annualized", [Annualized Revenue per FTE_app],
+    "RevenuePerFTEMoM", [Revenue per FTE MoM %_app]
+)
+// Largest first: a subtotal always comes before its children, so the matrix keeps this order.
+ORDER BY [Revenue] DESC

@@ -1,0 +1,16 @@
+// P5 customers whose actual revenue grew most vs the previous month (top 10 by the change). The customer rank
+// measures wait for open item #1, so the ranking is a TOPN in this query over the model's change measure.
+// Customer is the revenue fact's own column (no dim_project until #1 is fixed).
+EVALUATE
+TOPN (
+    10,
+    SUMMARIZECOLUMNS (
+        fact_revenue_metrics[financial_customer],
+        /* @filters */
+        "Revenue", [Actual Revenue_app],
+        "LastMonth", [Actual Revenue Last Month_app],
+        "Change", [Actual Revenue MoM $_app]
+    ),
+    [Change], DESC
+)
+ORDER BY [Change] DESC

@@ -814,3 +814,69 @@ IF (
     )
 )
 ```
+
+## 11. Revenue per FTE on project-org allocation FTE (open item #8, P5): APPLIED 2026-11-05
+
+Ion (2026-11-05, with Adan): FTE = `Operational FTE (Last Week)` (last week, not a month average: closes #8); revenue per FTE = Adan's `Revenue per FTE` (revenue ÷ that FTE); annualized = Adan's `Annualized Revenue per FTE` (× 12), "very important for Adan". The `_app` versions keep those formulas with two changes Ion approved: the Sunday–Saturday week (#22, like `Allocated FTE (Last Week)_app`) and, with an L1/L2/L3 selected, the FTE of the selected org's **projects** (project org), so revenue (financial org of the project) and FTE measure the same projects. The originals are untouched. Applied after Ion's approval of the DAX with the desktop `powerbi-modeling-mcp` (`State = Ready`); re-run against the model measures with identical values (October 2026: all 1,561.0 / $3,928.11 / $47,137.27; L1 = BPO 980.4 / $3,426.88 / MoM −2.0196%).
+
+| Measure | Action | Folder | Format |
+|---|---|---|---|
+| **Allocated FTE (Last Week, Project Org)_app** | NEW | `_app\People` | `#,0.0` |
+| **Revenue per FTE_app** | UPDATE | `_app\Yield` | `\$#,0;(\$#,0);\$#,0` |
+| **Annualized Revenue per FTE_app** | UPDATE | `_app\Yield` | `\$#,0;(\$#,0);\$#,0` |
+
+`Revenue per FTE MoM %_app` follows automatically. Nothing else uses these.
+
+### Validation (query-scoped, 2026-11-05)
+
+| Context | Revenue | FTE (project org) | Revenue per FTE | Annualized | MoM | Original (Monday week, employee org) |
+|---|---|---|---|---|---|---|
+| October 2026, all | $6,131,773 | 1,561 (= `Allocated FTE (Last Week)_app`) | $3,928 = 6,131,773 ÷ 1,561 | $47,137 | +0.48% | $3,926 / $47,107 |
+| October 2026, L1 = BPO | $3,359,710 (= SUM `actual_revenue_usd`, Actual, `financial_L1` = BPO) | 980.4 (= independent per-person sum, Oct 25–31, combos in the hierarchy) | $3,427 | $41,123 | −2.02% (Sep $3,498) | $3,387 / $40,642 |
+
+Caveat (#21): with the fact's own `project_L1` = BPO the FTE is 991.4; the 11.0 FTE gap is BPO / RCM / POD5, a project-org combo missing from `dim_hierarchy_master`. Until gold adds the project org to the hierarchy, project-org FTE under a filter misses those people (BPO revenue per FTE $3,427 instead of $3,389).
+
+### DAX
+
+#### Allocated FTE (Last Week, Project Org)_app (NEW)
+
+Description: `ADDED 2026-11-05 (Fabric app): Allocation FTE in the last Sunday–Saturday week with hours, mapping the master hierarchy to the project org: the share of people's time on the selected org's projects. Without an org filter it equals Allocated FTE (Last Week)_app.`
+
+```dax
+VAR _last = CALCULATE ( MAX ( fact_profitability_metrics[transaction_date] ), ALLEXCEPT ( fact_profitability_metrics, dim_calendar ) )
+VAR _start = _last - WEEKDAY ( _last, 1 ) + 1
+RETURN
+    IF (
+        ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+        CALCULATE (
+            SUMX (
+                CALCULATETABLE ( VALUES ( fact_profitability_metrics[ukg_employee_id] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) ),
+                VAR _emp = fact_profitability_metrics[ukg_employee_id]
+                VAR _ctx = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+                VAR _tot = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( fact_profitability_metrics ), fact_profitability_metrics[ukg_employee_id] = _emp, DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+                RETURN DIVIDE ( _ctx, _tot )
+            ),
+            TREATAS (
+                SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+                fact_profitability_metrics[project_L1], fact_profitability_metrics[project_L2], fact_profitability_metrics[project_L3]
+            )
+        ),
+        [Allocated FTE (Last Week)_app]
+    )
+```
+
+#### Revenue per FTE_app (UPDATE)
+
+Description: `FIXED 2026-11-05 (Fabric app): Adan's Revenue per FTE (actual revenue ÷ last-week allocation FTE) on the Sunday–Saturday week and, with an org filter, the project org's FTE. Monthly context only.`
+
+```dax
+DIVIDE ( [Actual Revenue_app], [Allocated FTE (Last Week, Project Org)_app], 0 )
+```
+
+#### Annualized Revenue per FTE_app (UPDATE)
+
+Description: `FIXED 2026-11-05 (Fabric app): Adan's Annualized Revenue per FTE (monthly revenue per FTE × 12) on the Sunday–Saturday week and, with an org filter, the project org's FTE. Valid for a single month only.`
+
+```dax
+DIVIDE ( [Actual Revenue_app], [Allocated FTE (Last Week, Project Org)_app], BLANK () ) * 12
+```
