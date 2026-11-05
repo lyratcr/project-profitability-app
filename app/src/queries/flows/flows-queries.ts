@@ -45,7 +45,9 @@ export const FLOW_ANALYSES: Record<FlowAnalysis, { label: string; flow: string; 
         label: "Cross charge",
         flow: "fact_profitability_metrics[cross_charge_flow]",
         levels: [
-            { id: "origin", label: "Employee L1", column: "fact_profitability_metrics[employee_L1]" },
+            // The master hierarchy, not fact[employee_L1]: the employee-org measure's TREATAS replaces a filter on the
+            // fact's employee_L1, so under an org filter every L1 showed the org's total (fix 2026-11-04).
+            { id: "origin", label: "Employee L1", column: "dim_hierarchy_master[L1]" },
             { id: "destination", label: "Project L1", column: "fact_profitability_metrics[project_L1]" },
             { id: "customer", label: "Customer", column: "fact_profitability_metrics[project_customer]" },
             { id: "project", label: "Project", column: "fact_profitability_metrics[project_name]" },
