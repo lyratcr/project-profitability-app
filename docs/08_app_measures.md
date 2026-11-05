@@ -728,3 +728,89 @@ Description: `ADDED 2026-11-04 (Fabric app): Change in last-week headcount vs th
 VAR _lm = CALCULATE ( [Headcount (Last Week)_app], DATEADD ( dim_calendar[date], -1, MONTH ) )
 RETURN DIVIDE ( [Headcount (Last Week)_app] - _lm, _lm )
 ```
+
+## 10. Allocated FTE and time allocation (open items #6, #22, P3): APPLIED 2026-11-04
+
+Ion (2026-11-04): FTE is **allocation FTE**, the logic of the original `Operational FTE % (Last Week)`, agreed with Adan. Not hours ÷ 40: people work night shifts and special schedules. Each person counts 1, split across projects by their share of that week's hours. Closes #6.
+
+Validation of the originals (October 2026; independent check = per person, hours in the slice ÷ all their hours in Sun Oct 25 – Sat Oct 31, summed):
+
+| Context | `Operational FTE % (Last Week)` | `Operational FTE (Last Week)` = `Allocated FTE (Last Week)_app` | Independent |
+|---|---|---|---|
+| All orgs | 1,562 | 1,562 | 1,561 |
+| L1 = BPO | **1,562** (ignores the org filter: the SUMX is a variable, evaluated before the CALCULATE with TREATAS) | 992 | 992 |
+| Project PAR-401-01 | 101.2 | 101.2 | 101.2 |
+
+Both originals find the week with `year_week` (Monday ISO, #22: October counts Oct 26 – Nov 1). The person-level `FTE Time Allocation %` (behind `Time Allocation %_app`) only removes `dim_project` and master-hierarchy filters from its denominator, so with the app's project filter on `fact_profitability_metrics[project_key]` (no `dim_project` until #1) every person shows 100% (PAR-401-01, October 2026: 108 of 108 at 100%; 4 actually split their time).
+
+`_app` changes (the originals are untouched; the Power BI report uses them), applied after Ion's approval (`State = Ready`) with the desktop `powerbi-modeling-mcp` (the project server hung 30 min and applied nothing). Re-run against the model measures with identical values: October 2026 1,561.0 / MoM 1.1666%; L1 = BPO 992.0; PAR-401-01 101.2; December 2025 1,326.0; time allocation of the top PAR-401-01 person 63.6364%.
+
+| Measure | Action | Folder | Format |
+|---|---|---|---|
+| **Allocated FTE (Last Week)_app** | UPDATE | `_app\People` | `#,0.0` |
+| **Time Allocation %_app** | UPDATE | `_app\People` | `0.0%` |
+
+`Allocated FTE MoM %_app` follows automatically (nothing else uses these two).
+
+- FTE: the same Sunday–Saturday week as `Headcount (Last Week)_app` (the week that holds the period's last day with hours); people iterated over that week (not the period, which missed 4 people in December 2025 who only logged Jan 1–3); employee-org mapping inside the CALCULATE so it applies.
+- Time allocation: denominator = the person's hours in the period with every non-calendar filter removed (`ALLEXCEPT`); blank above person level.
+
+### Validation (query-scoped, 2026-11-04)
+
+| Context | Proposed FTE | Headcount (Last Week)_app | Independent |
+|---|---|---|---|
+| October 2026, all orgs | 1,561 (MoM +1.17%) | 1,561 | 1,561 |
+| October 2026, L1 = BPO | 992 (MoM −1.20%) | 992 | 992 |
+| October 2026, PAR-401-01 | 101.2 (MoM −2.89%) | 104 | 101.2 |
+| Nov 2025 – Oct 2026, each month | equal to headcount every month (e.g. Dec 2025 1,326) | | |
+
+Time allocation, PAR-401-01, October 2026: top person 224 h on the project of 352 h in the month = 63.6% (original 100%); three more at 18.2% (32 / 176, 36 / 198, 32 / 176).
+
+### DAX
+
+#### Allocated FTE (Last Week)_app (UPDATE)
+
+Description: `FIXED 2026-11-04 (Fabric app): Allocation FTE in the Sunday–Saturday week that holds the last day with hours in the period: each person's hours in the context ÷ all their hours that week (a person totals 1); follows the master hierarchy through the employee org.`
+
+```dax
+VAR _last = CALCULATE ( MAX ( fact_profitability_metrics[transaction_date] ), ALLEXCEPT ( fact_profitability_metrics, dim_calendar ) )
+VAR _start = _last - WEEKDAY ( _last, 1 ) + 1
+RETURN
+    IF (
+        ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+        CALCULATE (
+            SUMX (
+                CALCULATETABLE ( VALUES ( fact_profitability_metrics[ukg_employee_id] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) ),
+                VAR _emp = fact_profitability_metrics[ukg_employee_id]
+                VAR _ctx = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+                VAR _tot = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( fact_profitability_metrics ), fact_profitability_metrics[ukg_employee_id] = _emp, DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+                RETURN DIVIDE ( _ctx, _tot )
+            ),
+            TREATAS (
+                SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+                fact_profitability_metrics[employee_L1], fact_profitability_metrics[employee_L2], fact_profitability_metrics[employee_L3]
+            )
+        ),
+        SUMX (
+            CALCULATETABLE ( VALUES ( fact_profitability_metrics[ukg_employee_id] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) ),
+            VAR _emp = fact_profitability_metrics[ukg_employee_id]
+            VAR _ctx = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+            VAR _tot = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( fact_profitability_metrics ), fact_profitability_metrics[ukg_employee_id] = _emp, DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+            RETURN DIVIDE ( _ctx, _tot )
+        )
+    )
+```
+
+#### Time Allocation %_app (UPDATE)
+
+Description: `FIXED 2026-11-04 (Fabric app): Share of a person's hours in the period that fall in the row's context (project, customer, org); blank above person level.`
+
+```dax
+IF (
+    HASONEVALUE ( fact_profitability_metrics[ukg_employee_id] ),
+    DIVIDE (
+        SUM ( fact_profitability_metrics[worked_hours] ),
+        CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), ALLEXCEPT ( fact_profitability_metrics, dim_calendar, fact_profitability_metrics[ukg_employee_id] ) )
+    )
+)
+```

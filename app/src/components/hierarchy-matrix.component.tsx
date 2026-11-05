@@ -19,6 +19,11 @@ interface HierarchyMatrixProps {
     subtitle?: string;
     /** Expand the first level on load. */
     expandFirstLevel?: boolean;
+    /**
+     * Fixed width of each value column in pixels, so month headers stay readable; the grid scrolls sideways.
+     * Without it the grid fits every column into the container (and ignores minWidth).
+     */
+    valueWidth?: number;
 }
 
 const show = (value: unknown, format?: string) => (value === null || value === undefined ? "" : String(formatValue(value, format)));
@@ -27,15 +32,21 @@ const show = (value: unknown, format?: string) => (value === null || value === u
  * Matrix with expandable rows (build plan 2.4): levels as a tree, an optional pivot (e.g. months) as
  * columns, and the model's grand total in the totals row. Every number comes from the query.
  */
-export function HierarchyMatrix({ table, spec, rowHeader, format, title, subtitle, expandFirstLevel = false }: HierarchyMatrixProps): ReactElement {
+export function HierarchyMatrix({ table, spec, rowHeader, format, title, subtitle, expandFirstLevel = false, valueWidth }: HierarchyMatrixProps): ReactElement {
     const { theme } = useThemeContext();
     const matrix = useMemo(() => buildMatrix(table, spec), [table, spec]);
 
     const formatOf = (i: number) => (typeof format === "string" || format === undefined ? format : format[i]);
     const columns: GridColumnDef[] = matrix.columns.map((c, i) =>
         c.id === "label"
-            ? { id: "label", header: rowHeader, minWidth: 180 }
-            : { id: c.id, header: c.header, numericStyling: true, cellRenderer: (value) => show(value, formatOf(i - 1)) },
+            ? { id: "label", header: rowHeader, minWidth: 180, ...(valueWidth !== undefined ? { width: 180 } : {}) }
+            : {
+                  id: c.id,
+                  header: c.header,
+                  numericStyling: true,
+                  ...(valueWidth !== undefined ? { width: valueWidth, minWidth: valueWidth } : {}),
+                  cellRenderer: (value) => show(value, formatOf(i - 1)),
+              },
     );
 
     const rows: Row[] = useMemo(() => {

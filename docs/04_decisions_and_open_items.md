@@ -11,7 +11,7 @@
 | 3 | Confirm Backlog = full planned schedule (EAC), not only the unbilled remainder | P6 KPIs | Finance | Open |
 | 4 | Add project manager (name + email) to `dim_project` from `msdyn_project` | P6 "my projects" | Ion / data engineering | Open |
 | 5 | Extend `dim_calendar` to the last backlog date (2029-12-01) | P6 plan totals by date | Data engineering | Open |
-| 6 | FTE definition for P3/P5: allocation FTE (current) vs capacity FTE (hours ÷ 40) | P3, P5 | Adan | Open |
+| 6 | FTE definition for P3/P5: allocation FTE (current) vs capacity FTE (hours ÷ 40) | P3, P5 | Adan | Done 2026-11-04 (Ion with Adan: allocation FTE, the `Operational FTE % (Last Week)` logic; not hours ÷ 40, people work night and special shifts) |
 | 7 | Headcount definition for P2: people with hours (current) vs active employees in UKG | P2 | Adan | Open |
 | 8 | Revenue per FTE: last-week FTE vs month-average FTE | P5 | Adan | Open |
 | 9 | Create the `_app` measures in `03_measure_review.md` § 3 (after Ion approves the DAX) | All pages | Ion + Claude | Done 2026-11-04 (33 of 35; the 2 customer rank measures wait for #1) |
@@ -34,6 +34,9 @@
 
 ## Log
 
+2026-11-04 | Change | Model | Ion approved; `Allocated FTE (Last Week)_app` now uses the allocation logic of `Operational FTE % (Last Week)` on the Sunday–Saturday week (no `year_week`), with the employee-org TREATAS applied (the original `%` version ignores it: L1 = BPO 1,562 vs 992) and people iterated over the week; `Time Allocation %_app` divides by all the person's hours in the period (the original kept the app's project filter and showed 100%). Validated before and after (Oct 2026 1,561 = headcount; PAR-401-01 101.2 = independent). TMDL re-exported; closes #6 | Ion + Claude
+2026-11-04 | Finding | Tooling | The project Power BI modeling MCP hung again for 30 min on a measure update and applied nothing (checked with INFO.MEASURES); the desktop `powerbi-modeling-mcp` applied it at once. Use the desktop server for model changes | Claude
+2026-11-04 | Decision | P3 | Ion: FTE = allocation FTE (agreed with Adan). The people detail (names and time allocation) shows when a customer or a project is selected | Ion
 2026-11-04 | Release | P2 Headcount Overview | `npx rayfin up` from `main` @ `d665eb4` (PR #14, approved by Ion) to `_Corporate DCOE Backend Dev`. Build, lint, 294 tests pass; `rayfin up status` reachable. Checked live in Ion's Chrome: `#/headcount` October 2026 1,561 / +1.2% / 1,634 / 6.1% (same as DAX on Fabric); `#/effort` still 271,203 h / 93.6%. The only console errors come from a Chrome extension ("A listener indicated an asynchronous response…"), not the app. Mobile still pending (#16) | Ion + Claude
 2026-11-04 | Change | Model | Ion approved; `Headcount (Last Week)_app` now counts the Sunday–Saturday week that holds the last day with hours in the period (not `year_week`) and follows the master hierarchy through the employee org; created `Headcount (Last Week) MoM %_app` (`08_app_measures.md` § 9). Validated before and after (Dec 2025 1,326 vs 1,767 before; Oct 2026 1,561; L1 = BPO 992). TMDL re-exported. #22 stays open for the gold `year_week` fix and the original measures | Ion + Claude
 2026-11-04 | Decision | P2 | Ion: P2 is built on the current headcount definition (people who logged time) and says so on the page; #7 stays open with Adan. Contractors = `employee_reporting_category` Contractor + GT Contractor (sliced in the query's DAX). The monthly trend shows the last 12 months ending with the period | Ion

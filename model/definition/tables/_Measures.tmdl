@@ -1094,7 +1094,34 @@ table _Measures
 		lineageTag: 61a2e1ab-ceea-48a4-a231-58049eceb17d
 
 	/// ADDED 2026-11-04 (Fabric app): Allocation FTE in the last week with data: each person's time split across projects (a person totals 1).
-	measure 'Allocated FTE (Last Week)_app' = [Operational FTE (Last Week)]
+	/// FIXED 2026-11-04 (Fabric app): Allocation FTE in the Sunday–Saturday week that holds the last day with hours in the period: each person's hours in the context ÷ all their hours that week (a person totals 1); follows the master hierarchy through the employee org.
+	measure 'Allocated FTE (Last Week)_app' =
+			VAR _last = CALCULATE ( MAX ( fact_profitability_metrics[transaction_date] ), ALLEXCEPT ( fact_profitability_metrics, dim_calendar ) )
+			VAR _start = _last - WEEKDAY ( _last, 1 ) + 1
+			RETURN
+			    IF (
+			        ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+			        CALCULATE (
+			            SUMX (
+			                CALCULATETABLE ( VALUES ( fact_profitability_metrics[ukg_employee_id] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) ),
+			                VAR _emp = fact_profitability_metrics[ukg_employee_id]
+			                VAR _ctx = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+			                VAR _tot = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( fact_profitability_metrics ), fact_profitability_metrics[ukg_employee_id] = _emp, DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+			                RETURN DIVIDE ( _ctx, _tot )
+			            ),
+			            TREATAS (
+			                SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+			                fact_profitability_metrics[employee_L1], fact_profitability_metrics[employee_L2], fact_profitability_metrics[employee_L3]
+			            )
+			        ),
+			        SUMX (
+			            CALCULATETABLE ( VALUES ( fact_profitability_metrics[ukg_employee_id] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) ),
+			            VAR _emp = fact_profitability_metrics[ukg_employee_id]
+			            VAR _ctx = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+			            VAR _tot = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( fact_profitability_metrics ), fact_profitability_metrics[ukg_employee_id] = _emp, DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+			            RETURN DIVIDE ( _ctx, _tot )
+			        )
+			    )
 		formatString: #,0.0
 		displayFolder: _app\People
 		lineageTag: 6a79ec23-13b4-4187-a33e-fb991c78b75b
@@ -1108,7 +1135,15 @@ table _Measures
 		lineageTag: 385c0289-77f7-4e97-896c-b9f7ed307a37
 
 	/// ADDED 2026-11-04 (Fabric app): Share of a person's hours on the row's project.
-	measure 'Time Allocation %_app' = [FTE Time Allocation %]
+	/// FIXED 2026-11-04 (Fabric app): Share of a person's hours in the period that fall in the row's context (project, customer, org); blank above person level.
+	measure 'Time Allocation %_app' =
+			IF (
+			    HASONEVALUE ( fact_profitability_metrics[ukg_employee_id] ),
+			    DIVIDE (
+			        SUM ( fact_profitability_metrics[worked_hours] ),
+			        CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), ALLEXCEPT ( fact_profitability_metrics, dim_calendar, fact_profitability_metrics[ukg_employee_id] ) )
+			    )
+			)
 		formatString: 0.0%
 		displayFolder: _app\People
 		lineageTag: 37aafcca-5338-4054-865b-2d76a1eefedf

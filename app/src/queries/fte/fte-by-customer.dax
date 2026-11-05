@@ -1,0 +1,20 @@
+// P3 allocation FTE by customer and project: the top 15 customers by FTE with their projects, next to the
+// last-week headcount (people who touched it). One person split between two projects counts 0.5 in each.
+// Customer and project come from the fact's own columns (no dim_project until open item #1 is fixed).
+EVALUATE
+VAR _base =
+    SUMMARIZECOLUMNS (
+        ROLLUPADDISSUBTOTAL (
+            fact_profitability_metrics[project_customer], "IsCustomerTotal",
+            fact_profitability_metrics[project_name], "IsProjectTotal"
+        ),
+        /* @filters */
+        "FTE", [Allocated FTE (Last Week)_app],
+        "Headcount", [Headcount (Last Week)_app]
+    )
+VAR _top = TOPN ( 15, FILTER ( _base, [IsProjectTotal] && NOT [IsCustomerTotal] ), [FTE], DESC )
+VAR _topCustomers = SELECTCOLUMNS ( _top, "Customer", fact_profitability_metrics[project_customer] )
+RETURN
+    FILTER ( _base, [IsCustomerTotal] || fact_profitability_metrics[project_customer] IN _topCustomers )
+// Largest first: a subtotal always comes before its children, so the matrix keeps this order.
+ORDER BY [FTE] DESC

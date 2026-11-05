@@ -53,4 +53,19 @@ describe("HierarchyMatrix", () => {
         expect(p.grandTotals.data.rows).toEqual([["Total", 267322.2809]]);
         expect(p.grandTotals.data.columns[1]).toEqual({ name: "c0", format: "#,0" });
     });
+
+    it("fixes the value column widths only when asked, so pivoted months stay readable", () => {
+        const renderWith = (valueWidth?: number) =>
+            render(
+                <ThemeContext.Provider value={{ isDark: false, toggleTheme: () => {}, theme: {} as VisualTheme }}>
+                    <HierarchyMatrix table={table} spec={spec} rowHeader="Org" title="t" valueWidth={valueWidth} />
+                </ThemeContext.Provider>,
+            );
+        renderWith(120);
+        let cols = (grid.props as { columns: { id: string; width?: number }[] }).columns;
+        expect(cols.map((c) => [c.id, c.width])).toEqual([["label", 180], ["c0", 120]]);
+        renderWith(undefined);
+        cols = (grid.props as { columns: { id: string; width?: number }[] }).columns;
+        expect(cols.every((c) => c.width === undefined)).toBe(true);
+    });
 });

@@ -1,0 +1,9 @@
+// P3 KPI cards: allocation FTE in the last Sunday–Saturday week with hours (#6: allocation FTE, Ion with Adan),
+// its MoM, and last-week headcount for contrast. Employee org throughout.
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "FTE", [Allocated FTE (Last Week)_app],
+    "FTEMoM", [Allocated FTE MoM %_app],
+    "Headcount", [Headcount (Last Week)_app]
+)
