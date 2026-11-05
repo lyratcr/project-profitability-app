@@ -1,0 +1,11 @@
+// P5 monthly trend: actual revenue (bars) and revenue per FTE (line), last 12 months ending with the selected month
+// (the app sends the window, lib/filters.ts monthWindow). Months in calendar order: the chart keeps the query's order.
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_calendar[year_month],
+    dim_calendar[year_month_number],
+    /* @filters */
+    "Revenue", [Actual Revenue_app],
+    "RevenuePerFTE", [Revenue per FTE_app]
+)
+ORDER BY dim_calendar[year_month_number]

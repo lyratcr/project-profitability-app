@@ -62,15 +62,16 @@
 
 ### P5 · Revenue & Capacity Yield (`/yield`)
 **Purpose:** revenue produced per unit of capacity.
+- **Definitions** (Ion with Adan, 2026-11-05, #8): FTE = last-week allocation FTE (`Operational FTE (Last Week)` logic, Sunday–Saturday week); revenue per FTE = Adan's `Revenue per FTE`; annualized = Adan's `Annualized Revenue per FTE` (× 12), the key KPI for Adan. With an org filter, revenue follows the project's financial org and FTE the project org (same projects).
 - **KPI cards:**
   - `[Actual Revenue_app]` with `[Actual Revenue MoM %_app]`.
-  - `[Allocated FTE (Last Week)_app]`.
+  - `[Allocated FTE (Last Week, Project Org)_app]`.
   - `[Revenue per FTE_app]` with `[Revenue per FTE MoM %_app]`.
   - `[Annualized Revenue per FTE_app]`.
   - Shown for a **single month** (the measures are monthly by design). The period filter is forced to one month on this page.
 - **Monthly trend:** revenue (bars) and revenue per FTE (line), last 12 months.
-- **By organization (master hierarchy L1 > L2 > L3):** revenue, FTE, revenue per FTE, MoM.
-- **Customers that grew / dropped most:** `[Actual Revenue MoM $_app]` with `[Customer Rank by Revenue Growth_app]` / `[… Decline_app]`, top 10 each.
+- **By organization (master hierarchy L1 > L2 > L3):** revenue, FTE, revenue per FTE, annualized, MoM.
+- **Customers that grew / dropped most:** `[Actual Revenue MoM $_app]`, top 10 each, ranked in the query (TOPN) until `[Customer Rank by Revenue Growth_app]` / `[… Decline_app]` exist (#1).
 
 ### P6 · Project Progress, for PMs (`/projects`)
 **Purpose:** day-by-day progress of my projects, and the Monday timesheet review.
