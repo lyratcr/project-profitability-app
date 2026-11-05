@@ -4,8 +4,10 @@ import { useThemeContext } from "@/hooks/theme.context";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { formatDay, isHoursStale, parseModelDate } from "@/lib/freshness";
 import { PAGES, pageHref, type PageDef } from "@/lib/routes";
-import { cn } from "@/lib/utils";
 import { dataFreshness, freshnessColumns } from "@/queries/shell";
+// Official Auxis logos (design-system/assets/logos): colour on light grounds, reversed on dark. Never recoloured.
+import logoColor from "../../../design-system/assets/logos/auxis-logo-color.png";
+import logoReversed from "../../../design-system/assets/logos/auxis-logo-reversed.png";
 
 interface AppHeaderProps {
     current: PageDef;
@@ -15,7 +17,7 @@ interface AppHeaderProps {
     today?: Date;
 }
 
-/** Top bar: app name, data freshness, theme toggle and page tabs (docs/05_app_design.md § 2). */
+/** Top bar: Auxis AppShell header (logo, app name, page tabs, theme toggle) and the data freshness line (docs/05_app_design.md § 2). */
 export function AppHeader({ current, params, today = new Date() }: AppHeaderProps): ReactElement {
     const { isDark, toggleTheme } = useThemeContext();
     const config = dataFreshness();
@@ -43,7 +45,7 @@ export function AppHeader({ current, params, today = new Date() }: AppHeaderProp
         const refresh = cell(freshnessColumns.lastRefresh);
 
         freshness = (
-            <dl className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-200 leading-200 text-muted-foreground">
+            <dl className="flex flex-wrap items-baseline justify-end gap-x-4 gap-y-1 text-200 leading-200 text-muted-foreground">
                 <div className="flex gap-1">
                     <dt>Hours through</dt>
                     <dd className="font-medium text-foreground">{formatDay(hoursThrough)}</dd>
@@ -65,7 +67,7 @@ export function AppHeader({ current, params, today = new Date() }: AppHeaderProp
             staleBanner = (
                 <div
                     role="status"
-                    className="flex items-center gap-2 border-b border-border bg-warning-surface px-4 py-2 text-300 text-warning sm:px-8"
+                    className="mx-auto mt-2 flex max-w-7xl items-center gap-2 rounded-md bg-warning-surface px-4 py-2 text-300 text-warning sm:px-8"
                 >
                     <AlertTriangle className="icon-size-200 shrink-0" aria-hidden="true" />
                     <span>Hours are not current: last day loaded is {formatDay(hoursThrough)}.</span>
@@ -75,47 +77,44 @@ export function AppHeader({ current, params, today = new Date() }: AppHeaderProp
     }
 
     return (
-        <header className="sticky top-0 z-10 border-b border-border bg-card">
-            <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 pt-4 sm:px-8">
-                <p className="font-heading text-500 leading-500 font-semibold text-emphasis-foreground">
-                    Project Real Profitability
-                </p>
-                <div className="flex items-center gap-4">
-                    {freshness}
-                    <button
-                        type="button"
-                        onClick={toggleTheme}
-                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-                        aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
-                    >
-                        {isDark ? <Sun className="icon-size-200" aria-hidden="true" /> : <Moon className="icon-size-200" aria-hidden="true" />}
-                    </button>
-                </div>
-            </div>
-            <nav aria-label="Pages" className="mx-auto max-w-7xl overflow-x-auto px-4 sm:px-8">
-                <ul className="flex gap-1">
-                    {PAGES.map((page) => {
-                        const active = page.id === current.id;
-                        return (
-                            <li key={page.id}>
+        <>
+            {/* Auxis AppShell header (design-system/components/AppShell): glass bar, logo, app title, page tabs.
+                Only the bar is sticky; the freshness line and stale banner scroll with the page. */}
+            <header className="ax-header ax-glass sticky top-0 z-10" style={{ borderWidth: 0, borderRadius: 0, boxShadow: "none" }}>
+                <img className="ax-logo ax-logo-light" src={logoColor} alt="Auxis" />
+                <img className="ax-logo ax-logo-dark" src={logoReversed} alt="Auxis" />
+                <span className="ax-header-title hidden sm:inline">Project Real Profitability</span>
+                <div className="ax-header-spacer" />
+                <nav aria-label="Pages" className="min-w-0 overflow-x-auto">
+                    <div className="ax-tabs" role="tablist">
+                        {PAGES.map((page) => {
+                            const active = page.id === current.id;
+                            return (
                                 <a
+                                    key={page.id}
                                     href={pageHref(page, params)}
+                                    role="tab"
+                                    aria-selected={active}
                                     aria-current={active ? "page" : undefined}
-                                    className={cn(
-                                        "inline-block whitespace-nowrap border-b-2 px-3 pt-3 pb-2 text-[length:var(--text-300)] focus-visible:outline-2 focus-visible:outline-ring",
-                                        active
-                                            ? "border-brand-foreground font-semibold text-emphasis-foreground"
-                                            : "border-transparent text-muted-foreground hover:text-foreground",
-                                    )}
+                                    className="ax-tab inline-flex items-center whitespace-nowrap no-underline"
                                 >
                                     {page.label}
                                 </a>
-                            </li>
-                        );
-                    })}
-                </ul>
-            </nav>
+                            );
+                        })}
+                    </div>
+                </nav>
+                <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className="ax-btn ax-btn-ghost"
+                    aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+                >
+                    {isDark ? <Sun className="icon-size-200" aria-hidden="true" /> : <Moon className="icon-size-200" aria-hidden="true" />}
+                </button>
+            </header>
+            <div className="mx-auto flex max-w-7xl justify-end px-4 pt-3 sm:px-8">{freshness}</div>
             {staleBanner}
-        </header>
+        </>
     );
 }

@@ -1,0 +1,14 @@
+<!-- @dsCard group="Inputs" height=150 subtitle="Chip slicer and dropdown slicer" -->
+<!doctype html><html data-theme="light"><head><link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css"><meta charset="utf-8"></head><body>
+<div class="ax-page" style="display:flex;gap:var(--space-6);align-items:flex-start">
+  <div class="ax-slicer"><span class="ax-label">Region</span>
+    <div class="ax-chips"><button class="ax-chip" aria-pressed="true">All</button><button class="ax-chip" aria-pressed="false">North America</button><button class="ax-chip" aria-pressed="false">LATAM</button><button class="ax-chip" aria-pressed="false">Europe</button></div>
+  </div>
+  <div class="ax-slicer"><span class="ax-label">Fiscal period</span>
+    <div class="ax-select">FY2026 · Q3<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.ax-chip').forEach(function(c){c.addEventListener('click',function(){c.setAttribute('aria-pressed',c.getAttribute('aria-pressed')==='true'?'false':'true')})});
+</script>
+</body></html>

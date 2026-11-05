@@ -1,5 +1,4 @@
 import type { ReactElement } from "react";
-import { cn } from "@/lib/utils";
 
 interface SegmentedToggleProps<T extends string> {
     /** Visible label above the buttons; also the radiogroup's accessible name. */
@@ -9,24 +8,24 @@ interface SegmentedToggleProps<T extends string> {
     onChange: (value: T) => void;
 }
 
-/** A small radio group drawn as joined buttons (page-level view switches: org view, flow analysis). */
+/** A small radio group drawn as Auxis chips (page-level view switches: org view, flow analysis). */
 export function SegmentedToggle<T extends string>({ label, options, value, onChange }: SegmentedToggleProps<T>): ReactElement {
+    // Auxis chip slicer (design-system/components/Slicer): `.ax-label` over `.ax-chip` buttons; the pressed chip
+    // takes the accent fill.
     return (
-        <div role="radiogroup" aria-label={label} className="flex flex-col gap-1">
-            <span className="text-200 leading-200 text-muted-foreground">{label}</span>
-            <div className="inline-flex rounded-md border border-border bg-card p-0.5">
+        <div role="radiogroup" aria-label={label} className="ax-slicer">
+            <span className="ax-label">{label}</span>
+            <div className="ax-chips">
                 {options.map((o) => (
                     <button
                         key={o.value}
                         type="button"
                         role="radio"
                         aria-checked={value === o.value}
+                        aria-pressed={value === o.value}
                         title={o.hint}
                         onClick={() => onChange(o.value)}
-                        className={cn(
-                            "rounded-sm px-3 py-1 text-200 focus-visible:outline-2 focus-visible:outline-ring",
-                            value === o.value ? "bg-brand text-on-brand" : "text-muted-foreground hover:bg-muted",
-                        )}
+                        className="ax-chip"
                     >
                         {o.label}
                     </button>

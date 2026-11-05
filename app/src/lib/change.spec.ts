@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { presentChange } from "./change";
+import { presentChange, signedChange } from "./change";
 
 describe("presentChange", () => {
     it("colors an increase as good when more is better (hours, revenue)", () => {
@@ -16,5 +16,13 @@ describe("presentChange", () => {
         expect(presentChange(0, "increase")).toMatchObject({ tone: "neutral", direction: "flat" });
         expect(presentChange(null, "increase")).toMatchObject({ tone: "neutral", direction: "none", icon: "" });
         expect(presentChange(0.2, "neither")).toMatchObject({ tone: "neutral", direction: "up" });
+    });
+});
+
+describe("signedChange", () => {
+    it("puts a plus or the true minus sign in front of the formatted value", () => {
+        expect(signedChange(0.0145, "0.0%")).toBe("+1.5%");
+        expect(signedChange(-0.0102, "0.0%")).toBe("−1.0%");
+        expect(signedChange(0, "0.0%")).toBe("0.0%");
     });
 });

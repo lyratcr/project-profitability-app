@@ -19,6 +19,10 @@ import { bootstrapAuth, type IAuthService } from './services/rayfin-auth.service
 import { bootstrapLanguage } from './services/language.service';
 import { AuthGate } from './components/auth-gate.component';
 
+// Auxis design system (../design-system): tokens first, then the ax- component classes, then the app's
+// Tailwind theme, which maps the template tokens onto the Auxis ones.
+import "../../design-system/tokens.css";
+import "../../design-system/components/bundle.css";
 import "./global.css"
 
 const rayfinAuthService: IAuthService = bootstrapAuth();

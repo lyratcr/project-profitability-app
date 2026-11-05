@@ -1,0 +1,14 @@
+<!-- @dsCard group="Navigation" height=90 subtitle="Page navigator for Fabric apps" -->
+<!doctype html><html data-theme="light"><head><link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css"><meta charset="utf-8"></head><body>
+<div class="ax-page">
+  <div class="ax-tabs" role="tablist">
+    <button class="ax-tab" role="tab" aria-selected="true">Overview</button>
+    <button class="ax-tab" role="tab" aria-selected="false">Revenue</button>
+    <button class="ax-tab" role="tab" aria-selected="false">Profitability</button>
+    <button class="ax-tab" role="tab" aria-selected="false">Aging</button>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.ax-tab').forEach(function(t){t.addEventListener('click',function(){document.querySelectorAll('.ax-tab').forEach(function(o){o.setAttribute('aria-selected',o===t?'true':'false')})})});
+</script>
+</body></html>

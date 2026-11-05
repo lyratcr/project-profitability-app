@@ -33,13 +33,15 @@ const ALL = "";
 
 const unique = (values: readonly string[] | undefined): string[] => [...new Set(values ?? [])];
 
-const controlClass =
-    "h-9 rounded-md border border-border bg-card px-2 text-[length:var(--text-300)] text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-60";
+// Auxis Slicer (design-system/components/Slicer): `.ax-label` over an `.ax-select` dropdown; short lists as
+// `.ax-chip` groups. `app-select-narrow` (global.css) relaxes the 180px minimum for the L1–L3 pickers.
+const controlClass = "ax-select disabled:opacity-60";
+const narrowClass = "ax-select app-select-narrow disabled:opacity-60";
 
 function Field({ label, children, id }: { label: string; children: ReactNode; id: string }): ReactElement {
     return (
-        <div className="flex min-w-0 flex-col gap-1">
-            <label htmlFor={id} className="text-200 leading-200 text-muted-foreground">
+        <div className="ax-slicer min-w-0">
+            <label htmlFor={id} className="ax-label">
                 {label}
             </label>
             {children}
@@ -74,19 +76,28 @@ export function FilterBar({
     };
 
     return (
-        <section aria-label="Filters" className="flex flex-wrap items-end gap-3 border-b border-border pb-4">
+        <section aria-label="Filters" className="ax-glass flex flex-wrap items-end gap-4 rounded-md px-5 py-4">
             {shows("period") && (
                 <>
                     {kinds.length > 1 && (
-                        <Field label="Period" id={`${id}-kind`}>
-                            <select id={`${id}-kind`} className={controlClass} value={period.kind} onChange={(e) => changeKind(e.target.value as PeriodKind)}>
+                        <div className="ax-slicer" role="group" aria-labelledby={`${id}-kind`}>
+                            <span id={`${id}-kind`} className="ax-label">
+                                Period
+                            </span>
+                            <div className="ax-chips">
                                 {kinds.map((k) => (
-                                    <option key={k} value={k}>
+                                    <button
+                                        key={k}
+                                        type="button"
+                                        className="ax-chip"
+                                        aria-pressed={period.kind === k}
+                                        onClick={() => period.kind !== k && changeKind(k)}
+                                    >
                                         {KIND_LABEL[k]}
-                                    </option>
+                                    </button>
                                 ))}
-                            </select>
-                        </Field>
+                            </div>
+                        </div>
                     )}
                     {period.kind === "range" ? (
                         <>
@@ -164,7 +175,7 @@ export function FilterBar({
                     <Field label="L1" id={`${id}-l1`}>
                         <select
                             id={`${id}-l1`}
-                            className={controlClass}
+                            className={narrowClass}
                             disabled={listsDisabled}
                             value={state.org.l1 ?? ALL}
                             onChange={(e) => set({ org: e.target.value === ALL ? {} : { l1: e.target.value } })}
@@ -180,7 +191,7 @@ export function FilterBar({
                     <Field label="L2" id={`${id}-l2`}>
                         <select
                             id={`${id}-l2`}
-                            className={controlClass}
+                            className={narrowClass}
                             disabled={listsDisabled || state.org.l1 === undefined}
                             value={state.org.l2 ?? ALL}
                             onChange={(e) => set({ org: e.target.value === ALL ? { l1: state.org.l1 } : { l1: state.org.l1, l2: e.target.value } })}
@@ -196,7 +207,7 @@ export function FilterBar({
                     <Field label="L3" id={`${id}-l3`}>
                         <select
                             id={`${id}-l3`}
-                            className={controlClass}
+                            className={narrowClass}
                             disabled={listsDisabled || state.org.l2 === undefined}
                             value={state.org.l3 ?? ALL}
                             onChange={(e) =>
@@ -237,7 +248,7 @@ export function FilterBar({
                 <Field label="Customer" id={`${id}-customer`}>
                     <select
                         id={`${id}-customer`}
-                        className={`${controlClass} max-w-64`}
+                        className={controlClass}
                         disabled={listsDisabled || customersLoading}
                         value={state.customer ?? ALL}
                         onChange={(e) => set({ customer: e.target.value === ALL ? undefined : e.target.value, project: undefined })}
@@ -256,7 +267,7 @@ export function FilterBar({
                 <Field label="Project" id={`${id}-project`}>
                     <select
                         id={`${id}-project`}
-                        className={`${controlClass} max-w-80`}
+                        className={controlClass}
                         disabled={listsDisabled || projectsLoading}
                         value={state.project ?? ALL}
                         onChange={(e) => set({ project: e.target.value === ALL ? undefined : e.target.value })}

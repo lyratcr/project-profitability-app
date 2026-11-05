@@ -80,6 +80,12 @@
   - Checks: 321 unit tests, lint, build; `validate:visual` 2/2 (trend, all orgs and L1 = BPO); every query run on Fabric first. Checked in Ion's Chrome (dark, desktop): October 2026 $6,131,773 / +1.7% / 1,561.0 FTE / $3,928 (+0.5%) / $47,137; L1 = BPO $3,359,710 / 980.4 / $3,427 / $41,123 / −2.0%; same as DAX. Mobile not verified (#16).
   - Merged (PR #21) and deployed from `main` @ `08d963b` on 2026-11-05; checked live, same numbers as DAX. Phase 3 is live.
 
+## Design system (Auxis Dashboards, `design-system/`)
+
+- [x] D.1 Global foundation and P1 Effort
+  - 2026-11-05: `main.tsx` loads `design-system/tokens.css` and `components/bundle.css`; `global.css` maps the template tokens (surfaces, ink, lines, data colours, fonts) to the Auxis tokens, with no hex values; `hooks/use-theme.ts` sets `data-theme` with `.dark`. Header = AppShell (glass bar, Auxis logo colour / reversed, `ax-tabs`), filters = Slicer row (`ax-label`, `ax-select`, period kind as `ax-chip`s, glass panel). Effort rebuilt with `components/ax/` (`AxCard`, `AxKpiCard`): spotlight hero (hours), accent bar (productive share), delta pills with arrow and sign (true minus), matrices and charts `chromeless` inside `ax-card`s, in-cell share bars (`HierarchyMatrix` `barColumns`), Regular Time as `chart-1`. Checked in Ion's Chrome, light and dark, same numbers as before; P2 checked with the inherited palette.
+- [ ] D.2 Apply the Auxis layouts to P2–P5 (they already inherit colours and fonts).
+
 ## Phase 4 — PM page (after open items #1 and #2 are fixed)
 
 - [ ] 4.1 P6 Project Progress: KPIs, week vs plan, weekly trend, revenue by month

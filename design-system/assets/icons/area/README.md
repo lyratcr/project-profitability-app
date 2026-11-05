@@ -1,0 +1,1 @@
+Service-line icons. `-tile`: gold gradient tile with charcoal `grey-700` glyph (any ground). `-light`: charcoal `grey-700` ink with `yellow-300` accent, for light grounds. `-dark`: ivory (#f4f1ee, dark `ink`) with `yellow-300` accent, for dark grounds.
