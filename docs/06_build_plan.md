@@ -84,6 +84,7 @@
 
 - [x] D.1 Global foundation and P1 Effort
   - 2026-11-05: `main.tsx` loads `design-system/tokens.css` and `components/bundle.css`; `global.css` maps the template tokens (surfaces, ink, lines, data colours, fonts) to the Auxis tokens, with no hex values; `hooks/use-theme.ts` sets `data-theme` with `.dark`. Header = AppShell (glass bar, Auxis logo colour / reversed, `ax-tabs`), filters = Slicer row (`ax-label`, `ax-select`, period kind as `ax-chip`s, glass panel). Effort rebuilt with `components/ax/` (`AxCard`, `AxKpiCard`): spotlight hero (hours), accent bar (productive share), delta pills with arrow and sign (true minus), matrices and charts `chromeless` inside `ax-card`s, in-cell share bars (`HierarchyMatrix` `barColumns`), Regular Time as `chart-1`. Checked in Ion's Chrome, light and dark, same numbers as before; P2 checked with the inherited palette.
+  - Merged (PR #23) and deployed from `main` @ `d75d97b` on 2026-11-05; checked live (logos and fonts load on Fabric, same numbers).
 - [ ] D.2 Apply the Auxis layouts to P2–P5 (they already inherit colours and fonts).
 
 ## Phase 4 — PM page (after open items #1 and #2 are fixed)
