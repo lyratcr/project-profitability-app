@@ -13,7 +13,7 @@
 | 5 | Extend `dim_calendar` to the last backlog date (2029-12-01) | P6 plan totals by date | Data engineering | Open |
 | 6 | FTE definition for P3/P5: allocation FTE (current) vs capacity FTE (hours ÷ 40) | P3, P5 | Adan | Done 2026-11-04 (Ion with Adan: allocation FTE, the `Operational FTE % (Last Week)` logic; not hours ÷ 40, people work night and special shifts) |
 | 7 | Headcount definition for P2: people with hours (current) vs active employees in UKG | P2 | Adan | Open |
-| 8 | Revenue per FTE: last-week FTE vs month-average FTE | P5 | Adan | Open |
+| 8 | Revenue per FTE: last-week FTE vs month-average FTE | P5 | Adan | Done 2026-11-05 (Ion with Adan: last-week FTE, Adan's `Operational FTE (Last Week)`, `Revenue per FTE` and `Annualized Revenue per FTE` formulas) |
 | 9 | Create the `_app` measures in `03_measure_review.md` § 3 (after Ion approves the DAX) | All pages | Ion + Claude | Done 2026-11-04 (33 of 35; the 2 customer rank measures wait for #1) |
 | 10 | Cost in local currency (COP/CRC) labelled USD; Project Ops standard cost and roles outdated | Margin (out of scope now) | Finance | Deferred |
 | 11 | `project_key` = first 10 characters of the project name (fragile); use the Project Ops project id | Data quality | Data engineering | Open |
@@ -34,6 +34,8 @@
 
 ## Log
 
+2026-11-05 | Change | Model | Ion approved; created `Allocated FTE (Last Week, Project Org)_app` and moved `Revenue per FTE_app` / `Annualized Revenue per FTE_app` to Adan's formulas on it (Sunday–Saturday week; project-org FTE under an org filter, so revenue and FTE cover the same projects). Validated before and after (Oct 2026 $3,928 / $47,137; L1 = BPO $3,427 / $41,123, FTE 980.4 = independent). TMDL re-exported; closes #8. With #21 open, project-org FTE misses BPO / RCM / POD5 (11 FTE in October) | Ion + Claude
+2026-11-05 | Decision | P5 | Ion (with Adan): FTE = last week (`Operational FTE (Last Week)` logic), revenue per FTE and annualized revenue per FTE = Adan's formulas, annualized is the key KPI for Adan. Under an org filter the FTE is the project org's (same projects as the revenue) | Ion
 2026-11-04 | Release | P4 tree fix | `npx rayfin up` from `main` @ `32574b0` (PR #19, approved by Ion) to `_Corporate DCOE Backend Dev`. Build, lint, 313 tests pass; `rayfin up status` reachable. Checked live in Ion's Chrome: February 2026, L1 = BPO, cross charge: flow breakdown BPO 143,966 → project L1 BPO 143,638 / DTF 160 (= the matrix); KPIs unchanged. Mobile still pending (#16) | Ion + Claude
 2026-11-04 | Fix | P4 tree | Live check of the P4 release found the cross-charge tree's first column wrong under an org filter: grouped by `fact[employee_L1]`, every L1 showed the org's total (the employee-org measure's TREATAS replaces that filter, like P1's org matrix). It now groups by `dim_hierarchy_master[L1]` (February 2026, L1 = BPO: BPO 143,966 → project L1 BPO 143,638 / DTF 160 = the matrix). Lesson: test every visual with an org filter, not only the KPIs | Claude
 2026-11-04 | Release | P4 Intercompany & Cross-Charge | `npx rayfin up` from `main` @ `075678c` (PR #18, approved by Ion) to `_Corporate DCOE Backend Dev`. Build, lint, 312 tests pass; `rayfin up status` reachable. Checked live in Ion's Chrome: February 2026, L1 = BPO, cross charge: 143,966 h / 96.4% / 0.2% / received 224 / lent 328 / net −104, matrix total 143,966 (same as DAX on Fabric). The flow-breakdown bug above was found here; fix in the follow-up PR, not deployed yet. Mobile still pending (#16) | Ion + Claude

@@ -1175,13 +1175,15 @@ table _Measures
 		lineageTag: 18a52965-dc28-4dcd-9d1c-54e8f275ef65
 
 	/// ADDED 2026-11-04 (Fabric app): Actual revenue / allocated FTE (last week). Monthly context only.
-	measure 'Revenue per FTE_app' = [Revenue per FTE]
+	/// FIXED 2026-11-05 (Fabric app): Adan's Revenue per FTE (actual revenue ÷ last-week allocation FTE) on the Sunday–Saturday week and, with an org filter, the project org's FTE. Monthly context only.
+	measure 'Revenue per FTE_app' = DIVIDE ( [Actual Revenue_app], [Allocated FTE (Last Week, Project Org)_app], 0 )
 		formatString: \$#,0;(\$#,0);\$#,0
 		displayFolder: _app\Yield
 		lineageTag: d78fc6aa-11e7-4e94-8a97-984d3dfb9254
 
 	/// ADDED 2026-11-04 (Fabric app): Revenue per FTE x 12. Valid for a single month only.
-	measure 'Annualized Revenue per FTE_app' = [Annualized Revenue per FTE]
+	/// FIXED 2026-11-05 (Fabric app): Adan's Annualized Revenue per FTE (monthly revenue per FTE × 12) on the Sunday–Saturday week and, with an org filter, the project org's FTE. Valid for a single month only.
+	measure 'Annualized Revenue per FTE_app' = DIVIDE ( [Actual Revenue_app], [Allocated FTE (Last Week, Project Org)_app], BLANK () ) * 12
 		formatString: \$#,0;(\$#,0);\$#,0
 		displayFolder: _app\Yield
 		lineageTag: 5573c208-fd0b-4614-890c-2c4ced5fc929
@@ -1467,6 +1469,32 @@ table _Measures
 		formatString: 0.0%
 		displayFolder: _app\People
 		lineageTag: 04acb14a-0388-4d60-a9ac-4a8a71130741
+
+	/// ADDED 2026-11-05 (Fabric app): Allocation FTE in the last Sunday–Saturday week with hours, mapping the master hierarchy to the project org: the share of people's time on the selected org's projects. Without an org filter it equals Allocated FTE (Last Week)_app.
+	measure 'Allocated FTE (Last Week, Project Org)_app' =
+			VAR _last = CALCULATE ( MAX ( fact_profitability_metrics[transaction_date] ), ALLEXCEPT ( fact_profitability_metrics, dim_calendar ) )
+			VAR _start = _last - WEEKDAY ( _last, 1 ) + 1
+			RETURN
+			    IF (
+			        ISFILTERED ( dim_hierarchy_master[L1] ) || ISFILTERED ( dim_hierarchy_master[L2] ) || ISFILTERED ( dim_hierarchy_master[L3] ),
+			        CALCULATE (
+			            SUMX (
+			                CALCULATETABLE ( VALUES ( fact_profitability_metrics[ukg_employee_id] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) ),
+			                VAR _emp = fact_profitability_metrics[ukg_employee_id]
+			                VAR _ctx = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( dim_calendar ), DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+			                VAR _tot = CALCULATE ( SUM ( fact_profitability_metrics[worked_hours] ), REMOVEFILTERS ( fact_profitability_metrics ), fact_profitability_metrics[ukg_employee_id] = _emp, DATESBETWEEN ( dim_calendar[date], _start, _start + 6 ) )
+			                RETURN DIVIDE ( _ctx, _tot )
+			            ),
+			            TREATAS (
+			                SUMMARIZE ( dim_hierarchy_master, dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+			                fact_profitability_metrics[project_L1], fact_profitability_metrics[project_L2], fact_profitability_metrics[project_L3]
+			            )
+			        ),
+			        [Allocated FTE (Last Week)_app]
+			    )
+		formatString: #,0.0
+		displayFolder: _app\People
+		lineageTag: 07ecac4f-6d26-4d50-a521-0ece2664c490
 
 	column Column
 		isHidden
