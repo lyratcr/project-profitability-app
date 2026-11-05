@@ -78,6 +78,7 @@
   - 2026-11-05: page `#/yield` (`components/yield-page.component.tsx`, queries in `queries/yield/`), one month at a time. KPI cards: actual revenue with MoM, allocated FTE (project org), revenue per FTE with MoM, annualized revenue per FTE (Adan's key KPI). Monthly trend: revenue bars + revenue-per-FTE line, last 12 months (`sort: null`, query order). By organization: master hierarchy with revenue, FTE, revenue / FTE, annualized, MoM. Customers that grew / dropped most: top 10 each by `Actual Revenue MoM $_app`, ranked with a TOPN in the query until the rank measures exist (#1).
   - Model: `Allocated FTE (Last Week, Project Org)_app` created; `Revenue per FTE_app` and `Annualized Revenue per FTE_app` moved to Adan's formulas on it (`08_app_measures.md` § 11); TMDL re-exported; #8 closed.
   - Checks: 321 unit tests, lint, build; `validate:visual` 2/2 (trend, all orgs and L1 = BPO); every query run on Fabric first. Checked in Ion's Chrome (dark, desktop): October 2026 $6,131,773 / +1.7% / 1,561.0 FTE / $3,928 (+0.5%) / $47,137; L1 = BPO $3,359,710 / 980.4 / $3,427 / $41,123 / −2.0%; same as DAX. Mobile not verified (#16).
+  - Merged (PR #21) and deployed from `main` @ `08d963b` on 2026-11-05; checked live, same numbers as DAX. Phase 3 is live.
 
 ## Phase 4 — PM page (after open items #1 and #2 are fixed)
 
