@@ -34,6 +34,7 @@
 
 ## Log
 
+2026-11-04 | Release | P3 FTE Overview | `npx rayfin up` from `main` @ `f04befb` (PR #16, approved by Ion) to `_Corporate DCOE Backend Dev`. Build, lint, 303 tests pass; `rayfin up status` reachable. Checked live in Ion's Chrome: `#/fte` October 2026, L1 = BPO 992.0 FTE / −1.2% / 992 headcount; L1 = DTF 149.0 / 0.0% / 149 (same as DAX on Fabric). Sign-in stayed on "Opening app…" until a page reload, as in the P2 release. Console errors come from a Chrome extension only. Mobile still pending (#16) | Ion + Claude
 2026-11-04 | Change | Model | Ion approved; `Allocated FTE (Last Week)_app` now uses the allocation logic of `Operational FTE % (Last Week)` on the Sunday–Saturday week (no `year_week`), with the employee-org TREATAS applied (the original `%` version ignores it: L1 = BPO 1,562 vs 992) and people iterated over the week; `Time Allocation %_app` divides by all the person's hours in the period (the original kept the app's project filter and showed 100%). Validated before and after (Oct 2026 1,561 = headcount; PAR-401-01 101.2 = independent). TMDL re-exported; closes #6 | Ion + Claude
 2026-11-04 | Finding | Tooling | The project Power BI modeling MCP hung again for 30 min on a measure update and applied nothing (checked with INFO.MEASURES); the desktop `powerbi-modeling-mcp` applied it at once. Use the desktop server for model changes | Claude
 2026-11-04 | Decision | P3 | Ion: FTE = allocation FTE (agreed with Adan). The people detail (names and time allocation) shows when a customer or a project is selected | Ion
