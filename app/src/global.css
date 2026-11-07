@@ -211,3 +211,17 @@ body {
   background: var(--grey-500);
   color: var(--ink);
 }
+
+/* Liquid glass on P6 (design-system bundle.css `.ax-liquid`): the Fabric DataGrid paints its own table, header
+   and footer grounds; inside glass cards they become the glass wells instead. */
+.ax-liquid .data-grid-root,
+.ax-liquid .data-grid-root tfoot,
+.ax-liquid .data-grid-root tfoot tr,
+.ax-liquid .data-grid-root tfoot td,
+.ax-liquid .ax-card [role="navigation"][aria-label="Pagination"] {
+  background: transparent;
+}
+.ax-liquid .data-grid-root thead,
+.ax-liquid .data-grid-root thead th {
+  background: var(--glass-sunken);
+}

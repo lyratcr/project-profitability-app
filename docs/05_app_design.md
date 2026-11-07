@@ -77,6 +77,8 @@
 ### P6 · Project Progress, for PMs (`/projects`)
 **Purpose:** day-by-day progress of my projects, and the Monday timesheet review.
 
+**Look** (Ion, 2026-11-07): liquid glass on the whole page (filter row, banner, cards, tables), an exception to the Auxis "cards = surface" rule documented in `design-system/README.md`. Other pages keep the solid Auxis cards.
+
 **Project selector.** The PM picks one or more projects. There's no PM field in the model yet (open item #4 in `04`); until it exists, the selection is remembered per user in the browser.
 
 **Monday review banner** (Mondays, and any day until the integration runs):

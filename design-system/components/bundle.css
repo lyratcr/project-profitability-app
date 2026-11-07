@@ -123,3 +123,69 @@ body { margin: 0; font-family: var(--font-sans); color: var(--ink); background: 
 .ax-icon .as { stroke: var(--yellow-300); }
 .ax-tile-glyph .a { fill: #272425; stroke: none; }
 .ax-tile-glyph .as { stroke: #272425; }
+
+/* ---------------------------------------------------------------------------------------------------
+   Liquid glass — P6 Project Progress only (Ion, 2026-11-07). An exception to "Cards = surface": inside
+   `.ax-liquid`, cards are translucent glass that blurs and saturates coloured light behind them, with a
+   specular rim and a top sheen. Every value is a token (tokens.json: glass-*, shadow-glass, blur-liquid).
+   Falls back to the solid Auxis card without backdrop-filter or when the viewer asks for less transparency.
+   --------------------------------------------------------------------------------------------------- */
+.ax-liquid { position: relative; isolation: isolate; }
+/* The light behind the glass is fixed to the viewport, so cards slide over it as the page scrolls. */
+.ax-liquid::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38% 30% at 10% 6%, var(--glass-orb-gold), transparent 70%),
+    radial-gradient(32% 26% at 94% 30%, var(--glass-orb-blue), transparent 70%),
+    radial-gradient(40% 24% at 28% 72%, var(--glass-orb-blue), transparent 72%),
+    radial-gradient(30% 22% at 84% 94%, var(--glass-orb-gold), transparent 70%);
+}
+
+.ax-liquid .ax-card,
+.ax-liquid .ax-glass,
+.ax-liquid .ax-liquid-pane {
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+  -webkit-backdrop-filter: blur(var(--blur-liquid)) saturate(180%);
+  backdrop-filter: blur(var(--blur-liquid)) saturate(180%);
+}
+.ax-liquid .ax-card,
+.ax-liquid .ax-glass { background: linear-gradient(180deg, var(--glass-highlight) 0%, transparent 42%), var(--glass-card); }
+
+/* Specular rim: a 1px gradient ring, bright at the top-left and bottom-right corners. */
+.ax-liquid .ax-card::before,
+.ax-liquid .ax-glass::before,
+.ax-liquid .ax-liquid-pane::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(135deg, var(--glass-edge) 0%, transparent 32%, transparent 68%, var(--glass-edge) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.ax-liquid .ax-glass, .ax-liquid .ax-liquid-pane { position: relative; }
+
+/* Smoked glass for the one spotlight KPI; the gold glow (::after) stays. */
+.ax-liquid .ax-card.ax-spotlight { background: linear-gradient(180deg, var(--glass-highlight) 0%, transparent 30%), var(--glass-spotlight); }
+
+/* Wells and table bands turn to glass too. */
+.ax-liquid .ax-table th, .ax-liquid .ax-pill, .ax-liquid .ax-badge { background: var(--glass-sunken); }
+.ax-liquid .ax-table th, .ax-liquid .ax-table td, .ax-liquid .ax-badge { border-color: var(--glass-line); }
+.ax-liquid .ax-table tr:hover td { background: var(--glass-sunken); }
+
+/* A soft lift on hover. */
+.ax-liquid .ax-card { transition: transform .25s ease, box-shadow .25s ease; }
+.ax-liquid .ax-card:hover { transform: translateY(-2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ax-liquid .ax-card { transition: none; }
+  .ax-liquid .ax-card:hover { transform: none; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ax-liquid .ax-card, .ax-liquid .ax-glass { background: var(--ax-card-gradient); }
+  .ax-liquid .ax-card.ax-spotlight { background: var(--gradient-charcoal); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .ax-liquid .ax-card, .ax-liquid .ax-glass, .ax-liquid .ax-liquid-pane { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .ax-liquid .ax-card, .ax-liquid .ax-glass { background: var(--ax-card-gradient); }
+  .ax-liquid .ax-card.ax-spotlight { background: var(--gradient-charcoal); }
+}

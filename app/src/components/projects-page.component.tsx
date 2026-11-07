@@ -116,7 +116,7 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
             />
 
             {model.review.active && (
-                <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-warning-surface px-4 py-3 text-300 text-warning">
+                <div role="status" className="ax-liquid-pane flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-warning-surface px-4 py-3 text-300 text-warning">
                     <span>
                         Review last week&apos;s hours ({dayFormat.format(model.review.week.start)} – {dayFormat.format(model.review.week.weekEnd)}). Synerion approval
                         closes <strong>today at end of day</strong>; the integration to Project Operations runs <strong>Tuesday early morning</strong>.

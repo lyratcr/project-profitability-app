@@ -54,6 +54,16 @@
   --shadow-card: 0 1px 0 rgba(255,255,255,0.9) inset, 0 2px 4px rgba(39,36,37,0.04), 0 12px 32px -8px rgba(39,36,37,0.12);
   --shadow-float: 0 24px 64px -16px rgba(39,36,37,0.24), 0 4px 12px rgba(39,36,37,0.06);
   --shadow-glow: 0 8px 24px -6px rgba(255,203,5,0.55);
+  --glass-card: rgba(255,255,255,0.52);
+  --glass-highlight: rgba(255,255,255,0.70);
+  --glass-edge: rgba(255,255,255,0.92);
+  --glass-line: rgba(39,36,37,0.08);
+  --glass-sunken: rgba(242,239,235,0.55);
+  --glass-spotlight: rgba(30,27,28,0.90);
+  --glass-orb-gold: rgba(255,203,5,0.34);
+  --glass-orb-blue: rgba(20,177,231,0.24);
+  --shadow-glass: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -1px 0 rgba(255,255,255,0.40) inset, 0 2px 6px rgba(39,36,37,0.05), 0 24px 56px -18px rgba(39,36,37,0.26);
+  --blur-liquid: 28px;
 }
 [data-theme="dark"] {
   --bg-base: #1b1819;
@@ -94,6 +104,15 @@
   --shadow-card: 0 1px 0 rgba(255,255,255,0.06) inset, 0 2px 4px rgba(0,0,0,0.35), 0 16px 40px -12px rgba(0,0,0,0.7);
   --shadow-float: 0 28px 72px -16px rgba(0,0,0,0.85), 0 4px 12px rgba(0,0,0,0.4);
   --shadow-glow: 0 8px 28px -6px rgba(255,203,5,0.45);
+  --glass-card: rgba(42,38,39,0.40);
+  --glass-highlight: rgba(255,255,255,0.09);
+  --glass-edge: rgba(255,255,255,0.20);
+  --glass-line: rgba(255,255,255,0.10);
+  --glass-sunken: rgba(10,9,9,0.35);
+  --glass-spotlight: rgba(30,27,28,0.62);
+  --glass-orb-gold: rgba(255,203,5,0.22);
+  --glass-orb-blue: rgba(20,177,231,0.20);
+  --shadow-glass: 0 1px 0 rgba(255,255,255,0.16) inset, 0 -1px 0 rgba(255,255,255,0.04) inset, 0 2px 6px rgba(0,0,0,0.30), 0 28px 64px -18px rgba(0,0,0,0.80);
 }
 :root {
   --space-1: 4px;

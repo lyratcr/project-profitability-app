@@ -30,7 +30,8 @@ function App() {
     return (
         <div className="min-h-full bg-background">
             <AppHeader current={page} params={route.params} />
-            <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-8">
+            {/* Liquid glass on P6 only (Ion, 2026-11-07; design-system bundle.css `.ax-liquid`): filter row and cards. */}
+            <main className={`mx-auto w-full max-w-7xl px-4 py-6 sm:px-8${page.id === "projects" ? " ax-liquid" : ""}`}>
                 <FilterBar
                     page={page}
                     state={filters.state}
