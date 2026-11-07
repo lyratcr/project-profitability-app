@@ -14,8 +14,10 @@ import {
     headcountKpis,
     headcountMonthlyTrend,
 } from "@/queries/headcount";
+import { AxCard } from "./ax/ax-card.component";
+import { AxKpiCard } from "./ax/ax-kpi-card.component";
+import { AxPageHeader } from "./ax/ax-page-header.component";
 import { HierarchyMatrix } from "./hierarchy-matrix.component";
-import { KpiTile } from "./kpi-tile.component";
 import { QueryStates } from "./query-states.component";
 import { TrendChart } from "./trend-chart.component";
 
@@ -70,82 +72,89 @@ export function HeadcountPage({ page, filters, options }: HeadcountPageProps): R
 
     return (
         <section aria-labelledby="page-title" className="flex flex-col gap-6">
-            <header className="min-w-0">
-                <h1 id="page-title" className="font-page-title text-page-title text-emphasis-foreground">
-                    {page.title}
-                </h1>
-                <p className="font-page-subtitle text-page-subtitle text-muted-foreground">{page.purpose}</p>
-                {context !== "" && <p className="mt-1 text-200 text-muted-foreground">{context}</p>}
-                <p className="mt-1 text-200 text-muted-foreground">
-                    Headcount counts people who logged time in Synerion during the last Sunday–Saturday week with hours in the period, by the
-                    employee&apos;s home org.
-                </p>
-            </header>
+            <AxPageHeader
+                title={page.title}
+                purpose={page.purpose}
+                context={context}
+                notes={["Headcount counts people who logged time in Synerion during the last Sunday–Saturday week with hours in the period, by the employee's home org."]}
+            />
 
+            {/* KPI row: headcount is the hero (spotlight); contractors share carries the accent bar. */}
             <QueryStates result={kpiResult} shape="kpi" title="Headcount">
                 {(table) => (
                     <div className="grid grid-cols-1 gap-grid sm:grid-cols-3">
-                        <KpiTile
-                            title="Headcount"
-                            subtitle={`Last week with hours · ${periodText}`}
+                        <AxKpiCard
+                            variant="spotlight"
+                            label={`Headcount · last week · ${periodText}`}
                             value={numberCell(table, headcountKpiColumns.headcount)}
                             format="#,0"
                             change={{ value: numberCell(table, headcountKpiColumns.headcountMoM), format: "0.0%", comparedTo: describeMonthComparison(filters.period) }}
                             favorable="neither"
                         />
-                        <KpiTile
-                            title="People with hours"
-                            subtitle={`Anyone who logged time in ${periodText}`}
+                        <AxKpiCard
+                            label="People with hours"
                             value={numberCell(table, headcountKpiColumns.people)}
                             format="#,0"
+                            note={`Anyone who logged time in ${periodText}`}
                         />
-                        <KpiTile
-                            title="Contractors share"
-                            subtitle="Contractor + GT Contractor, last week"
+                        <AxKpiCard
+                            variant="accent"
+                            label="Contractors share"
                             value={numberCell(table, headcountKpiColumns.contractorsShare)}
                             format="0.0%"
+                            note="Contractor + GT Contractor, last week"
                         />
                     </div>
                 )}
             </QueryStates>
 
-            <QueryStates result={trendResult} shape="chart" title="Monthly headcount">
-                {(table) => (
-                    <TrendChart
-                        data={toDataTable(table, monthly.columnMetadata)}
-                        spec={monthly.vegaLiteSpec}
-                        title="Monthly headcount by reporting category"
-                        subtitle={`Last ${TREND_MONTHS} months, ${monthLabel.format(trend.window.start)} – ${monthLabel.format(trend.window.end)}; each month shows its last week with hours`}
-                        height={300}
-                    />
-                )}
-            </QueryStates>
-
-            <div className="grid grid-cols-1 gap-grid lg:grid-cols-5">
-                <QueryStates result={countryResult} shape="chart" title="Headcount by country" className="lg:col-span-2">
+            <AxCard
+                title="Monthly headcount by reporting category"
+                subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(trend.window.start)} – ${monthLabel.format(trend.window.end)} · each month's last week with hours`}
+            >
+                <QueryStates result={trendResult} shape="chart" title="Monthly headcount">
                     {(table) => (
                         <TrendChart
-                            data={toDataTable(table, byCountry.columnMetadata)}
-                            spec={byCountry.vegaLiteSpec}
-                            title="Headcount by country"
-                            subtitle={`Employee country, last week · labels: share`}
-                            height={Math.max(160, 48 * table.rows.length)}
+                            chromeless
+                            data={toDataTable(table, monthly.columnMetadata)}
+                            spec={monthly.vegaLiteSpec}
+                            title="Monthly headcount by reporting category"
+                            height={300}
                         />
                     )}
                 </QueryStates>
-                <QueryStates result={orgResult} shape="table" title="Headcount by organization" className="lg:col-span-3">
-                    {(table) => (
-                        <HierarchyMatrix
-                            table={table}
-                            spec={ORG_SPEC}
-                            rowHeader="Employee org"
-                            format={ORG_FORMATS}
-                            title="Headcount by organization"
-                            subtitle="Where the people sit. Subtotals and the total come from the model (people are not additive)."
-                            expandFirstLevel
-                        />
-                    )}
-                </QueryStates>
+            </AxCard>
+
+            <div className="grid grid-cols-1 items-start gap-grid lg:grid-cols-5">
+                <AxCard title="Headcount by country" subtitle={`Employee country · last week · labels: share`} className="lg:col-span-2">
+                    <QueryStates result={countryResult} shape="chart" title="Headcount by country">
+                        {(table) => (
+                            <TrendChart
+                                chromeless
+                                data={toDataTable(table, byCountry.columnMetadata)}
+                                spec={byCountry.vegaLiteSpec}
+                                title="Headcount by country"
+                                height={Math.max(160, 48 * table.rows.length)}
+                            />
+                        )}
+                    </QueryStates>
+                </AxCard>
+                <AxCard title="Headcount by organization" subtitle={`${periodText} · employee org · last week and whole period`} className="lg:col-span-3">
+                    <QueryStates result={orgResult} shape="table" title="Headcount by organization">
+                        {(table) => (
+                            <HierarchyMatrix
+                                chromeless
+                                table={table}
+                                spec={ORG_SPEC}
+                                rowHeader="Employee org"
+                                format={ORG_FORMATS}
+                                title="Headcount by organization"
+                                expandFirstLevel
+                            />
+                        )}
+                    </QueryStates>
+                    <p className="caption m-0 mt-3 text-muted-foreground">Subtotals and the total come from the model (people are not additive).</p>
+                </AxCard>
             </div>
         </section>
     );

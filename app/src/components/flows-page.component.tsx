@@ -7,9 +7,11 @@ import type { MatrixSpec } from "@/lib/matrix";
 import { numberCell } from "@/lib/query-table";
 import type { PageDef } from "@/lib/routes";
 import { FLOW_ANALYSES, flowKpiColumns, flowMatrixColumns, flowsKpis, flowsMatrix, type FlowAnalysis } from "@/queries/flows";
+import { AxCard } from "./ax/ax-card.component";
+import { AxKpiCard } from "./ax/ax-kpi-card.component";
+import { AxPageHeader } from "./ax/ax-page-header.component";
 import { DecompositionTree } from "./decomposition-tree.component";
 import { HierarchyMatrix } from "./hierarchy-matrix.component";
-import { KpiTile } from "./kpi-tile.component";
 import { QueryStates } from "./query-states.component";
 import { SegmentedToggle } from "./segmented-toggle.component";
 
@@ -80,84 +82,90 @@ export function FlowsPage({ page, filters, options, analysis, onAnalysisChange }
 
     return (
         <section aria-labelledby="page-title" className="flex flex-col gap-6">
-            <header className="flex flex-wrap items-end justify-between gap-4">
-                <div className="min-w-0">
-                    <h1 id="page-title" className="font-page-title text-page-title text-emphasis-foreground">
-                        {page.title}
-                    </h1>
-                    <p className="font-page-subtitle text-page-subtitle text-muted-foreground">{page.purpose}</p>
-                    {context !== "" && <p className="mt-1 text-200 text-muted-foreground">{context}</p>}
-                    <p className="mt-1 text-200 text-muted-foreground">Organization filters use the employee&apos;s home org.</p>
-                </div>
-                <SegmentedToggle
-                    label="Analysis"
-                    options={[
-                        { value: "intercompany", label: "Intercompany", hint: "Employee country → project country" },
-                        { value: "cross", label: "Cross charge", hint: "Employee L1 → project L1" },
-                    ]}
-                    value={analysis}
-                    onChange={onAnalysisChange}
-                />
-            </header>
+            <AxPageHeader
+                title={page.title}
+                purpose={page.purpose}
+                context={context}
+                notes={["Organization filters use the employee's home org."]}
+                aside={
+                    <SegmentedToggle
+                        label="Analysis"
+                        options={[
+                            { value: "intercompany", label: "Intercompany", hint: "Employee country → project country" },
+                            { value: "cross", label: "Cross charge", hint: "Employee L1 → project L1" },
+                        ]}
+                        value={analysis}
+                        onChange={onAnalysisChange}
+                    />
+                }
+            />
 
+            {/* KPI row: intercompany share is the hero (spotlight); cross-charge share carries the accent bar. */}
             <QueryStates result={kpiResult} shape="kpi" title="Flow KPIs">
                 {(table) => (
                     <div className="flex flex-col gap-grid">
                         <div className="grid grid-cols-1 gap-grid sm:grid-cols-3">
-                            <KpiTile title="Synerion hours" subtitle={`${periodText} · Employee org`} value={numberCell(table, flowKpiColumns.hours)} format="#,0" />
-                            <KpiTile
-                                title="Intercompany share"
-                                subtitle="Employee country ≠ project country"
+                            <AxKpiCard
+                                variant="spotlight"
+                                label={`Intercompany share · ${periodText}`}
                                 value={numberCell(table, flowKpiColumns.intercompanyShare)}
                                 format="0.0%"
+                                note="Employee country ≠ project country"
                             />
-                            <KpiTile
-                                title="Cross-charge share"
-                                subtitle="Employee L1 ≠ project L1"
+                            <AxKpiCard
+                                variant="accent"
+                                label="Cross-charge share"
                                 value={numberCell(table, flowKpiColumns.crossChargeShare)}
                                 format="0.0%"
+                                note="Employee L1 ≠ project L1"
                             />
+                            <AxKpiCard label="Synerion hours" value={numberCell(table, flowKpiColumns.hours)} format="#,0" note={`${periodText} · employee org`} />
                         </div>
                         {areaNote !== undefined ? (
                             <div className="grid grid-cols-1 gap-grid sm:grid-cols-3">
-                                <KpiTile
-                                    title="Cross-charge hours received"
-                                    subtitle={`Other areas' people on ${areaNote} projects`}
+                                <AxKpiCard
+                                    label="Cross-charge hours received"
                                     value={numberCell(table, flowKpiColumns.received)}
                                     format="#,0"
+                                    note={`Other areas' people on ${areaNote} projects`}
                                 />
-                                <KpiTile
-                                    title="Cross-charge hours lent"
-                                    subtitle={`${areaNote} people on other areas' projects`}
+                                <AxKpiCard
+                                    label="Cross-charge hours lent"
                                     value={numberCell(table, flowKpiColumns.lent)}
                                     format="#,0"
+                                    note={`${areaNote} people on other areas' projects`}
                                 />
-                                <KpiTile title="Net cross-charge hours" subtitle="Received − lent" value={numberCell(table, flowKpiColumns.net)} format="#,0;-#,0;0" />
+                                <AxKpiCard signed label="Net cross-charge hours" value={numberCell(table, flowKpiColumns.net)} format="#,0" note="Received − lent" />
                             </div>
                         ) : (
-                            <p className="text-200 text-muted-foreground">Select an L1 area to see the cross-charge hours it received and lent.</p>
+                            <p className="body-sm m-0 text-muted-foreground">Select an L1 area to see the cross-charge hours it received and lent.</p>
                         )}
                     </div>
                 )}
             </QueryStates>
 
-            <QueryStates result={matrixResult} shape="table" title={`${FLOW_ANALYSES[analysis].label} flows by month`}>
-                {(table) => (
-                    <HierarchyMatrix
-                        table={table}
-                        spec={matrixSpecFor(table)}
-                        rowHeader={withEmployees ? "Flow › customer › project › employee" : "Flow › customer › project"}
-                        format="#,0"
-                        valueWidth={120}
-                        title={`${FLOW_ANALYSES[analysis].label} flows by month`}
-                        subtitle={
-                            withEmployees
-                                ? `${periodText}. Totals come from the model.`
-                                : `${periodText}. Totals come from the model. Select a customer or project to expand to employees.`
-                        }
-                    />
-                )}
-            </QueryStates>
+            <AxCard
+                title={`${FLOW_ANALYSES[analysis].label} flows by month`}
+                subtitle={
+                    withEmployees
+                        ? `${periodText} · hours · totals from the model`
+                        : `${periodText} · hours · totals from the model · select a customer or project to expand to employees`
+                }
+            >
+                <QueryStates result={matrixResult} shape="table" title={`${FLOW_ANALYSES[analysis].label} flows by month`}>
+                    {(table) => (
+                        <HierarchyMatrix
+                            chromeless
+                            table={table}
+                            spec={matrixSpecFor(table)}
+                            rowHeader={withEmployees ? "Flow › customer › project › employee" : "Flow › customer › project"}
+                            format="#,0"
+                            valueWidth={120}
+                            title={`${FLOW_ANALYSES[analysis].label} flows by month`}
+                        />
+                    )}
+                </QueryStates>
+            </AxCard>
 
             <DecompositionTree key={`${analysis}|${args.join("|")}`} analysis={analysis} filters={args} ready={ready} />
         </section>

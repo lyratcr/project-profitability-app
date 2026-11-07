@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
 import { render } from "@testing-library/react";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import type { VisualTheme } from "@microsoft/fabric-visuals-core";
@@ -67,5 +68,42 @@ describe("HierarchyMatrix", () => {
         renderWith(undefined);
         cols = (grid.props as { columns: { id: string; width?: number }[] }).columns;
         expect(cols.every((c) => c.width === undefined)).toBe(true);
+    });
+
+    it("renders share bars and signed deltas only in the columns asked for", () => {
+        const t = {
+            columns: ["L1", "[IsL1Total]", "[Hours]", "[Share]", "[MoM]"].map((name) => ({ name })),
+            rows: [
+                [null, true, 271203, 1, 0.0048],
+                ["BPO", false, 169978, 0.627, -0.0202],
+            ],
+        } as unknown as QueryTable;
+        const values = [
+            { raw: "[Hours]", header: "Hours" },
+            { raw: "[Share]", header: "Share" },
+            { raw: "[MoM]", header: "MoM" },
+        ];
+        render(
+            <ThemeContext.Provider value={{ isDark: false, toggleTheme: () => {}, theme: {} as VisualTheme }}>
+                <HierarchyMatrix
+                    chromeless
+                    table={t}
+                    spec={{ levels: ["L1"], flags: ["[IsL1Total]"], values }}
+                    rowHeader="Org"
+                    format={["#,0", "0.0%", "0.0%"]}
+                    barColumns={[1]}
+                    deltaColumns={[2]}
+                    title="t"
+                />
+            </ThemeContext.Provider>,
+        );
+        const p = grid.props as { columns: { id: string; cellRenderer?: (v: unknown) => unknown }[]; header?: unknown; chromeless?: boolean };
+        expect(p.chromeless).toBe(true);
+        expect(p.header).toBeUndefined();
+        expect(p.columns[1].cellRenderer!(169978)).toBe("169,978");
+        const share = render(<>{p.columns[2].cellRenderer!(0.627) as ReactNode}</>);
+        expect(share.container.querySelector(".ax-bar > span")).toHaveStyle({ width: "62.7%" });
+        const delta = render(<>{p.columns[3].cellRenderer!(-0.0202) as ReactNode}</>);
+        expect(delta.container.textContent).toBe("−2.0%");
     });
 });
