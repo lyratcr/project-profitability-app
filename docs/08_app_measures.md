@@ -880,3 +880,25 @@ Description: `FIXED 2026-11-05 (Fabric app): Adan's Annualized Revenue per FTE (
 ```dax
 DIVIDE ( [Actual Revenue_app], [Allocated FTE (Last Week, Project Org)_app], BLANK () ) * 12
 ```
+
+## 12. Hours vs plan without plan (open item #26, P6): PROPOSED 2026-11-06
+
+`Hours vs Plan_app` is `[Synerion Hours_app] - [Planned Hours_app]`, so a week with no plan rows (most weeks of a Fixed Fee project) shows all its hours as a gap. Proposed: blank when the period has no plan. `Hours vs Plan %_app` is already blank without plan. Pending Ion's approval; nothing changed in the model.
+
+#### Hours vs Plan_app (UPDATE)
+
+Description: `FIXED 2026-11-06 (Fabric app): Synerion minus planned hours; blank when the period has no plan hours. Project level only.`
+
+```dax
+IF ( NOT ISBLANK ( [Planned Hours_app] ), [Synerion Hours_app] - [Planned Hours_app] )
+```
+
+### Validation (query-scoped, 2026-11-06)
+
+| Project | Week (Sun–Sat) | Current | Proposed |
+|---|---|---|---|
+| PAR-401-05 (Fixed Fee) | Oct 25–31 (no plan rows) | 13,554 | blank |
+| PAR-401-01 | Nov 1–7, to date (holds the 1st) | 2,386 | 2,386 |
+| UIP-101-01 (T&M) | Oct 25–31 | −32 | −32 |
+| UIP-101-01 (T&M) | Nov 1–7, to date (no plan rows) | 40 | blank |
+

@@ -17,3 +17,9 @@ export function numberCell(table: QueryTable, raw: string, rowIndex = 0): number
     const value = cell(table, raw, rowIndex);
     return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
+
+/** The table without the given columns (e.g. a sort-only key); row order is kept, since it carries the query's ORDER BY. */
+export function withoutColumns(table: QueryTable, raw: readonly string[]): QueryTable {
+    const keep = table.columns.map((c, i) => (raw.includes(c.name) ? -1 : i)).filter((i) => i >= 0);
+    return { ...table, columns: keep.map((i) => table.columns[i]), rows: table.rows.map((r) => keep.map((i) => r[i])) };
+}

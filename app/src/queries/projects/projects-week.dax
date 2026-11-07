@@ -1,0 +1,16 @@
+// P6 one Sunday-Saturday week vs plan, for the project: Synerion hours, plan (Backlog) hours and revenue, the
+// difference, people who logged time, and hours logged in Synerion but not yet integrated into Project Operations.
+// The app runs it once per column (last week, this week to date) with that week's dim_calendar[date] range.
+// Plan rows are posted monthly for Fixed Fee (first of the month) and daily for T&M, so a week only holds the
+// Fixed Fee plan when it contains the first of a month.
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "Hours", [Synerion Hours_app],
+    "PlannedHours", [Planned Hours_app],
+    "HoursVsPlan", [Hours vs Plan_app],
+    "HoursVsPlanPct", [Hours vs Plan %_app],
+    "PlannedRevenue", [Planned Revenue_app],
+    "People", [People With Hours_app],
+    "NotYetBilled", [Hours Not Yet Billed_app]
+)

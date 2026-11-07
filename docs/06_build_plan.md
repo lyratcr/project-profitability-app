@@ -92,7 +92,10 @@
 ## Phase 4 — PM page (after open items #1 and #2 are fixed)
 
 - [ ] 4.1 P6 Project Progress: KPIs, week vs plan, weekly trend, revenue by month
+  - 2026-11-06: built ahead of #1 / #2 on branch `feat/p6-projects-fact-keys` (not released): `components/projects-page.component.tsx`, queries in `queries/projects/` (one per visual; the week table runs one query per column), `lib/plan-end.ts` for days left (viewer's local date). Project filter on `fact_profitability_metrics[project_key]` and `fact_revenue_metrics[project_key]`, never `dim_project`. KPIs: billing progress (spotlight), revenue left to bill (accent), total plan, billed to date, plan end date with days left (< 30 red, < 90 amber). Last week / this week to date vs plan; 12-week trend with hours and plan on one axis. Spot-checked against independent DAX in Ion's Chrome. Mobile not checked (#16).
+  - Pending before release: #1 and #2 closed; Ion's decision on #26 (weekly plan for Fixed Fee) and approval of the `Hours vs Plan_app` fix (`08` § 12).
 - [ ] 4.2 P6 "Who logged time" table with flags and the Monday banner
+  - 2026-11-06: built with 4.1 (same branch): one row per person (tasks, pay categories, hours on project, all their hours that week, time allocation, flags "No hours this week" / "Unmapped task" / "Overtime"; flagged people first). The Monday banner shows on Monday and Tuesday before 06:00 local (#23) and links to the review week.
 - [ ] 4.3 Project selector (remembered; default to the PM's projects once #4 exists)
 
 ## Phase 5 — Release
