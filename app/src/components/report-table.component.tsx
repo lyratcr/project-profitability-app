@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { DataGrid, type SortConfig } from "@microsoft/fabric-datagrid";
 import { useThemeContext } from "@/hooks/theme.context";
+import { withoutColumns } from "@/lib/query-table";
 import { toDataTable, toRollupDataTables, type ColumnMetadataMap } from "@/lib/to-data-table";
 
 interface ReportTableProps {
@@ -19,11 +20,14 @@ interface ReportTableProps {
     pageSize?: number;
     /** No frame or header: the caller's card (e.g. AxCard) is the frame and carries the title. */
     chromeless?: boolean;
+    /** Raw names of query columns that only order the rows (e.g. a numeric month key); not shown. */
+    hiddenColumns?: readonly string[];
 }
 
 /** Table with model-provided grand totals (build plan 2.4). */
-export function ReportTable({ table, columnMetadata, title, subtitle, grandTotalFlag, defaultSort, pageSize = 25, chromeless = false }: ReportTableProps): ReactElement {
+export function ReportTable({ table: queryTable, columnMetadata, title, subtitle, grandTotalFlag, defaultSort, pageSize = 25, chromeless = false, hiddenColumns }: ReportTableProps): ReactElement {
     const { theme } = useThemeContext();
+    const table = hiddenColumns && hiddenColumns.length > 0 ? withoutColumns(queryTable, hiddenColumns) : queryTable;
     const frame = chromeless ? { chromeless: true as const } : { header: { title, subtitle } };
 
     if (grandTotalFlag) {

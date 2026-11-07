@@ -1295,8 +1295,8 @@ table _Measures
 		displayFolder: _app\Projects
 		lineageTag: 2e215692-3dfe-499b-a99b-5e04634c6130
 
-	/// ADDED 2026-11-04 (Fabric app): Synerion minus planned hours. Project level only.
-	measure 'Hours vs Plan_app' = [Synerion Hours_app] - [Planned Hours_app]
+	/// FIXED 2026-11-06 (Fabric app): Synerion minus planned hours; blank when the period has no plan hours. Project level only.
+	measure 'Hours vs Plan_app' = IF ( NOT ISBLANK ( [Planned Hours_app] ), [Synerion Hours_app] - [Planned Hours_app] )
 		formatString: #,0;-#,0;0
 		displayFolder: _app\Projects
 		lineageTag: d3a499be-fdd8-4038-90d0-0f48f37eb8f3
