@@ -26,8 +26,10 @@ import {
     ftePeople,
 
 } from "@/queries/fte";
+import { AxCard } from "./ax/ax-card.component";
+import { AxKpiCard } from "./ax/ax-kpi-card.component";
+import { AxPageHeader } from "./ax/ax-page-header.component";
 import { HierarchyMatrix } from "./hierarchy-matrix.component";
-import { KpiTile } from "./kpi-tile.component";
 import { QueryStates } from "./query-states.component";
 import { ReportTable } from "./report-table.component";
 
@@ -95,83 +97,88 @@ export function FtePage({ page, filters, options }: FtePageProps): ReactElement 
 
     return (
         <section aria-labelledby="page-title" className="flex flex-col gap-6">
-            <header className="min-w-0">
-                <h1 id="page-title" className="font-page-title text-page-title text-emphasis-foreground">
-                    {page.title}
-                </h1>
-                <p className="font-page-subtitle text-page-subtitle text-muted-foreground">{page.purpose}</p>
-                {context !== "" && <p className="mt-1 text-200 text-muted-foreground">{context}</p>}
-                <p className="mt-1 text-200 text-muted-foreground">
-                    Allocation FTE: each person counts 1, split across projects by their share of the week&apos;s hours, in the last
-                    Sunday–Saturday week with hours. Organization filters use the employee&apos;s home org.
-                </p>
-            </header>
+            <AxPageHeader
+                title={page.title}
+                purpose={page.purpose}
+                context={context}
+                notes={[
+                    "Allocation FTE: each person counts 1, split across projects by their share of the week's hours, in the last Sunday–Saturday week with hours. Organization filters use the employee's home org.",
+                ]}
+            />
 
+            {/* KPI row: allocated FTE is the hero (spotlight); headcount is the comparison. */}
             <QueryStates result={kpiResult} shape="kpi" title="Allocated FTE">
                 {(table) => (
                     <div className="grid grid-cols-1 gap-grid sm:grid-cols-2">
-                        <KpiTile
-                            title="Allocated FTE"
-                            subtitle={`Last week with hours · ${periodText}`}
+                        <AxKpiCard
+                            variant="spotlight"
+                            label={`Allocated FTE · last week · ${periodText}`}
                             value={numberCell(table, fteKpiColumns.fte)}
                             format="#,0.0"
                             change={{ value: numberCell(table, fteKpiColumns.fteMoM), format: "0.0%", comparedTo: describeMonthComparison(filters.period) }}
                             favorable="neither"
                         />
-                        <KpiTile
-                            title="Headcount"
-                            subtitle="People who logged time that week"
-                            value={numberCell(table, fteKpiColumns.headcount)}
-                            format="#,0"
-                        />
+                        <AxKpiCard label="Headcount" value={numberCell(table, fteKpiColumns.headcount)} format="#,0" note="People who logged time that week" />
                     </div>
                 )}
             </QueryStates>
 
-            <QueryStates result={customerResult} shape="table" title="FTE by customer and project">
-                {(table) => (
-                    <HierarchyMatrix
-                        table={table}
-                        spec={CUSTOMER_SPEC}
-                        rowHeader="Customer › project"
-                        format={CUSTOMER_FORMATS}
-                        title="FTE by customer and project"
-                        subtitle={`Top ${FTE_TOP_CUSTOMERS} customers by FTE. People = who logged time there; someone split across projects counts in each but adds less than 1 FTE.`}
-                    />
-                )}
-            </QueryStates>
-
-            <QueryStates result={monthResult} shape="table" title="FTE by project org and month">
-                {(table) => (
-                    <HierarchyMatrix
-                        table={table}
-                        spec={MONTH_SPEC}
-                        rowHeader="Project org"
-                        format="#,0.0"
-                        valueWidth={120}
-                        title="FTE by project org and month"
-                        subtitle={`Where the work is billed, last ${TREND_MONTHS} months (${monthLabel.format(months.window.start)} – ${monthLabel.format(months.window.end)}); each month shows its last week with hours.`}
-                        expandFirstLevel
-                    />
-                )}
-            </QueryStates>
-
-            {peopleScope ? (
-                <QueryStates result={peopleResult} shape="table" title="People" emptyMessage="Nobody logged time on this selection in the period.">
+            <AxCard title="FTE by customer and project" subtitle={`${periodText} · top ${FTE_TOP_CUSTOMERS} customers by FTE · FTE and people`}>
+                <QueryStates result={customerResult} shape="table" title="FTE by customer and project">
                     {(table) => (
-                        <ReportTable
+                        <HierarchyMatrix
+                            chromeless
                             table={table}
-                            columnMetadata={people.columnMetadata}
-                            title={`People on ${selection ?? "the selection"}`}
-                            subtitle={`${periodText}, most hours first. Time allocation = share of all the person's hours in the period; FTE = last week with hours.`}
+                            spec={CUSTOMER_SPEC}
+                            rowHeader="Customer › project"
+                            format={CUSTOMER_FORMATS}
+                            title="FTE by customer and project"
                         />
                     )}
                 </QueryStates>
-            ) : (
-                <div className="rounded-xl border border-dashed border-border bg-card px-6 py-8 text-center text-300 text-muted-foreground">
-                    Select a customer or a project in the filters to see who works on it and how much of their time it takes.
-                </div>
-            )}
+                <p className="caption m-0 mt-3 text-muted-foreground">
+                    People = who logged time there; someone split across projects counts in each but adds less than 1 FTE.
+                </p>
+            </AxCard>
+
+            <AxCard
+                title="FTE by project org and month"
+                subtitle={`Where the work is billed · last ${TREND_MONTHS} months · ${monthLabel.format(months.window.start)} – ${monthLabel.format(months.window.end)} · each month's last week with hours`}
+            >
+                <QueryStates result={monthResult} shape="table" title="FTE by project org and month">
+                    {(table) => (
+                        <HierarchyMatrix
+                            chromeless
+                            table={table}
+                            spec={MONTH_SPEC}
+                            rowHeader="Project org"
+                            format="#,0.0"
+                            valueWidth={120}
+                            title="FTE by project org and month"
+                            expandFirstLevel
+                        />
+                    )}
+                </QueryStates>
+            </AxCard>
+
+            <AxCard
+                title={peopleScope ? `People on ${selection ?? "the selection"}` : "People"}
+                subtitle={
+                    peopleScope
+                        ? `${periodText} · most hours first · time allocation = share of all the person's hours in the period · FTE = last week with hours`
+                        : "Who works on a customer or project, and how much of their time it takes"
+                }
+            >
+                {peopleScope ? (
+                    <QueryStates result={peopleResult} shape="table" title="People" emptyMessage="Nobody logged time on this selection in the period.">
+                        {(table) => (
+                            <ReportTable chromeless table={table} columnMetadata={people.columnMetadata} title={`People on ${selection ?? "the selection"}`} />
+                        )}
+                    </QueryStates>
+                ) : (
+                    <p className="body m-0 text-muted-foreground">Select a customer or a project in the filters to see the people.</p>
+                )}
+            </AxCard>
         </section>
     );
 }

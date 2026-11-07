@@ -3,6 +3,7 @@ import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmode
 import { DataGrid, type GridColumnDef, type Row } from "@microsoft/fabric-datagrid";
 import { formatValue, type DataTable } from "@microsoft/fabric-visuals-core";
 import { useThemeContext } from "@/hooks/theme.context";
+import { signedChange } from "@/lib/change";
 import { buildMatrix, type MatrixSpec } from "@/lib/matrix";
 
 interface HierarchyMatrixProps {
@@ -31,9 +32,25 @@ interface HierarchyMatrixProps {
      * (design-system DataTable `.ax-bar`). Display only; the share itself comes from the model.
      */
     barColumns?: readonly number[];
+    /**
+     * Value columns (0-based) that hold a change (e.g. MoM %): shown with a sign (+ / true minus) and the
+     * positive or negative ink (design-system DataTable). Increase is taken as good news.
+     */
+    deltaColumns?: readonly number[];
 }
 
 const show = (value: unknown, format?: string) => (value === null || value === undefined ? "" : String(formatValue(value, format)));
+
+/** A change with its sign and the positive / negative ink; never colour alone. */
+function DeltaCell({ value, format }: { value: unknown; format?: string }): ReactNode {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "";
+    const color = value > 0 ? "var(--positive-ink)" : value < 0 ? "var(--negative-ink)" : undefined;
+    return (
+        <span className="tabular-nums" style={color ? { color } : undefined}>
+            {signedChange(value, format)}
+        </span>
+    );
+}
 
 /** A formatted share with an in-cell bar; the bar length is the model's 0–1 share, clamped for display. */
 function ShareCell({ value, format }: { value: unknown; format?: string }): ReactNode {
@@ -64,6 +81,7 @@ export function HierarchyMatrix({
     valueWidth,
     chromeless = false,
     barColumns = [],
+    deltaColumns = [],
 }: HierarchyMatrixProps): ReactElement {
     const { theme } = useThemeContext();
     const matrix = useMemo(() => buildMatrix(table, spec), [table, spec]);
@@ -78,7 +96,13 @@ export function HierarchyMatrix({
                   numericStyling: true,
                   ...(valueWidth !== undefined ? { width: valueWidth, minWidth: valueWidth } : {}),
                   cellRenderer: (value) =>
-                      barColumns.includes(i - 1) ? <ShareCell value={value} format={formatOf(i - 1)} /> : show(value, formatOf(i - 1)),
+                      barColumns.includes(i - 1) ? (
+                          <ShareCell value={value} format={formatOf(i - 1)} />
+                      ) : deltaColumns.includes(i - 1) ? (
+                          <DeltaCell value={value} format={formatOf(i - 1)} />
+                      ) : (
+                          show(value, formatOf(i - 1))
+                      ),
               },
     );
 

@@ -23,13 +23,15 @@ interface AxKpiCardProps {
      * bar of the page's focus metric (one per page); "default" otherwise.
      */
     variant?: AxKpiVariant;
+    /** Show the value with its sign (+ / true minus), e.g. a net figure. */
+    signed?: boolean;
 }
 
 /**
  * Auxis KpiCard (design-system/components/KpiCard): label, value with tabular figures, and a StatusBadge
  * delta pill with arrow and sign plus the comparison basis. Every number comes from the model.
  */
-export function AxKpiCard({ label, value, format, change, favorable = "increase", note, variant = "default" }: AxKpiCardProps): ReactElement {
+export function AxKpiCard({ label, value, format, change, favorable = "increase", note, variant = "default", signed = false }: AxKpiCardProps): ReactElement {
     const presentation = change ? presentChange(change.value, favorable) : null;
     const pillClass =
         presentation?.tone === "positive" ? "ax-pill ax-pill-up" : presentation?.tone === "negative" ? "ax-pill ax-pill-down" : "ax-pill";
@@ -38,7 +40,7 @@ export function AxKpiCard({ label, value, format, change, favorable = "increase"
         <section className={cn("ax-card", variant === "spotlight" && "ax-spotlight ax-kpi-hero")} aria-label={label}>
             {variant === "accent" && <span className="ax-kpi-accent" aria-hidden="true" />}
             <div className="ax-kpi-label">{label}</div>
-            <div className="ax-kpi-value">{value === null ? "—" : String(formatValue(value, format))}</div>
+            <div className="ax-kpi-value">{value === null ? "—" : signed ? signedChange(value, format) : String(formatValue(value, format))}</div>
             <div className="ax-kpi-foot">
                 {change && change.value !== null && presentation ? (
                     <>

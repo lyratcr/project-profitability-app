@@ -27,8 +27,10 @@ import {
     yieldKpis,
     yieldMonthlyTrend,
 } from "@/queries/yield";
+import { AxCard } from "./ax/ax-card.component";
+import { AxKpiCard } from "./ax/ax-kpi-card.component";
+import { AxPageHeader } from "./ax/ax-page-header.component";
 import { HierarchyMatrix } from "./hierarchy-matrix.component";
-import { KpiTile } from "./kpi-tile.component";
 import { QueryStates } from "./query-states.component";
 import { ReportTable } from "./report-table.component";
 import { TrendChart } from "./trend-chart.component";
@@ -91,90 +93,95 @@ export function YieldPage({ page, filters, options }: YieldPageProps): ReactElem
 
     return (
         <section aria-labelledby="page-title" className="flex flex-col gap-6">
-            <header className="min-w-0">
-                <h1 id="page-title" className="font-page-title text-page-title text-emphasis-foreground">
-                    {page.title}
-                </h1>
-                <p className="font-page-subtitle text-page-subtitle text-muted-foreground">{page.purpose}</p>
-                {context !== "" && <p className="mt-1 text-200 text-muted-foreground">{context}</p>}
-                <p className="mt-1 text-200 text-muted-foreground">
-                    Actual revenue (Actual scenario) ÷ allocation FTE in the last Sunday–Saturday week with hours. With an organization
-                    selected, revenue follows the project&apos;s financial org and FTE the time people spent on that org&apos;s projects.
-                </p>
-            </header>
+            <AxPageHeader
+                title={page.title}
+                purpose={page.purpose}
+                context={context}
+                notes={[
+                    "Actual revenue (Actual scenario) ÷ allocation FTE in the last Sunday–Saturday week with hours. With an organization selected, revenue follows the project's financial org and FTE the time people spent on that org's projects.",
+                ]}
+            />
 
+            {/* KPI row: annualized revenue per FTE (Adan's key KPI) is the hero; revenue per FTE carries the accent bar. */}
             <QueryStates result={kpiResult} shape="kpi" title="Yield KPIs">
                 {(table) => (
                     <div className="grid grid-cols-1 gap-grid sm:grid-cols-2 xl:grid-cols-4">
-                        <KpiTile
-                            title="Actual revenue"
-                            subtitle={periodText}
-                            value={numberCell(table, yieldKpiColumns.revenue)}
+                        <AxKpiCard
+                            variant="spotlight"
+                            label={`Annualized revenue per FTE · ${periodText}`}
+                            value={numberCell(table, yieldKpiColumns.annualized)}
                             format={YIELD_FORMATS.money}
-                            change={{ value: numberCell(table, yieldKpiColumns.revenueMoM), format: YIELD_FORMATS.percent, comparedTo: comparison }}
+                            note="Revenue per FTE × 12"
                         />
-                        <KpiTile title="Allocated FTE" subtitle="Last week with hours · project org" value={numberCell(table, yieldKpiColumns.fte)} format={YIELD_FORMATS.fte} />
-                        <KpiTile
-                            title="Revenue per FTE"
-                            subtitle="Monthly"
+                        <AxKpiCard
+                            variant="accent"
+                            label="Revenue per FTE"
                             value={numberCell(table, yieldKpiColumns.revenuePerFte)}
                             format={YIELD_FORMATS.money}
                             change={{ value: numberCell(table, yieldKpiColumns.revenuePerFteMoM), format: YIELD_FORMATS.percent, comparedTo: comparison }}
                         />
-                        <KpiTile title="Annualized revenue per FTE" subtitle="Revenue per FTE × 12" value={numberCell(table, yieldKpiColumns.annualized)} format={YIELD_FORMATS.money} />
+                        <AxKpiCard
+                            label="Actual revenue"
+                            value={numberCell(table, yieldKpiColumns.revenue)}
+                            format={YIELD_FORMATS.money}
+                            change={{ value: numberCell(table, yieldKpiColumns.revenueMoM), format: YIELD_FORMATS.percent, comparedTo: comparison }}
+                        />
+                        <AxKpiCard
+                            label="Allocated FTE"
+                            value={numberCell(table, yieldKpiColumns.fte)}
+                            format={YIELD_FORMATS.fte}
+                            note="Last week with hours · project org"
+                        />
                     </div>
                 )}
             </QueryStates>
 
-            <QueryStates result={trendResult} shape="chart" title="Monthly revenue and revenue per FTE">
-                {(table) => (
-                    <TrendChart
-                        data={toDataTable(table, monthly.columnMetadata)}
-                        spec={monthly.vegaLiteSpec}
-                        title="Monthly revenue and revenue per FTE"
-                        subtitle={`Last ${TREND_MONTHS} months, ${monthLabel.format(trend.window.start)} – ${monthLabel.format(trend.window.end)}. Bars: actual revenue; line: revenue per FTE.`}
-                        height={300}
-                    />
-                )}
-            </QueryStates>
+            <AxCard
+                title="Monthly revenue and revenue per FTE"
+                subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(trend.window.start)} – ${monthLabel.format(trend.window.end)} · bars: actual revenue (USD) · line: revenue per FTE (USD)`}
+            >
+                <QueryStates result={trendResult} shape="chart" title="Monthly revenue and revenue per FTE">
+                    {(table) => (
+                        <TrendChart chromeless data={toDataTable(table, monthly.columnMetadata)} spec={monthly.vegaLiteSpec} title="Monthly revenue and revenue per FTE" height={300} />
+                    )}
+                </QueryStates>
+            </AxCard>
 
-            <QueryStates result={orgResult} shape="table" title="Yield by organization">
-                {(table) => (
-                    <HierarchyMatrix
-                        table={table}
-                        spec={ORG_SPEC}
-                        rowHeader="Organization"
-                        format={ORG_FORMATS}
-                        title="Yield by organization"
-                        subtitle={`${periodText}. Totals come from the model. Project-org combos missing from the master hierarchy lose their FTE here (open item #21).`}
-                        expandFirstLevel
-                    />
-                )}
-            </QueryStates>
+            <AxCard title="Yield by organization" subtitle={`${periodText} · USD · revenue by financial org, FTE by project org`}>
+                <QueryStates result={orgResult} shape="table" title="Yield by organization">
+                    {(table) => (
+                        <HierarchyMatrix
+                            chromeless
+                            table={table}
+                            spec={ORG_SPEC}
+                            rowHeader="Organization"
+                            format={ORG_FORMATS}
+                            deltaColumns={[4]}
+                            title="Yield by organization"
+                            expandFirstLevel
+                        />
+                    )}
+                </QueryStates>
+                <p className="caption m-0 mt-3 text-muted-foreground">
+                    Totals come from the model. Project-org combos missing from the master hierarchy lose their FTE here (open item #21).
+                </p>
+            </AxCard>
 
             <div className="grid grid-cols-1 gap-grid lg:grid-cols-2">
-                <QueryStates result={grewResult} shape="table" title="Customers that grew most">
-                    {(table) => (
-                        <ReportTable
-                            table={table}
-                            columnMetadata={grew.columnMetadata}
-                            title="Customers that grew most"
-                            subtitle={`Top ${TOP_CUSTOMER_MOVES} by revenue change ${comparison}`}
-                            pageSize={TOP_CUSTOMER_MOVES}
-                        />
-                    )}
-                </QueryStates>
-                <QueryStates result={droppedResult} shape="table" title="Customers that dropped most">
-                    {(table) => (
-                        <ReportTable
-                            table={table}
-                            columnMetadata={dropped.columnMetadata}
-                            title="Customers that dropped most"
-                            subtitle={`Top ${TOP_CUSTOMER_MOVES} by revenue change ${comparison}`}
-                            pageSize={TOP_CUSTOMER_MOVES}
-                        />
-                    )}
-                </QueryStates>
+                <AxCard title="Customers that grew most" subtitle={`Top ${TOP_CUSTOMER_MOVES} by revenue change ${comparison} · USD`}>
+                    <QueryStates result={grewResult} shape="table" title="Customers that grew most">
+                        {(table) => (
+                            <ReportTable chromeless table={table} columnMetadata={grew.columnMetadata} title="Customers that grew most" pageSize={TOP_CUSTOMER_MOVES} />
+                        )}
+                    </QueryStates>
+                </AxCard>
+                <AxCard title="Customers that dropped most" subtitle={`Top ${TOP_CUSTOMER_MOVES} by revenue change ${comparison} · USD`}>
+                    <QueryStates result={droppedResult} shape="table" title="Customers that dropped most">
+                        {(table) => (
+                            <ReportTable chromeless table={table} columnMetadata={dropped.columnMetadata} title="Customers that dropped most" pageSize={TOP_CUSTOMER_MOVES} />
+                        )}
+                    </QueryStates>
+                </AxCard>
             </div>
         </section>
     );

@@ -5,6 +5,7 @@ import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { cell, numberCell } from "@/lib/query-table";
 import { cn } from "@/lib/utils";
 import { FLOW_ANALYSES, flowTreeColumns, flowsTree, type FlowAnalysis } from "@/queries/flows";
+import { AxCard } from "./ax/ax-card.component";
 import { QueryStates } from "./query-states.component";
 
 interface DecompositionTreeProps {
@@ -32,13 +33,7 @@ export function DecompositionTree({ analysis, filters, ready }: DecompositionTre
     const shown = Math.min(picks.length + 1, levels.length);
 
     return (
-        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
-            <div>
-                <h2 className="font-semibold text-300 text-emphasis-foreground">Flow breakdown</h2>
-                <p className="text-200 text-muted-foreground">
-                    Pick an item to break it down: {levels.map((l) => l.label.toLowerCase()).join(" → ")}.
-                </p>
-            </div>
+        <AxCard title="Flow breakdown" subtitle={`Pick an item to break it down: ${levels.map((l) => l.label.toLowerCase()).join(" → ")}`}>
             <div className="flex gap-3 overflow-x-auto pb-1">
                 {levels.slice(0, shown).map((level, i) => (
                     <TreeColumn
@@ -55,7 +50,7 @@ export function DecompositionTree({ analysis, filters, ready }: DecompositionTre
                     />
                 ))}
             </div>
-        </div>
+        </AxCard>
     );
 }
 
@@ -77,7 +72,7 @@ function TreeColumn({ analysis, level, label, filters, picks, selected, ready, h
 
     return (
         <div className="flex w-64 shrink-0 flex-col gap-2">
-            <h3 className="text-200 font-semibold text-muted-foreground">{label}</h3>
+            <h3 className="ax-label m-0">{label}</h3>
             <QueryStates result={result} shape="table" title={label} emptyMessage="No hours here.">
                 {(table) => {
                     const items = table.rows.map((_, r) => ({
@@ -114,8 +109,8 @@ function TreeColumn({ analysis, level, label, filters, picks, selected, ready, h
                                                     {canPick && <ChevronRight className="icon-size-100" aria-hidden="true" />}
                                                 </span>
                                             </span>
-                                            <span className="h-1.5 w-full rounded-full bg-muted" aria-hidden="true">
-                                                <span className="block h-1.5 rounded-full bg-brand" style={{ width: `${width}%` }} />
+                                            <span className="ax-bar block w-full" aria-hidden="true">
+                                                <span style={{ width: `${width}%` }} />
                                             </span>
                                         </button>
                                     </li>

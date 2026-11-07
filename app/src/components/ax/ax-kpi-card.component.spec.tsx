@@ -39,3 +39,10 @@ describe("AxKpiCard", () => {
         expect(screen.getByText("Regular Time")).toBeInTheDocument();
     });
 });
+
+describe("AxKpiCard signed values", () => {
+    it("shows a net value with its sign", () => {
+        render(<AxKpiCard signed label="Net cross-charge hours" value={-104} format="#,0" />);
+        expect(screen.getByText("−104")).toBeInTheDocument();
+    });
+});

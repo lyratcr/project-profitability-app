@@ -21,6 +21,7 @@ import {
 } from "@/queries/effort";
 import { AxCard } from "./ax/ax-card.component";
 import { AxKpiCard } from "./ax/ax-kpi-card.component";
+import { AxPageHeader } from "./ax/ax-page-header.component";
 import { HierarchyMatrix } from "./hierarchy-matrix.component";
 import { QueryStates } from "./query-states.component";
 import { SegmentedToggle } from "./segmented-toggle.component";
@@ -101,22 +102,19 @@ export function EffortPage({ page, filters, options, view, onViewChange, today =
 
     return (
         <section aria-labelledby="page-title" className="flex flex-col gap-6">
-            {/* Auxis page head: display title, muted purpose and filter context, org view as a chip slicer. */}
-            <header className="flex flex-wrap items-end justify-between gap-4">
-                <div className="min-w-0">
-                    <h1 id="page-title" className="display-xl m-0">
-                        {page.title}
-                    </h1>
-                    <p className="body m-0 mt-1 text-muted-foreground">{page.purpose}</p>
-                    {context !== "" && <p className="body-sm m-0 mt-1 text-muted-foreground">{context}</p>}
-                </div>
-                <SegmentedToggle
-                    label="Organization view"
-                    options={(["project", "employee"] as const).map((v) => ({ value: v, label: ORG_VIEW_LABEL[v], hint: ORG_VIEW_HINT[v] }))}
-                    value={view}
-                    onChange={onViewChange}
-                />
-            </header>
+            <AxPageHeader
+                title={page.title}
+                purpose={page.purpose}
+                context={context}
+                aside={
+                    <SegmentedToggle
+                        label="Organization view"
+                        options={(["project", "employee"] as const).map((v) => ({ value: v, label: ORG_VIEW_LABEL[v], hint: ORG_VIEW_HINT[v] }))}
+                        value={view}
+                        onChange={onViewChange}
+                    />
+                }
+            />
 
             {/* KPI row: one spotlight (the hero, hours) and one accent bar (the focus metric, productive share). */}
             <QueryStates result={kpiResult} shape="kpi" title="Synerion hours">
