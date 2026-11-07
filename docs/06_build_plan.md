@@ -87,6 +87,7 @@
   - Merged (PR #23) and deployed from `main` @ `d75d97b` on 2026-11-05; checked live (logos and fonts load on Fabric, same numbers).
 - [x] D.2 Apply the Auxis layouts to P2–P5
   - 2026-11-06: every page uses `AxPageHeader`, `AxKpiCard` and `AxCard` with `chromeless` visuals (charts transparent on the card). One spotlight and at most one accent per page: P2 headcount / contractors share; P3 allocated FTE (no accent); P4 intercompany share / cross-charge share (net cross-charge shown signed); P5 annualized revenue per FTE (Adan's key KPI) / revenue per FTE. New shared options: `AxKpiCard` `signed`, `HierarchyMatrix` `deltaColumns` (sign + positive/negative ink, P5 Rev / FTE MoM), `ReportTable` `chromeless`; the P4 flow breakdown sits in an `AxCard` with `ax-bar`s. `KpiTile` is no longer used by any page. Checked in Ion's Chrome (dark): P2 1,561 / 1,634 / 6.1%; P3 PAR-401-01 101.2 / 104, split person 63.6% / 0.60; P4 BPO cross charge Feb 2026 96.4% / 0.2% / 143,966 / 224 / 328 / −104; P5 October 2026 after today's refresh $6,105,005 / 1,561.0 / $3,911 / $46,931 = DAX.
+  - Merged (PR #25) and deployed from `main` @ `77e969f` on 2026-11-06; checked live.
 
 ## Phase 4 — PM page (after open items #1 and #2 are fixed)
 
