@@ -881,9 +881,9 @@ Description: `FIXED 2026-11-05 (Fabric app): Adan's Annualized Revenue per FTE (
 DIVIDE ( [Actual Revenue_app], [Allocated FTE (Last Week, Project Org)_app], BLANK () ) * 12
 ```
 
-## 12. Hours vs plan without plan (open item #26, P6): PROPOSED 2026-11-06
+## 12. Hours vs plan without plan (open item #26, P6): APPLIED 2026-11-06
 
-`Hours vs Plan_app` is `[Synerion Hours_app] - [Planned Hours_app]`, so a week with no plan rows (most weeks of a Fixed Fee project) shows all its hours as a gap. Proposed: blank when the period has no plan. `Hours vs Plan %_app` is already blank without plan. Pending Ion's approval; nothing changed in the model.
+`Hours vs Plan_app` is `[Synerion Hours_app] - [Planned Hours_app]`, so a week with no plan rows (most weeks of a Fixed Fee project) shows all its hours as a gap. Proposed: blank when the period has no plan. `Hours vs Plan %_app` is already blank without plan. Ion approved on 2026-11-06; updated in the Dev model with the Power BI modeling MCP (state Ready) and re-validated against the model measure: identical to the query-scoped values below. TMDL re-exported.
 
 #### Hours vs Plan_app (UPDATE)
 
