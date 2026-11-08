@@ -902,3 +902,29 @@ IF ( NOT ISBLANK ( [Planned Hours_app] ), [Synerion Hours_app] - [Planned Hours_
 | UIP-101-01 (T&M) | Oct 25–31 | −32 | −32 |
 | UIP-101-01 (T&M) | Nov 1–7, to date (no plan rows) | 40 | blank |
 
+## 13. Weekly variance vs plan (P6 weekly trend): CREATED 2026-11-07
+
+Ion asked for each week's variance against the plan on the P6 weekly trend (a segment from the plan to the hours with the % above it), as (hours − plan) ÷ plan with a sign. The model only had `Hours vs Plan %_app` (hours ÷ plan). Ion approved the DAX on 2026-11-07; created with the Power BI modeling MCP (state Ready) and re-validated against the model measure; TMDL re-exported.
+
+#### Hours vs Plan Variance %_app (NEW)
+
+Folder `_app\Projects` · format `+0.0%;-0.0%;0.0%`  
+Description: `ADDED 2026-11-07 (Fabric app): (Synerion hours - plan hours) / plan hours; blank without plan hours. Project level only.`
+
+```dax
+DIVIDE ( [Hours vs Plan_app], [Planned Hours_app] )
+```
+
+### Validation (2026-11-07)
+
+Query-scoped first, then against the model measure: identical, and equal to an independent `DIVIDE ( hours − plan, plan )` in all 15 project-weeks checked (UIP-101-01, MOS-401-09, PAR-401-05; Sep 27 – Oct 31 2026).
+
+| Project · week (Sun–Sat) | Hours | Plan | Variance |
+|---|---|---|---|
+| UIP-101-01 (T&M) · Oct 25–31 | 388 | 419.6 | −7.5% |
+| UIP-101-01 · Oct 11–17 | 264 | 488.4 | −45.9% |
+| MOS-401-09 (Fixed Fee) · Oct 25–31 | 826.8 | 4.8 | +17,018.7% |
+| PAR-401-05 (Fixed Fee) · Oct 4–10 | 13,394 | — | blank |
+
+Fixed Fee weekly plans are tiny or absent (open item #26), so their variance is very large; read it on T&M projects.
+
