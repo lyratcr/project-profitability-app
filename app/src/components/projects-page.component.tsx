@@ -39,7 +39,7 @@ interface ProjectsPageProps {
 }
 
 const PEOPLE_TABLE_ID = "who-logged-time";
-const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink", "surface"] as const;
+const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink-muted", "ink", "surface"] as const;
 // The weekly trend's spec carries a tooltip with both series (VegaVisual's line crosshair would show only the plan),
 // and its one plan label is wider than a week's column (VegaVisual would cut it to "Pla…").
 const TREND_CAPABILITIES = { disableLineChartCrosshairTooltip: true, disableTextTruncation: true } as const;
@@ -75,7 +75,7 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
     // Gold glass bars for the weekly trend (liquid glass look), from the design-system tokens.
     // Ink and surface switch with the theme; the hook reads them again when it changes.
     const tokens = useDesignTokens(GLASS_TOKENS);
-    const glass = useMemo(() => (tokens ? { light: tokens[0], base: tokens[1], deep: tokens[2], plan: tokens[3], ring: tokens[4] } : undefined), [tokens]);
+    const glass = useMemo(() => (tokens ? { light: tokens[0], base: tokens[1], deep: tokens[2], plan: tokens[3], variance: tokens[4], ring: tokens[5] } : undefined), [tokens]);
 
     const model = useMemo(() => {
         const [y, m, d, h] = nowKey.split("-").map(Number);
@@ -310,10 +310,14 @@ function TrendLegend(): ReactElement {
                 Synerion hours
             </li>
             <li className="flex items-center gap-2">
-                <span aria-hidden="true" className="relative inline-block h-0.5 w-4 rounded-full bg-[var(--ink)]">
-                    <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--ink)] ring-2 ring-[var(--surface)]" />
+                <span aria-hidden="true" className="relative inline-block w-5 border-t-2 border-dashed border-[var(--ink-muted)]">
+                    <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-[60%] rounded-full bg-[var(--ink-muted)] ring-2 ring-[var(--surface)]" />
                 </span>
                 Planned hours
+            </li>
+            <li className="flex items-center gap-2">
+                <span aria-hidden="true" className="inline-block h-3 w-0.5 rounded-full bg-[var(--ink)]" />
+                Variance vs plan (%)
             </li>
         </ul>
     );

@@ -9,6 +9,7 @@ export const projectsTrendColumns = {
     weekStart: "dim_calendar[start_of_week_sun]",
     hours: "[Hours]",
     plannedHours: "[PlannedHours]",
+    variance: "[Variance]",
     week: "[Week]",
     weekKey: "[WeekKey]",
 } as const;
@@ -16,27 +17,34 @@ export const projectsTrendColumns = {
 /** Weeks in the P6 trend (docs/05_app_design.md: last 12 weeks). */
 export const PROJECT_TREND_WEEKS = 12;
 
+/** `Hours vs Plan Variance %_app`'s format, with a true minus (Auxis: deltas carry a sign, never a hyphen). */
+export const VARIANCE_FORMAT = "+0.0%;−0.0%;0.0%";
+
 const columnMetadata: ColumnMetadataMap = {
     [projectsTrendColumns.weekStart]: { name: "WeekStart", displayName: "Week starting" },
     [projectsTrendColumns.hours]: { name: "Hours", displayName: "Synerion hours", format: "#,0" },
     [projectsTrendColumns.plannedHours]: { name: "PlannedHours", displayName: "Planned hours", format: "#,0" },
+    [projectsTrendColumns.variance]: { name: "Variance", displayName: "Variance vs plan", format: VARIANCE_FORMAT },
     [projectsTrendColumns.week]: { name: "Week", displayName: "Week" },
     [projectsTrendColumns.weekKey]: { name: "WeekKey", displayName: "Week key" },
 };
 
 /**
  * Colours for the liquid glass look (P6; Ion, 2026-11-07), read by the page from the design-system tokens
- * `--yellow-100`, `--yellow-300`, `--yellow-500`, `--ink` and `--surface` so the spec never hard-codes a hex value.
+ * (`--yellow-100`, `--yellow-300`, `--yellow-500`, `--ink`, `--ink-muted`, `--surface`) so the spec never hard-codes
+ * a hex value.
  */
 export interface GlassBarColors {
     light: string;
     base: string;
     deep: string;
     /**
-     * The plan line, a neutral reference line in the text colour (`--ink`). A gold or amber line next to the gold
-     * bars fails the dataviz palette check (normal-vision ΔE 4.8–13.4, floor 15); ink passes in both themes.
+     * The plan line: grey and dashed (`--ink-muted`; Ion, 2026-11-07), a reference line. A gold or amber line next to
+     * the gold bars fails the dataviz palette check (normal-vision ΔE 4.8–13.4, floor 15).
      */
     plan: string;
+    /** The weekly variance segments and their labels (`--ink`): the data, so stronger than the plan line. */
+    variance: string;
     /** The chart surface (`--surface`): the 2px ring around the plan points. */
     ring: string;
 }
@@ -44,14 +52,14 @@ export interface GlassBarColors {
 /** Bar width in px: at most 24 (dataviz mark spec), leaving air between weeks. */
 export const TREND_BAR_SIZE = 22;
 
-type Layer = { mark: unknown; encoding: Record<string, unknown> };
+type Layer = { mark: unknown; encoding: Record<string, unknown>; transform?: unknown[] };
 
 /**
  * The shared bars + line trend on one hours axis, keeping the query's week order (`sort: null`): VegaVisual's
- * layered marks order x labels alphabetically and ignore a sort by another field (log 2026-11-04). With `glass`,
- * the dataviz mark specs apply: bars at most 24px with 4px rounded tops (Auxis premium gold gradient plus a glossy
- * sheen on their left side, no border), a 2px plan line with 8px points in a 2px surface ring, and one direct
- * label at the start of the plan line with its value.
+ * layered marks order x labels alphabetically and ignore a sort by another field (log 2026-11-04). With `glass`:
+ * bars at most 24px with 4px rounded tops (Auxis premium gold gradient plus a glossy sheen, no border); the plan as
+ * a grey dashed 2px line with ringed 8px points; and, per week, a vertical segment from the plan to the hours with
+ * the model's variance % above it (Ion, 2026-11-07).
  */
 function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
     const spec = trendSpec({ kind: "bars-line", x: "Week", xSort: "WeekKey", y: "Hours", line: "PlannedHours" }) as VisualizationSpec & {
@@ -61,20 +69,21 @@ function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
     (spec as Record<string, unknown>).background = "transparent";
     spec.encoding.x.sort = null;
     // Points on the plan line: a Fixed Fee plan has one value a month, which a line alone doesn't draw.
-    const layers = (spec as unknown as { layer: { layer: { mark: unknown; encoding: { y: Record<string, unknown> }; transform?: unknown[] }[] }[] }).layer;
+    const layers = (spec as unknown as { layer: { layer: (Layer & { encoding: { y: Record<string, unknown> } })[] }[] }).layer;
     layers[1].layer[0].mark = { type: "line", point: true };
     // Both series are hours: one shared axis, so the bar and the line can be compared directly.
     layers[0].layer[0].encoding.y.title = "Hours";
     layers[1].layer[0].encoding.y.axis = null;
     layers[1].layer[0].encoding.y.title = "Hours";
     (spec as Record<string, unknown>).resolve = { scale: { y: "shared" } };
-    // One tooltip with both series (the layered default showed only the plan).
+    // One tooltip with both series and the variance (the layered default showed only the plan).
     const tooltip = [
         { field: "Week", type: "ordinal", title: "Week starting" },
         { field: "Hours", type: "quantitative", title: "Synerion hours", format: ",.0f" },
         { field: "PlannedHours", type: "quantitative", title: "Planned hours", format: ",.0f" },
+        { field: "Variance", type: "quantitative", title: "Variance vs plan" },
     ];
-    for (const group of layers) for (const layer of group.layer as Layer[]) layer.encoding.tooltip = tooltip;
+    for (const group of layers) for (const layer of group.layer) layer.encoding.tooltip = tooltip;
     if (glass) {
         const bars = layers[0].layer as Layer[];
         const shape = { type: "bar", size: TREND_BAR_SIZE, cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4 };
@@ -83,7 +92,7 @@ function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
             // Bottom to top: deep gold, brand gold, soft gold.
             color: { gradient: "linear", x1: 0, y1: 1, x2: 0, y2: 0, stops: [{ offset: 0, color: glass.deep }, { offset: 0.45, color: glass.base }, { offset: 1, color: glass.light }] },
         };
-        // Sheen: soft gold fading out across the left side of each bar, drawn over it; no tooltip of its own.
+        // Sheen: soft gold fading out across the left side of each bar, drawn over it.
         bars.push({
             mark: {
                 ...shape,
@@ -92,26 +101,35 @@ function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
             },
             encoding: { y: { ...(bars[0].encoding.y as Record<string, unknown>), axis: null }, tooltip },
         });
-        const lineGroup = layers[1].layer as (Layer & { transform?: unknown[] })[];
+
+        const lineGroup = layers[1].layer as Layer[];
         lineGroup[0].mark = {
             type: "line",
             color: glass.plan,
             strokeWidth: 2,
+            strokeDash: [5, 4],
             strokeCap: "round",
-            strokeJoin: "round",
             point: { filled: true, color: glass.plan, size: 64, stroke: glass.ring, strokeWidth: 2 },
         };
-        // Direct label at the first week with plan: names the line and gives its value ("Plan 5 h"), so a small plan
-        // next to large bars doesn't read as a line at 0. Text in the ink colour, never a series colour.
+        // Variance per week: a segment from the plan to the hours, centred on the bar (Ion, 2026-11-07), and the model's
+        // % centred above its top end.
+        const withVariance = [{ filter: "isValid(datum.PlannedHours) && isValid(datum.Variance)" }];
+        lineGroup.push({
+            transform: withVariance,
+            mark: { type: "rule", color: glass.variance, strokeWidth: 2, strokeCap: "round" },
+            // No `axis: null` here: Vega merges every layer's axis on the shared scale, and null hid the hours axis.
+            encoding: { y: { field: "PlannedHours", type: "quantitative", title: "Hours" }, y2: { field: "Hours" }, tooltip },
+        });
         lineGroup.push({
             transform: [
-                { filter: "isValid(datum.PlannedHours)" },
-                { joinaggregate: [{ op: "min", field: "WeekKey", as: "FirstPlanKey" }] },
-                { filter: "datum.WeekKey === datum.FirstPlanKey" },
-                { calculate: "'Plan ' + format(datum.PlannedHours, ',.0f') + ' h'", as: "PlanLabel" },
+                ...withVariance,
+                { calculate: "max(datum.Hours, datum.PlannedHours)", as: "VarianceTop" },
+                // The measure's +0.0% pattern with thousands separators; d3's format writes a true minus. VegaVisual's own text formatting
+                // dropped trailing zeros ("−12%" next to "−12.4%").
+                { calculate: "format(datum.Variance, '+,.1%')", as: "VarianceLabel" },
             ],
-            mark: { type: "text", align: "left", baseline: "bottom", dx: -4, dy: -10, fontSize: 11, fontWeight: 600, color: glass.plan },
-            encoding: { y: { field: "PlannedHours", type: "quantitative", axis: null, title: "Hours" }, text: { field: "PlanLabel" } },
+            mark: { type: "text", align: "center", baseline: "bottom", dy: -6, fontSize: 10, fontWeight: 600, color: glass.variance },
+            encoding: { y: { field: "VarianceTop", type: "quantitative", title: "Hours" }, text: { field: "VarianceLabel" } },
         });
     }
     return spec;

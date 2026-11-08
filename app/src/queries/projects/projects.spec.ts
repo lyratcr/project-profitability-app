@@ -88,6 +88,11 @@ describe("P6 project query factories", () => {
         expect(q).toMatch(/IF \(\s*NOT ISBLANK \( \[Synerion Hours_app\] \) \|\| NOT ISBLANK \( \[Planned Hours_app\] \),\s*COALESCE \( \[Synerion Hours_app\], 0 \)\s*\)/);
     });
 
+    it("weekly trend asks the model for the variance %", () => {
+        expect(projectsWeeklyTrend({ filters: week }).query).toContain('"Variance", [Hours vs Plan Variance %_app]');
+        expect(projectsWeeklyTrend({ filters: week }).columnMetadata["[Variance]"].format).toBe("+0.0%;−0.0%;0.0%");
+    });
+
     it("weekly trend tooltip carries both series", () => {
         const json = JSON.stringify(projectsWeeklyTrend({ filters: week }).vegaLiteSpec);
         expect(json).toContain('"tooltip":[{"field":"Week"');
@@ -96,7 +101,7 @@ describe("P6 project query factories", () => {
     });
 
     it("glass bars and plan line follow the dataviz mark specs, in token colours", () => {
-        const glass = { light: "#ffd866", base: "#ffcb05", deep: "#fab434", plan: "#f4f1ee", ring: "#1f1c1d" };
+        const glass = { light: "#ffd866", base: "#ffcb05", deep: "#fab434", plan: "#aba4a6", variance: "#f4f1ee", ring: "#1f1c1d" };
         const spec = projectsWeeklyTrend({ filters: week, glass }).vegaLiteSpec as unknown as {
             layer: { layer: { mark: Record<string, unknown> }[] }[];
         };
@@ -106,12 +111,20 @@ describe("P6 project query factories", () => {
         expect(bar.mark).not.toHaveProperty("stroke");
         expect(bar.mark.color).toMatchObject({ gradient: "linear", y1: 1, y2: 0, stops: [{ color: glass.deep }, { color: glass.base }, { color: glass.light }] });
         expect(sheen.mark).toMatchObject({ type: "bar", color: { gradient: "linear", x1: 0, x2: 1 } });
-        // 2px line; >= 8px points with a 2px ring in the surface colour.
-        expect(spec.layer[1].layer[0].mark).toMatchObject({ type: "line", color: glass.plan, strokeWidth: 2, point: { size: 64, stroke: glass.ring, strokeWidth: 2 } });
-        // One direct label at the first week with plan, in the ink colour.
-        const label = spec.layer[1].layer[1] as unknown as { mark: Record<string, unknown>; transform: { calculate?: string }[] };
-        expect(label.mark).toMatchObject({ type: "text", color: glass.plan });
-        expect(label.transform.at(-1)?.calculate).toContain("'Plan '");
+        // Plan: grey dashed 2px line; >= 8px points with a 2px ring in the surface colour.
+        expect(spec.layer[1].layer[0].mark).toMatchObject({ type: "line", color: glass.plan, strokeWidth: 2, strokeDash: [5, 4], point: { size: 64, stroke: glass.ring, strokeWidth: 2 } });
+        // Per week: a segment from plan to hours beside the bar, and the model's variance % above it.
+        const [, segment, label] = spec.layer[1].layer as unknown as { mark: Record<string, unknown>; encoding: Record<string, { field?: string }> }[];
+        expect(segment.mark).toMatchObject({ type: "rule", color: glass.variance });
+        expect(segment.mark).not.toHaveProperty("xOffset");
+        expect(segment.encoding.y.field).toBe("PlannedHours");
+        expect(segment.encoding.y2.field).toBe("Hours");
+        expect(label.mark).toMatchObject({ type: "text", align: "center", color: glass.variance });
+        expect(label.mark).not.toHaveProperty("xOffset");
+        expect(label.encoding.text.field).toBe("VarianceLabel");
+        // No layer may hide the shared hours axis.
+        expect(JSON.stringify(spec.layer[0].layer[0])).not.toContain('"axis":null');
+        expect(segment.encoding.y).not.toHaveProperty("axis");
         // Without the tokens (tests, stylesheet not loaded) the theme's plain bars stay.
         const plain = projectsWeeklyTrend({ filters: week }).vegaLiteSpec as unknown as { layer: { layer: unknown[] }[] };
         expect(plain.layer[0].layer).toHaveLength(1);
