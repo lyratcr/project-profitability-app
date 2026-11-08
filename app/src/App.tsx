@@ -10,6 +10,7 @@ import { EffortPage } from "./components/effort-page.component";
 import { FlowsPage } from "./components/flows-page.component";
 import { FtePage } from "./components/fte-page.component";
 import { HeadcountPage } from "./components/headcount-page.component";
+import { ProjectsPage } from "./components/projects-page.component";
 import { YieldPage } from "./components/yield-page.component";
 import { FilterBar } from "./components/filter-bar.component";
 import { PagePlaceholder } from "./components/page-placeholder.component";
@@ -20,7 +21,7 @@ import { readFlowAnalysis, writeFlowAnalysis } from "./queries/flows";
 import { pageHref } from "./lib/routes";
 
 // App shell (build plan 2.1–2.2): top bar with data freshness, page tabs, hash routes and global filters.
-// Pages P1–P6 replace PagePlaceholder in Phases 3–4 (P1 Effort: 3.1, P2 Headcount: 3.2, P3 FTE: 3.3, P4 Flows: 3.4, P5 Yield: 3.5).
+// Pages P1–P6 replace PagePlaceholder in Phases 3–4 (P1 Effort: 3.1, P2 Headcount: 3.2, P3 FTE: 3.3, P4 Flows: 3.4, P5 Yield: 3.5, P6 Projects: 4.1).
 function App() {
     const route = useHashRoute();
     const { page } = route;
@@ -29,7 +30,8 @@ function App() {
     return (
         <div className="min-h-full bg-background">
             <AppHeader current={page} params={route.params} />
-            <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-8">
+            {/* Liquid glass on P6 only (Ion, 2026-11-07; design-system bundle.css `.ax-liquid`): filter row and cards. */}
+            <main className={`mx-auto w-full max-w-7xl px-4 py-6 sm:px-8${page.id === "projects" ? " ax-liquid" : ""}`}>
                 <FilterBar
                     page={page}
                     state={filters.state}
@@ -67,6 +69,8 @@ function App() {
                         />
                     ) : page.id === "yield" ? (
                         <YieldPage page={page} filters={filters.state} options={filters.options} />
+                    ) : page.id === "projects" ? (
+                        <ProjectsPage page={page} filters={filters.state} options={filters.options} params={route.params} />
                     ) : (
                         <PagePlaceholder page={page} filters={filters.state} options={filters.options} />
                     )}

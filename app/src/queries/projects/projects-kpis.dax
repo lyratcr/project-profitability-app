@@ -1,0 +1,12 @@
+// P6 KPI cards, whole project life (the measures ignore the date filter): total plan (Backlog scenario), actual
+// revenue billed to date, plan left to bill, billing progress and the plan's last date. The project filter goes
+// to each fact's own project_key (no dim_project until open item #1 is fixed).
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "Planned", [Total Planned Revenue_app],
+    "Billed", [Revenue Billed to Date_app],
+    "LeftToBill", [Revenue Left to Bill_app],
+    "Progress", [Billing Progress %_app],
+    "PlanEnd", [Plan End Date_app]
+)

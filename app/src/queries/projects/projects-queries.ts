@@ -1,0 +1,115 @@
+import { applyFilters } from "@/lib/filters";
+import type { ColumnMetadataMap } from "@/lib/to-data-table";
+import kpisQuery from "./projects-kpis.dax?raw";
+import peopleQuery from "./projects-people.dax?raw";
+import revenueByMonthQuery from "./projects-revenue-by-month.dax?raw";
+import weekQuery from "./projects-week.dax?raw";
+
+/**
+ * P6 Project Progress (docs/05_app_design.md § 3), for Project Managers. Every factory takes SUMMARIZECOLUMNS
+ * filter arguments: the project goes to each fact's own project_key (lib/filters.ts FILTER_COLUMNS.project),
+ * because every query through dim_project fails until open item #1 is fixed; weeks are Sunday–Saturday
+ * dim_calendar[date] ranges from the viewer's local date (lib/weeks.ts).
+ */
+export interface ProjectsParams {
+    filters?: readonly string[];
+}
+
+const CONNECTION = "profitmodel";
+const MONEY = "\\$#,0;(\\$#,0);\\$#,0";
+
+export const PROJECTS_FORMATS = {
+    money: MONEY,
+    hours: "#,0",
+    people: "#,0",
+    percent: "0.0%",
+} as const;
+
+// ---------------------------------------------------------------- KPI cards (whole project life)
+
+export const projectsKpiColumns = {
+    planned: "[Planned]",
+    billed: "[Billed]",
+    leftToBill: "[LeftToBill]",
+    progress: "[Progress]",
+    planEnd: "[PlanEnd]",
+} as const;
+
+/** `filters` must carry the project only: the measures cover the project's whole life. */
+export function projectsKpis({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(kpisQuery, filters) } as const;
+}
+
+// ---------------------------------------------------------------- one week vs plan
+
+export const projectsWeekColumns = {
+    hours: "[Hours]",
+    plannedHours: "[PlannedHours]",
+    hoursVsPlan: "[HoursVsPlan]",
+    hoursVsPlanPct: "[HoursVsPlanPct]",
+    plannedRevenue: "[PlannedRevenue]",
+    people: "[People]",
+    notYetBilled: "[NotYetBilled]",
+} as const;
+
+/** One row for one week; run once per column (last week, this week to date) with that week's date range. */
+export function projectsWeek({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(weekQuery, filters) } as const;
+}
+
+// ---------------------------------------------------------------- who logged time
+
+export const projectsPeopleColumns = {
+    employee: "[Employee]",
+    tasks: "[Tasks]",
+    payCategories: "[PayCategories]",
+    hours: "[Hours]",
+    totalHours: "[TotalHours]",
+    timeAllocation: "[TimeAllocation]",
+    flags: "[Flags]",
+    flagOrder: "[FlagOrder]",
+} as const;
+
+function peopleMetadata(currentWeek: boolean): ColumnMetadataMap {
+    return {
+        [projectsPeopleColumns.employee]: { name: "Employee", displayName: "Employee" },
+        [projectsPeopleColumns.tasks]: { name: "Tasks", displayName: "Tasks" },
+        [projectsPeopleColumns.payCategories]: { name: "PayCategories", displayName: "Pay categories" },
+        [projectsPeopleColumns.hours]: { name: "Hours", displayName: "Hours on project", format: "#,0.0" },
+        [projectsPeopleColumns.totalHours]: { name: "TotalHours", displayName: currentWeek ? "All their hours (to date)" : "All their hours", format: "#,0.0" },
+        [projectsPeopleColumns.timeAllocation]: { name: "TimeAllocation", displayName: "Time allocation", format: "0.0%" },
+        [projectsPeopleColumns.flags]: { name: "Flags", displayName: "Flags" },
+    };
+}
+
+/**
+ * `filters` = project + the selected week. People flagged "No hours this week" (logged on the project in the
+ * 4 weeks before, not in the week; for the current week: none logged yet) or "Unmapped task" come first.
+ */
+export function projectsPeople({ filters = [], currentWeek = false }: ProjectsParams & { currentWeek?: boolean } = {}) {
+    return { connection: CONNECTION, query: applyFilters(peopleQuery, filters), columnMetadata: peopleMetadata(currentWeek) } as const;
+}
+
+// ---------------------------------------------------------------- revenue by month
+
+export const projectsRevenueColumns = {
+    month: "dim_calendar[year_month]",
+    monthNumber: "dim_calendar[year_month_number]",
+    actual: "[Actual]",
+    planned: "[Planned]",
+    vsPlan: "[VsPlan]",
+    vsPlanPct: "[VsPlanPct]",
+} as const;
+
+const revenueMetadata: ColumnMetadataMap = {
+    [projectsRevenueColumns.month]: { name: "Month", displayName: "Month" },
+    [projectsRevenueColumns.actual]: { name: "Actual", displayName: "Actual revenue", format: MONEY },
+    [projectsRevenueColumns.planned]: { name: "Planned", displayName: "Planned revenue", format: MONEY },
+    [projectsRevenueColumns.vsPlan]: { name: "VsPlan", displayName: "Actual − plan", format: "\\$#,0;−\\$#,0;\\$#,0" },
+    [projectsRevenueColumns.vsPlanPct]: { name: "VsPlanPct", displayName: "Actual / plan", format: "0.0%" },
+};
+
+/** `filters` = project + the 12-month window (`dateRangeArg(monthWindow(...))`). */
+export function projectsRevenueByMonth({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(revenueByMonthQuery, filters), columnMetadata: revenueMetadata } as const;
+}
