@@ -12,9 +12,11 @@ import { TREND_TOOLTIP, TREND_Y_AXIS_WIDTH, trendColumnMetadata, type GlassBarCo
 function varianceSpec(glass: GlassBarColors): VisualizationSpec {
     const x = { field: "Week", type: "ordinal", sort: null, title: null, axis: { labelAngle: 0 } };
     const y = { field: "Variance", type: "quantitative", title: "Variance", axis: { minExtent: TREND_Y_AXIS_WIDTH, maxExtent: TREND_Y_AXIS_WIDTH, tickCount: 3, format: "+.0%" } };
-    const color = { condition: { test: "datum.Variance < 0", value: glass.below }, value: glass.above };
+    // Over budget (more hours than planned) in red, at or under budget in green.
+    const color = { condition: { test: "datum.Variance > 0", value: glass.above }, value: glass.below };
     const withVariance = { filter: "isValid(datum.Variance)" };
-    const label = { calculate: "format(datum.Variance, '+,.1%')", as: "VarianceLabel" };
+    // Whole percents (Ion, 2026-11-07); d3 writes a true minus.
+    const label = { calculate: "format(datum.Variance, '+,.0%')", as: "VarianceLabel" };
     const text = { type: "text", align: "center", fontSize: 10, fontWeight: 600, color: glass.muted };
     // Every y encoding carries the same axis definition: Vega merges the layers' axes on the shared scale, and an
     // `axis: null` in any layer hid it (and with it the width that keeps the weeks aligned with the chart above).

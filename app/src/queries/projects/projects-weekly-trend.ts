@@ -17,8 +17,8 @@ export const projectsTrendColumns = {
 /** Weeks in the P6 trend (docs/05_app_design.md: last 12 weeks). */
 export const PROJECT_TREND_WEEKS = 12;
 
-/** `Hours vs Plan Variance %_app`'s format, with a true minus (Auxis: deltas carry a sign, never a hyphen). */
-export const VARIANCE_FORMAT = "+0.0%;−0.0%;0.0%";
+/** `Hours vs Plan Variance %_app`'s format, whole percents (Ion, 2026-11-07), with a true minus (Auxis: deltas carry a sign). */
+export const VARIANCE_FORMAT = "+#,0%;−#,0%;0%";
 
 export const trendColumnMetadata: ColumnMetadataMap = {
     [projectsTrendColumns.weekStart]: { name: "WeekStart", displayName: "Week starting" },
@@ -45,8 +45,9 @@ export interface GlassBarColors {
     /** `--surface`: the 2px ring around points. */
     ring: string;
     /**
-     * `--chart-2` (blue) below the budget, `--chart-4` (amber) above. Dataviz palette check: normal-vision ΔE 28.4,
-     * CVD ΔE 23.0; light-theme contrast is relieved by the signed label on every point.
+     * Auxis status fills (Ion, 2026-11-07): `--positive` (green-500) when the hours stay under the budget, `--negative`
+     * (red-500) when they go over it. Dataviz palette check: normal-vision ΔE 26.7, CVD ΔE 17.5 in both themes; the red
+     * is 2.3:1 on the dark surface, relieved by the signed label on every point (README: status is never colour alone).
      */
     below: string;
     above: string;

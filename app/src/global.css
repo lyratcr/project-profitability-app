@@ -239,7 +239,7 @@ body {
   filter: drop-shadow(0 2px 3px var(--glass-line-shadow));
 }
 
-/* Month rows under the trend: hours as gold glass, budget as an ink outline, variance coloured by its sign. */
+/* Month rows under the trend: hours as gold glass, budget as an ink outline, variance green under budget, red over. */
 .ax-month-bar {
   display: inline-block;
   height: 10px;
@@ -260,9 +260,9 @@ body {
   height: 4px;
 }
 .ax-month-bar-variance.is-below {
-  background: var(--chart-2);
+  background: var(--positive);
 }
 .ax-month-bar-variance.is-above {
-  background: var(--chart-4);
+  background: var(--negative);
 }
 

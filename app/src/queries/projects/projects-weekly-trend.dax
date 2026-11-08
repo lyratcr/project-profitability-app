@@ -13,7 +13,13 @@ ADDCOLUMNS (
                 NOT ISBLANK ( [Synerion Hours_app] ) || NOT ISBLANK ( [Planned Hours_app] ),
                 COALESCE ( [Synerion Hours_app], 0 )
             ),
-        "PlannedHours", [Planned Hours_app],
+        // 0 budget in a week that has hours but no plan rows, so the budget line stays connected (Ion, 2026-11-07).
+        // Weeks with neither stay blank and drop out (the Hours column above).
+        "PlannedHours",
+            IF (
+                NOT ISBLANK ( [Synerion Hours_app] ) || NOT ISBLANK ( [Planned Hours_app] ),
+                COALESCE ( [Planned Hours_app], 0 )
+            ),
         "Variance", [Hours vs Plan Variance %_app]
     ),
     "Week", FORMAT ( dim_calendar[start_of_week_sun], "m/d" ),

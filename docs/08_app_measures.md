@@ -928,3 +928,30 @@ Query-scoped first, then against the model measure: identical, and equal to an i
 
 Fixed Fee weekly plans are tiny or absent (open item #26), so their variance is very large; read it on T&M projects.
 
+### Update 2026-11-07: +100% for hours without plan, whole percents (Ion)
+
+Ion asked that weeks with hours but no plan read as variance rather than blank, keeping the sign convention (more hours than plan is positive). Dividing by a zero plan has no value, so these weeks count as +100% (all their hours are unplanned); weeks with neither stay blank. Format changed to whole percents. Ion approved the DAX; updated in the Dev model (state Ready) and re-validated: identical to the query-scoped proposal in 21 project-weeks (KWP-401-02, UIP-101-01; Aug 16 – Nov 7 2026), unchanged for every week with plan. TMDL re-exported.
+
+#### Hours vs Plan Variance %_app (UPDATE)
+
+Format `+0%;-0%;0%`  
+Description: `FIXED 2026-11-07 (Fabric app): (Synerion hours - plan hours) / plan hours; +100% when there are hours but no plan hours; blank with neither. Project level only.`
+
+```dax
+VAR _hours = [Synerion Hours_app]
+VAR _plan = [Planned Hours_app]
+RETURN
+    IF (
+        NOT ISBLANK ( _plan ) && _plan <> 0,
+        DIVIDE ( _hours - _plan, _plan ),
+        IF ( _hours > 0, 1 )
+    )
+```
+
+| KWP-401-02 · week | Hours | Plan | Before | Now |
+|---|---|---|---|---|
+| Aug 23–29 | 4 | — | blank | +100% |
+| Aug 30 – Sep 5 | — | 1 | −100% | −100% |
+| Sep 27 – Oct 3 | 10 | 1 | +900% | +900% |
+| Oct 4–10 | 13 | — | blank | +100% |
+
