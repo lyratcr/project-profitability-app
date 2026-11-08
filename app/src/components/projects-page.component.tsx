@@ -44,7 +44,7 @@ interface ProjectsPageProps {
 }
 
 const PEOPLE_TABLE_ID = "who-logged-time";
-const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink", "ink-muted", "surface", "chart-2", "chart-4"] as const;
+const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink", "ink-muted", "surface", "positive", "negative"] as const;
 // The weekly trend's spec carries a tooltip with both series (VegaVisual's line crosshair would show only the plan),
 // and its one plan label is wider than a week's column (VegaVisual would cut it to "Pla…").
 const TREND_CAPABILITIES = { disableLineChartCrosshairTooltip: true, disableTextTruncation: true } as const;
@@ -358,26 +358,27 @@ function TrendLegend(): ReactElement {
                 Budget hours
             </li>
             <li className="flex items-center gap-2">
-                <span aria-hidden="true" className="inline-block size-2 rounded-full bg-[var(--chart-2)]" />
-                Below budget
+                <span aria-hidden="true" className="inline-block size-2 rounded-full bg-[var(--positive)]" />
+                Under budget
             </li>
             <li className="flex items-center gap-2">
-                <span aria-hidden="true" className="inline-block size-2 rounded-full bg-[var(--chart-4)]" />
-                Above budget
+                <span aria-hidden="true" className="inline-block size-2 rounded-full bg-[var(--negative)]" />
+                Over budget
             </li>
         </ul>
     );
 }
 
 const hoursFormat = (v: number | null) => (v === null ? "—" : String(formatValue(v, "#,0")));
-const varianceText = (v: number | null) => (v === null ? "—" : signedChange(v, "#,0.0%"));
+const varianceText = (v: number | null) => (v === null ? "—" : signedChange(v, "#,0%"));
 
 /** The 12-week totals: Synerion hours, budget, the difference and the variance, all from the model. */
 function TrendTotals({ table }: { table: QueryTable }): ReactElement {
     const c = projectsTrendSummaryColumns;
     const delta = numberCell(table, c.hoursVsPlan);
     const variance = numberCell(table, c.variance);
-    const tone = (v: number | null) => (v === null ? "" : v < 0 ? "text-[var(--chart-2)]" : "text-[var(--accent-ink)]");
+    // Status text uses the Auxis ink tokens (legible on both themes): over budget red, at or under green.
+    const tone = (v: number | null) => (v === null ? "" : v > 0 ? "text-[var(--negative-ink)]" : "text-[var(--positive-ink)]");
     const items = [
         { label: "Synerion hours", value: hoursFormat(numberCell(table, c.hours)), className: "" },
         { label: "Budget hours", value: hoursFormat(numberCell(table, c.plannedHours)), className: "" },
@@ -461,7 +462,7 @@ function TrendMonths({ table, window }: { table: QueryTable; window: { start: Da
                                 ) : (
                                     <span className="flex items-center gap-2">
                                         <span
-                                            className={`ax-month-bar ax-month-bar-variance ${r.variance < 0 ? "is-below" : "is-above"}`}
+                                            className={`ax-month-bar ax-month-bar-variance ${r.variance > 0 ? "is-above" : "is-below"}`}
                                             style={{ width: pct(r.variance, maxVariance) }}
                                             aria-hidden="true"
                                         />

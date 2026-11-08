@@ -1496,9 +1496,17 @@ table _Measures
 		displayFolder: _app\People
 		lineageTag: 07ecac4f-6d26-4d50-a521-0ece2664c490
 
-	/// ADDED 2026-11-07 (Fabric app): (Synerion hours - plan hours) / plan hours; blank without plan hours. Project level only.
-	measure 'Hours vs Plan Variance %_app' = DIVIDE ( [Hours vs Plan_app], [Planned Hours_app] )
-		formatString: +0.0%;-0.0%;0.0%
+	/// FIXED 2026-11-07 (Fabric app): (Synerion hours - plan hours) / plan hours; +100% when there are hours but no plan hours; blank with neither. Project level only.
+	measure 'Hours vs Plan Variance %_app' =
+			VAR _hours = [Synerion Hours_app]
+			VAR _plan = [Planned Hours_app]
+			RETURN
+			    IF (
+			        NOT ISBLANK ( _plan ) && _plan <> 0,
+			        DIVIDE ( _hours - _plan, _plan ),
+			        IF ( _hours > 0, 1 )
+			    )
+		formatString: +0%;-0%;0%
 		displayFolder: _app\Projects
 		lineageTag: e9a3e781-d3b7-4dae-9b23-cc3f90331c8e
 

@@ -93,7 +93,7 @@ describe("P6 project query factories", () => {
 
     it("weekly trend asks the model for the variance %", () => {
         expect(projectsWeeklyTrend({ filters: week }).query).toContain('"Variance", [Hours vs Plan Variance %_app]');
-        expect(projectsWeeklyTrend({ filters: week }).columnMetadata["[Variance]"].format).toBe("+0.0%;−0.0%;0.0%");
+        expect(projectsWeeklyTrend({ filters: week }).columnMetadata["[Variance]"].format).toBe("+#,0%;−#,0%;0%");
     });
 
     it("weekly trend tooltip carries both series", () => {
@@ -103,7 +103,7 @@ describe("P6 project query factories", () => {
         expect(json).toContain('"title":"Budget hours"');
     });
 
-    const glass = { light: "#ffd866", base: "#ffcb05", deep: "#fab434", plan: "#f4f1ee", muted: "#aba4a6", ring: "#1f1c1d", below: "#14b1e7", above: "#eb9935" };
+    const glass = { light: "#ffd866", base: "#ffcb05", deep: "#fab434", plan: "#f4f1ee", muted: "#aba4a6", ring: "#1f1c1d", below: "#729b78", above: "#9e2b2b" };
 
     it("hours chart: translucent glass bars behind, an ink budget line in front, week labels left to the panel below", () => {
         const spec = projectsWeeklyTrend({ filters: week, glass }).vegaLiteSpec as unknown as {
@@ -140,10 +140,11 @@ describe("P6 project query factories", () => {
         expect(JSON.stringify(spec)).not.toContain('"axis":null');
         const stem = spec.layer[2];
         expect(stem.mark).toMatchObject({ type: "rule" });
-        expect(stem.encoding.color).toMatchObject({ condition: { test: "datum.Variance < 0", value: glass.below }, value: glass.above });
+        // Over budget red, at or under budget green.
+        expect(stem.encoding.color).toMatchObject({ condition: { test: "datum.Variance > 0", value: glass.above }, value: glass.below });
         expect(stem.encoding.y.axis).toMatchObject({ minExtent: 46, maxExtent: 46 });
         const json = JSON.stringify(spec);
-        expect(json).toContain("format(datum.Variance, '+,.1%')");
+        expect(json).toContain("format(datum.Variance, '+,.0%')");
         expect(json).toContain("'no plan'");
     });
 
