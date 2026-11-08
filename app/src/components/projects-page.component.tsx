@@ -1,8 +1,8 @@
 import { useMemo, type ReactElement } from "react";
 import { formatValue } from "@microsoft/fabric-visuals-core";
+import { useDesignTokens } from "@/hooks/use-design-tokens";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { signedChange } from "@/lib/change";
-import { readTokens } from "@/lib/design-tokens";
 import { describeFilterContext } from "@/lib/filter-context";
 import { dateRangeArg, filterArgs, monthWindow, TREND_MONTHS, writeFilters, type FilterOptions, type FilterState } from "@/lib/filters";
 import { describeDaysLeft, parseModelDate, planEndStatus } from "@/lib/plan-end";
@@ -39,8 +39,10 @@ interface ProjectsPageProps {
 }
 
 const PEOPLE_TABLE_ID = "who-logged-time";
-// The weekly trend's spec carries a tooltip with both series; VegaVisual's line crosshair would show only the plan.
-const TREND_CAPABILITIES = { disableLineChartCrosshairTooltip: true } as const;
+const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink", "surface"] as const;
+// The weekly trend's spec carries a tooltip with both series (VegaVisual's line crosshair would show only the plan),
+// and its one plan label is wider than a week's column (VegaVisual would cut it to "Pla…").
+const TREND_CAPABILITIES = { disableLineChartCrosshairTooltip: true, disableTextTruncation: true } as const;
 
 const dayFormat = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" });
 const dateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -71,10 +73,9 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
     const nowKey = [now.getFullYear(), now.getMonth(), now.getDate(), now.getHours()].join("-");
 
     // Gold glass bars for the weekly trend (liquid glass look), from the design-system tokens.
-    const glass = useMemo(() => {
-        const c = readTokens(["yellow-100", "yellow-300", "yellow-500", "chart-2"]);
-        return c ? { light: c[0], base: c[1], deep: c[2], plan: c[3] } : undefined;
-    }, []);
+    // Ink and surface switch with the theme; the hook reads them again when it changes.
+    const tokens = useDesignTokens(GLASS_TOKENS);
+    const glass = useMemo(() => (tokens ? { light: tokens[0], base: tokens[1], deep: tokens[2], plan: tokens[3], ring: tokens[4] } : undefined), [tokens]);
 
     const model = useMemo(() => {
         const [y, m, d, h] = nowKey.split("-").map(Number);
@@ -194,7 +195,8 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                         <AxCard
                             className="lg:col-span-3"
                             title="Weekly hours vs plan"
-                            subtitle={`Last ${PROJECT_TREND_WEEKS} weeks · ${weekSpan({ ...model.current, start: model.trend.start })} · gold bars: Synerion hours · blue line: planned hours · the last week is this week, to date`}
+                            subtitle={`Up to ${PROJECT_TREND_WEEKS} weeks · ${weekSpan({ ...model.current, start: model.trend.start })} · weeks with hours or plan · the last one is this week, to date`}
+                            aside={<TrendLegend />}
                         >
                             <QueryStates result={trendResult} shape="chart" title="Weekly hours vs plan">
                                 {(table) => <TrendChart chromeless data={toDataTable(table, model.weekly.columnMetadata)} spec={model.weekly.vegaLiteSpec} title="Weekly hours vs plan" height={360} capabilities={TREND_CAPABILITIES} />}
@@ -296,5 +298,23 @@ function WeekVsPlan({ last, current }: { last: WeekColumn; current: WeekColumn }
                 </tbody>
             </table>
         </div>
+    );
+}
+
+/** Legend for the weekly trend (two series: a legend is always present). Keys carry the colour; text stays in ink. */
+function TrendLegend(): ReactElement {
+    return (
+        <ul className="m-0 flex shrink-0 list-none flex-wrap items-center gap-x-4 gap-y-1 p-0 text-200 text-muted-foreground" aria-label="Legend">
+            <li className="flex items-center gap-2">
+                <span aria-hidden="true" className="inline-block h-3 w-2.5 rounded-t-[3px] bg-[image:var(--gradient-gold)]" />
+                Synerion hours
+            </li>
+            <li className="flex items-center gap-2">
+                <span aria-hidden="true" className="relative inline-block h-0.5 w-4 rounded-full bg-[var(--ink)]">
+                    <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--ink)] ring-2 ring-[var(--surface)]" />
+                </span>
+                Planned hours
+            </li>
+        </ul>
     );
 }
