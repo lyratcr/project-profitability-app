@@ -3,6 +3,8 @@ import type { ColumnMetadataMap } from "@/lib/to-data-table";
 import kpisQuery from "./projects-kpis.dax?raw";
 import peopleQuery from "./projects-people.dax?raw";
 import revenueByMonthQuery from "./projects-revenue-by-month.dax?raw";
+import trendMonthsQuery from "./projects-trend-months.dax?raw";
+import trendSummaryQuery from "./projects-trend-summary.dax?raw";
 import weekQuery from "./projects-week.dax?raw";
 
 /**
@@ -113,3 +115,26 @@ const revenueMetadata: ColumnMetadataMap = {
 export function projectsRevenueByMonth({ filters = [] }: ProjectsParams = {}) {
     return { connection: CONNECTION, query: applyFilters(revenueByMonthQuery, filters), columnMetadata: revenueMetadata } as const;
 }
+
+// ---------------------------------------------------------------- weekly trend summary (12-week window)
+
+/** Columns of the trend summary (one row) and of its monthly rows. */
+export const projectsTrendSummaryColumns = {
+    month: "dim_calendar[year_month]",
+    monthNumber: "dim_calendar[year_month_number]",
+    hours: "[Hours]",
+    plannedHours: "[PlannedHours]",
+    hoursVsPlan: "[HoursVsPlan]",
+    variance: "[Variance]",
+} as const;
+
+/** `filters` = project + the trend's 12-week window (the same arguments as the weekly trend). */
+export function projectsTrendSummary({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(trendSummaryQuery, filters) } as const;
+}
+
+/** One row per calendar month in the window; the first and last are usually partial. */
+export function projectsTrendMonths({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(trendMonthsQuery, filters) } as const;
+}
+

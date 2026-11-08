@@ -8,7 +8,10 @@ import {
     projectsPeopleColumns,
     projectsRevenueByMonth,
     projectsWeek,
+    projectsTrendMonths,
+    projectsTrendSummary,
     projectsWeeklyTrend,
+    projectsWeeklyVariance,
 } from "./index";
 
 const today = new Date(2026, 10, 6);
@@ -97,36 +100,57 @@ describe("P6 project query factories", () => {
         const json = JSON.stringify(projectsWeeklyTrend({ filters: week }).vegaLiteSpec);
         expect(json).toContain('"tooltip":[{"field":"Week"');
         expect(json).toContain('"title":"Synerion hours"');
-        expect(json).toContain('"title":"Planned hours"');
+        expect(json).toContain('"title":"Budget hours"');
     });
 
-    it("glass bars and plan line follow the dataviz mark specs, in token colours", () => {
-        const glass = { light: "#ffd866", base: "#ffcb05", deep: "#fab434", plan: "#aba4a6", variance: "#f4f1ee", ring: "#1f1c1d" };
+    const glass = { light: "#ffd866", base: "#ffcb05", deep: "#fab434", plan: "#f4f1ee", muted: "#aba4a6", ring: "#1f1c1d", below: "#14b1e7", above: "#eb9935" };
+
+    it("hours chart: translucent glass bars behind, an ink budget line in front, week labels left to the panel below", () => {
         const spec = projectsWeeklyTrend({ filters: week, glass }).vegaLiteSpec as unknown as {
-            layer: { layer: { mark: Record<string, unknown> }[] }[];
+            encoding: { x: { axis: Record<string, unknown> } };
+            layer: { layer: { mark: Record<string, unknown>; encoding: { y: { axis?: unknown } } }[] }[];
         };
         const [bar, sheen] = spec.layer[0].layer;
-        // At most 24px wide, 4px rounded data-end, no border around the mark.
-        expect(bar.mark).toMatchObject({ type: "bar", size: 22, cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4 });
+        // At most 24px wide, 4px rounded data-end, no border; translucent so the line reads in front.
+        expect(bar.mark).toMatchObject({ type: "bar", size: 22, cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4, opacity: 0.82 });
         expect(bar.mark).not.toHaveProperty("stroke");
         expect(bar.mark.color).toMatchObject({ gradient: "linear", y1: 1, y2: 0, stops: [{ color: glass.deep }, { color: glass.base }, { color: glass.light }] });
         expect(sheen.mark).toMatchObject({ type: "bar", color: { gradient: "linear", x1: 0, x2: 1 } });
-        // Plan: grey dashed 2px line; >= 8px points with a 2px ring in the surface colour.
-        expect(spec.layer[1].layer[0].mark).toMatchObject({ type: "line", color: glass.plan, strokeWidth: 2, strokeDash: [5, 4], point: { size: 64, stroke: glass.ring, strokeWidth: 2 } });
-        // Per week: a segment from plan to hours beside the bar, and the model's variance % above it.
-        const [, segment, label] = spec.layer[1].layer as unknown as { mark: Record<string, unknown>; encoding: Record<string, { field?: string }> }[];
-        expect(segment.mark).toMatchObject({ type: "rule", color: glass.variance });
-        expect(segment.mark).not.toHaveProperty("xOffset");
-        expect(segment.encoding.y.field).toBe("PlannedHours");
-        expect(segment.encoding.y2.field).toBe("Hours");
-        expect(label.mark).toMatchObject({ type: "text", align: "center", color: glass.variance });
-        expect(label.mark).not.toHaveProperty("xOffset");
-        expect(label.encoding.text.field).toBe("VarianceLabel");
-        // No layer may hide the shared hours axis.
-        expect(JSON.stringify(spec.layer[0].layer[0])).not.toContain('"axis":null');
-        expect(segment.encoding.y).not.toHaveProperty("axis");
+        expect(spec.layer[1].layer[0].mark).toMatchObject({ type: "line", color: glass.plan, strokeWidth: 2.5, point: { size: 64, stroke: glass.ring, strokeWidth: 2 } });
+        // The y axis keeps a fixed width so the variance panel's weeks line up under these bars.
+        expect(bar.encoding.y.axis).toMatchObject({ minExtent: 46, maxExtent: 46 });
+        expect(spec.encoding.x.axis).toMatchObject({ labels: false });
         // Without the tokens (tests, stylesheet not loaded) the theme's plain bars stay.
         const plain = projectsWeeklyTrend({ filters: week }).vegaLiteSpec as unknown as { layer: { layer: unknown[] }[] };
         expect(plain.layer[0].layer).toHaveLength(1);
+    });
+
+    it("variance panel: lollipops coloured by sign, signed labels, every week kept in order", () => {
+        const { query, vegaLiteSpec } = projectsWeeklyVariance({ filters: week, glass });
+        expect(query).toContain('"Variance", [Hours vs Plan Variance %_app]');
+        const spec = vegaLiteSpec as unknown as {
+            layer: { mark: Record<string, unknown>; encoding: Record<string, Record<string, unknown>>; transform?: Record<string, string>[] }[];
+        };
+        // Zero line first, with no x so it spans the width; then an invisible rule with every week (no filter).
+        expect(spec.layer[0].encoding).not.toHaveProperty("x");
+        expect(spec.layer[1].mark).toMatchObject({ type: "rule", opacity: 0 });
+        expect(spec.layer[1].transform).toBeUndefined();
+        expect(spec.layer[1].encoding.x).toMatchObject({ field: "Week", sort: null });
+        // No layer hides the axis (it would also drop the width that aligns the weeks).
+        expect(JSON.stringify(spec)).not.toContain('"axis":null');
+        const stem = spec.layer[2];
+        expect(stem.mark).toMatchObject({ type: "rule" });
+        expect(stem.encoding.color).toMatchObject({ condition: { test: "datum.Variance < 0", value: glass.below }, value: glass.above });
+        expect(stem.encoding.y.axis).toMatchObject({ minExtent: 46, maxExtent: 46 });
+        const json = JSON.stringify(spec);
+        expect(json).toContain("format(datum.Variance, '+,.1%')");
+        expect(json).toContain("'no plan'");
+    });
+
+    it("trend summary and months use the four model measures over the same window", () => {
+        for (const q of [projectsTrendSummary({ filters: week }).query, projectsTrendMonths({ filters: week }).query]) {
+            for (const m of ["[Synerion Hours_app]", "[Planned Hours_app]", "[Hours vs Plan_app]", "[Hours vs Plan Variance %_app]"]) expect(q).toContain(m);
+        }
+        expect(projectsTrendMonths({ filters: week }).query).toContain("ORDER BY dim_calendar[year_month_number]");
     });
 });

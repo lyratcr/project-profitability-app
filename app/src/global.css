@@ -225,3 +225,44 @@ body {
 .ax-liquid .data-grid-root thead th {
   background: var(--glass-sunken);
 }
+
+/* P6 weekly trend, layered (Ion, 2026-11-07). Vega-Lite has no shadows, so they go on the rendered SVG: the budget line
+   and its points float in front of the translucent glass bars; the variance lollipops get a softer one. */
+.ax-trend-layered g.mark-line path {
+  filter: drop-shadow(0 6px 6px var(--glass-line-shadow));
+}
+.ax-trend-layered g.mark-symbol path,
+.ax-trend-lollipop g.mark-symbol path {
+  filter: drop-shadow(0 3px 4px var(--glass-line-shadow));
+}
+.ax-trend-lollipop g.mark-rule line {
+  filter: drop-shadow(0 2px 3px var(--glass-line-shadow));
+}
+
+/* Month rows under the trend: hours as gold glass, budget as an ink outline, variance coloured by its sign. */
+.ax-month-bar {
+  display: inline-block;
+  height: 10px;
+  max-width: 60%;
+  min-width: 2px;
+  flex: 0 1 auto;
+  border-radius: 0 3px 3px 0;
+}
+.ax-month-bar-hours {
+  background: var(--gradient-gold);
+  opacity: 0.7;
+}
+.ax-month-bar-plan {
+  border: 1.5px solid var(--ink);
+  filter: drop-shadow(0 2px 2px var(--glass-line-shadow));
+}
+.ax-month-bar-variance {
+  height: 4px;
+}
+.ax-month-bar-variance.is-below {
+  background: var(--chart-2);
+}
+.ax-month-bar-variance.is-above {
+  background: var(--chart-4);
+}
+

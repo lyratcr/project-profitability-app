@@ -9,6 +9,7 @@ import { describeDaysLeft, parseModelDate, planEndStatus } from "@/lib/plan-end"
 import { cell, numberCell } from "@/lib/query-table";
 import { pageHref, type PageDef } from "@/lib/routes";
 import { toDataTable } from "@/lib/to-data-table";
+import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { describeWeek, lastWeek, reviewWindow, thisWeek, trendWindow, weekSpan, type Week } from "@/lib/weeks";
 import {
     PROJECT_TREND_WEEKS,
@@ -21,7 +22,11 @@ import {
     projectsRevenueColumns,
     projectsWeek,
     projectsWeekColumns,
+    projectsTrendMonths,
+    projectsTrendSummary,
+    projectsTrendSummaryColumns,
     projectsWeeklyTrend,
+    projectsWeeklyVariance,
 } from "@/queries/projects";
 import { AxCard } from "./ax/ax-card.component";
 import { AxKpiCard } from "./ax/ax-kpi-card.component";
@@ -39,7 +44,7 @@ interface ProjectsPageProps {
 }
 
 const PEOPLE_TABLE_ID = "who-logged-time";
-const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink-muted", "ink", "surface"] as const;
+const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink", "ink-muted", "surface", "chart-2", "chart-4"] as const;
 // The weekly trend's spec carries a tooltip with both series (VegaVisual's line crosshair would show only the plan),
 // and its one plan label is wider than a week's column (VegaVisual would cut it to "Pla…").
 const TREND_CAPABILITIES = { disableLineChartCrosshairTooltip: true, disableTextTruncation: true } as const;
@@ -75,7 +80,9 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
     // Gold glass bars for the weekly trend (liquid glass look), from the design-system tokens.
     // Ink and surface switch with the theme; the hook reads them again when it changes.
     const tokens = useDesignTokens(GLASS_TOKENS);
-    const glass = useMemo(() => (tokens ? { light: tokens[0], base: tokens[1], deep: tokens[2], plan: tokens[3], variance: tokens[4], ring: tokens[5] } : undefined), [tokens]);
+    const glass = useMemo(() => (tokens
+            ? { light: tokens[0], base: tokens[1], deep: tokens[2], plan: tokens[3], muted: tokens[4], ring: tokens[5], below: tokens[6], above: tokens[7] }
+            : undefined), [tokens]);
 
     const model = useMemo(() => {
         const [y, m, d, h] = nowKey.split("-").map(Number);
@@ -86,6 +93,7 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
         const current = thisWeek(at);
         const trend = trendWindow(at, at, PROJECT_TREND_WEEKS);
         const months = monthWindow(filters.week.weekEnd);
+        const trendArgs = [dateRangeArg(trend.start, trend.end), ...project];
         return {
             at,
             last,
@@ -96,7 +104,10 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
             kpis: projectsKpis({ filters: project }),
             lastWeekQuery: projectsWeek({ filters: weekArgs(last) }),
             thisWeekQuery: projectsWeek({ filters: weekArgs(current) }),
-            weekly: projectsWeeklyTrend({ filters: [dateRangeArg(trend.start, trend.end), ...project], glass }),
+            weekly: projectsWeeklyTrend({ filters: trendArgs, glass }),
+            variance: glass ? projectsWeeklyVariance({ filters: trendArgs, glass }) : null,
+            trendSummary: projectsTrendSummary({ filters: trendArgs }),
+            trendMonths: projectsTrendMonths({ filters: trendArgs }),
             people: projectsPeople({ filters: weekArgs(filters.week), currentWeek: filters.week.isCurrent }),
             revenue: projectsRevenueByMonth({ filters: [dateRangeArg(months.start, months.end), ...project] }),
         };
@@ -107,6 +118,8 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
     const lastWeekResult = useSemanticModelQuery(run(model.lastWeekQuery));
     const thisWeekResult = useSemanticModelQuery(run(model.thisWeekQuery));
     const trendResult = useSemanticModelQuery(run(model.weekly));
+    const trendSummaryResult = useSemanticModelQuery(run(model.trendSummary));
+    const trendMonthsResult = useSemanticModelQuery(run(model.trendMonths));
     const peopleResult = useSemanticModelQuery(run(model.people));
     const revenueResult = useSemanticModelQuery(run(model.revenue));
 
@@ -183,6 +196,44 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                         }}
                     </QueryStates>
 
+                    <AxCard
+                        title="Weekly hours vs budget"
+                        subtitle={`Up to ${PROJECT_TREND_WEEKS} weeks · ${weekSpan({ ...model.current, start: model.trend.start })} · weeks with hours or budget · the last one is this week, to date`}
+                        aside={<TrendLegend />}
+                    >
+                        <QueryStates result={trendResult} shape="chart" title="Weekly hours vs budget">
+                            {(table) => {
+                                const data = toDataTable(table, model.weekly.columnMetadata);
+                                return (
+                                    <>
+                                        {/* Layers: glass bars behind, the budget line in front with a CSS drop shadow (global.css). */}
+                                        <div className="ax-trend-layered">
+                                            <TrendChart chromeless data={data} spec={model.weekly.vegaLiteSpec} title="Weekly hours vs budget" height={260} capabilities={TREND_CAPABILITIES} />
+                                        </div>
+                                        {model.variance && (
+                                            <div className="ax-trend-lollipop">
+                                                <TrendChart chromeless data={data} spec={model.variance.vegaLiteSpec} title="Weekly variance vs budget" height={150} capabilities={TREND_CAPABILITIES} />
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            }}
+                        </QueryStates>
+                        <div className="mt-5 rounded-md bg-[var(--glass-sunken)] px-3 py-1.5 text-center text-200 font-semibold text-[var(--ink)]">
+                            Last {PROJECT_TREND_WEEKS} weeks · {weekSpan({ ...model.current, start: model.trend.start })}
+                        </div>
+                        <QueryStates result={trendSummaryResult} shape="kpi" title="Hours vs budget summary" className="mt-3">
+                            {(table) => <TrendTotals table={table} />}
+                        </QueryStates>
+                        <QueryStates result={trendMonthsResult} shape="table" title="Hours vs budget by month" className="mt-3">
+                            {(table) => <TrendMonths table={table} window={model.trend} />}
+                        </QueryStates>
+                        <p className="caption m-0 mt-3 text-muted-foreground">
+                            Budget = plan hours (Backlog scenario). * The window cuts the first and last months. On Fixed Fee projects the weekly budget is tiny,
+                            so the variance is very large (open item #26).
+                        </p>
+                    </AxCard>
+
                     <div className="grid grid-cols-1 gap-grid lg:grid-cols-5">
                         <AxCard className="lg:col-span-2" title="Last week and this week vs plan" subtitle="Hours in Synerion; plan from the Backlog scenario">
                             <WeekVsPlan last={{ week: model.last, result: lastWeekResult }} current={{ week: model.current, result: thisWeekResult }} />
@@ -194,12 +245,11 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
 
                         <AxCard
                             className="lg:col-span-3"
-                            title="Weekly hours vs plan"
-                            subtitle={`Up to ${PROJECT_TREND_WEEKS} weeks · ${weekSpan({ ...model.current, start: model.trend.start })} · weeks with hours or plan · the last one is this week, to date`}
-                            aside={<TrendLegend />}
+                            title="Revenue by month vs plan"
+                            subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · actual (Actual scenario) vs plan (Backlog scenario)`}
                         >
-                            <QueryStates result={trendResult} shape="chart" title="Weekly hours vs plan">
-                                {(table) => <TrendChart chromeless data={toDataTable(table, model.weekly.columnMetadata)} spec={model.weekly.vegaLiteSpec} title="Weekly hours vs plan" height={360} capabilities={TREND_CAPABILITIES} />}
+                            <QueryStates result={revenueResult} shape="table" title="Revenue by month">
+                                {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} />}
                             </QueryStates>
                         </AxCard>
                     </div>
@@ -219,14 +269,6 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                         </AxCard>
                     </div>
 
-                    <AxCard
-                        title="Revenue by month vs plan"
-                        subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · actual (Actual scenario) vs plan (Backlog scenario)`}
-                    >
-                        <QueryStates result={revenueResult} shape="table" title="Revenue by month">
-                            {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} />}
-                        </QueryStates>
-                    </AxCard>
                 </>
             )}
         </section>
@@ -301,24 +343,136 @@ function WeekVsPlan({ last, current }: { last: WeekColumn; current: WeekColumn }
     );
 }
 
-/** Legend for the weekly trend (two series: a legend is always present). Keys carry the colour; text stays in ink. */
+/** Legend for the weekly trend and its variance panel. Keys carry the colour; text stays in ink. */
 function TrendLegend(): ReactElement {
     return (
         <ul className="m-0 flex shrink-0 list-none flex-wrap items-center gap-x-4 gap-y-1 p-0 text-200 text-muted-foreground" aria-label="Legend">
             <li className="flex items-center gap-2">
-                <span aria-hidden="true" className="inline-block h-3 w-2.5 rounded-t-[3px] bg-[image:var(--gradient-gold)]" />
+                <span aria-hidden="true" className="inline-block h-3 w-2.5 rounded-t-[3px] bg-[image:var(--gradient-gold)] opacity-70" />
                 Synerion hours
             </li>
             <li className="flex items-center gap-2">
-                <span aria-hidden="true" className="relative inline-block w-5 border-t-2 border-dashed border-[var(--ink-muted)]">
-                    <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-[60%] rounded-full bg-[var(--ink-muted)] ring-2 ring-[var(--surface)]" />
+                <span aria-hidden="true" className="relative inline-block w-5 border-t-[2.5px] border-[var(--ink)] [filter:drop-shadow(0_2px_2px_var(--glass-line-shadow))]">
+                    <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-[60%] rounded-full bg-[var(--ink)] ring-2 ring-[var(--surface)]" />
                 </span>
-                Planned hours
+                Budget hours
             </li>
             <li className="flex items-center gap-2">
-                <span aria-hidden="true" className="inline-block h-3 w-0.5 rounded-full bg-[var(--ink)]" />
-                Variance vs plan (%)
+                <span aria-hidden="true" className="inline-block size-2 rounded-full bg-[var(--chart-2)]" />
+                Below budget
+            </li>
+            <li className="flex items-center gap-2">
+                <span aria-hidden="true" className="inline-block size-2 rounded-full bg-[var(--chart-4)]" />
+                Above budget
             </li>
         </ul>
+    );
+}
+
+const hoursFormat = (v: number | null) => (v === null ? "—" : String(formatValue(v, "#,0")));
+const varianceText = (v: number | null) => (v === null ? "—" : signedChange(v, "#,0.0%"));
+
+/** The 12-week totals: Synerion hours, budget, the difference and the variance, all from the model. */
+function TrendTotals({ table }: { table: QueryTable }): ReactElement {
+    const c = projectsTrendSummaryColumns;
+    const delta = numberCell(table, c.hoursVsPlan);
+    const variance = numberCell(table, c.variance);
+    const tone = (v: number | null) => (v === null ? "" : v < 0 ? "text-[var(--chart-2)]" : "text-[var(--accent-ink)]");
+    const items = [
+        { label: "Synerion hours", value: hoursFormat(numberCell(table, c.hours)), className: "" },
+        { label: "Budget hours", value: hoursFormat(numberCell(table, c.plannedHours)), className: "" },
+        { label: "Hours vs budget", value: delta === null ? "—" : signedChange(delta, "#,0"), className: tone(delta) },
+        { label: "Variance", value: varianceText(variance), className: tone(variance) },
+    ];
+    return (
+        <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {items.map((item) => (
+                <div key={item.label} className="rounded-md bg-[var(--glass-sunken)] px-4 py-3">
+                    <dt className="ax-kpi-label">{item.label}</dt>
+                    <dd className={`m-0 mt-1 text-[22px] font-semibold tabular-nums ${item.className}`}>{item.value}</dd>
+                </div>
+            ))}
+        </dl>
+    );
+}
+
+/**
+ * Rows per month in the window, like the YTD block of the reference (Ion, 2026-11-07): hours and budget bars on one
+ * scale, the difference, and a variance bar coloured by its sign. Bar lengths only scale the model's numbers for display.
+ */
+function TrendMonths({ table, window }: { table: QueryTable; window: { start: Date; end: Date } }): ReactElement {
+    const c = projectsTrendSummaryColumns;
+    const rows = table.rows.map((_, i) => {
+        const key = numberCell(table, c.monthNumber, i) ?? 0;
+        const monthStart = new Date(Math.floor(key / 100), (key % 100) - 1, 1);
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+        return {
+            label: String(cell(table, c.month, i) ?? ""),
+            partial: monthStart < window.start || monthEnd > window.end,
+            hours: numberCell(table, c.hours, i),
+            plan: numberCell(table, c.plannedHours, i),
+            delta: numberCell(table, c.hoursVsPlan, i),
+            variance: numberCell(table, c.variance, i),
+        };
+    });
+    const maxHours = Math.max(1, ...rows.flatMap((r) => [r.hours ?? 0, r.plan ?? 0]));
+    const maxVariance = Math.max(0.0001, ...rows.map((r) => Math.abs(r.variance ?? 0)));
+    const pct = (v: number, max: number) => `${Math.max(2, (Math.abs(v) / max) * 100)}%`;
+    return (
+        <div className="overflow-x-auto">
+            <table className="ax-table w-full">
+                <caption className="sr-only">Hours vs budget by month</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Month</th>
+                        <th scope="col">Synerion hours</th>
+                        <th scope="col">Budget hours</th>
+                        <th scope="col" className="ax-num">Hours vs budget</th>
+                        <th scope="col">Variance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((r) => (
+                        <tr key={r.label}>
+                            <th scope="row" className="text-left font-normal">
+                                {r.label}
+                                {r.partial ? "*" : ""}
+                            </th>
+                            <td>
+                                <span className="flex items-center gap-2">
+                                    <span className="ax-month-bar ax-month-bar-hours" style={{ width: r.hours === null ? 0 : pct(r.hours, maxHours) }} aria-hidden="true" />
+                                    <span className="tabular-nums">{hoursFormat(r.hours)}</span>
+                                </span>
+                            </td>
+                            <td>
+                                {r.plan === null ? (
+                                    <span className="text-muted-foreground">No budget yet</span>
+                                ) : (
+                                    <span className="flex items-center gap-2">
+                                        <span className="ax-month-bar ax-month-bar-plan" style={{ width: pct(r.plan, maxHours) }} aria-hidden="true" />
+                                        <span className="tabular-nums">{hoursFormat(r.plan)}</span>
+                                    </span>
+                                )}
+                            </td>
+                            <td className="ax-num">{r.delta === null ? "—" : signedChange(r.delta, "#,0")}</td>
+                            <td>
+                                {r.variance === null ? (
+                                    "—"
+                                ) : (
+                                    <span className="flex items-center gap-2">
+                                        <span
+                                            className={`ax-month-bar ax-month-bar-variance ${r.variance < 0 ? "is-below" : "is-above"}`}
+                                            style={{ width: pct(r.variance, maxVariance) }}
+                                            aria-hidden="true"
+                                        />
+                                        <span className="whitespace-nowrap tabular-nums">{varianceText(r.variance)}</span>
+                                    </span>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
     );
 }
