@@ -5,7 +5,9 @@ ADDCOLUMNS (
     SUMMARIZECOLUMNS (
         dim_calendar[start_of_week_sun],
         /* @filters */
-        "Hours", [Synerion Hours_app],
+        // 0 for a week with no hours, so every week of the window has a row and the bar layer keeps the
+        // query's week order (a plan-only week was appended after the last one, 2026-11-07).
+        "Hours", COALESCE ( [Synerion Hours_app], 0 ),
         "PlannedHours", [Planned Hours_app]
     ),
     "Week", FORMAT ( dim_calendar[start_of_week_sun], "m/d" ),

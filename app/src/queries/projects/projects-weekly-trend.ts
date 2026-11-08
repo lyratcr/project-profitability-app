@@ -25,10 +25,26 @@ const columnMetadata: ColumnMetadataMap = {
 };
 
 /**
- * The shared bars + line trend (independent axes), keeping the query's week order (`sort: null`): VegaVisual's
- * layered marks order x labels alphabetically and ignore a sort by another field (log 2026-11-04).
+ * Colours for the liquid glass look (P6; Ion, 2026-11-07), read by the page from the design-system tokens
+ * `--yellow-100`, `--yellow-300`, `--yellow-500` and `--chart-2` so the spec never hard-codes a hex value.
  */
-function weeklySpec(): VisualizationSpec {
+export interface GlassBarColors {
+    light: string;
+    base: string;
+    deep: string;
+    /** The plan line: the Auxis comparison series (`--chart-2`, blue), so it stands out from the gold bars. */
+    plan: string;
+}
+
+type Layer = { mark: unknown; encoding: Record<string, unknown> };
+
+/**
+ * The shared bars + line trend on one hours axis, keeping the query's week order (`sort: null`): VegaVisual's
+ * layered marks order x labels alphabetically and ignore a sort by another field (log 2026-11-04). With `glass`,
+ * the bars get the Auxis premium fill (vertical gold gradient, design-system README), rounded tops, a light rim
+ * and a glossy sheen layer on their left side.
+ */
+function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
     const spec = trendSpec({ kind: "bars-line", x: "Week", xSort: "WeekKey", y: "Hours", line: "PlannedHours" }) as VisualizationSpec & {
         encoding: { x: Record<string, unknown> };
     };
@@ -43,9 +59,39 @@ function weeklySpec(): VisualizationSpec {
     layers[1].layer[0].encoding.y.axis = null;
     layers[1].layer[0].encoding.y.title = "Hours";
     (spec as Record<string, unknown>).resolve = { scale: { y: "shared" } };
+    // One tooltip with both series (the layered default showed only the plan).
+    const tooltip = [
+        { field: "Week", type: "ordinal", title: "Week starting" },
+        { field: "Hours", type: "quantitative", title: "Synerion hours", format: ",.0f" },
+        { field: "PlannedHours", type: "quantitative", title: "Planned hours", format: ",.0f" },
+    ];
+    for (const group of layers) for (const layer of group.layer as Layer[]) layer.encoding.tooltip = tooltip;
+    if (glass) {
+        const bars = layers[0].layer as Layer[];
+        const shape = { type: "bar", cornerRadiusTopLeft: 6, cornerRadiusTopRight: 6 };
+        bars[0].mark = {
+            ...shape,
+            // Bottom to top: deep gold, brand gold, soft gold.
+            color: { gradient: "linear", x1: 0, y1: 1, x2: 0, y2: 0, stops: [{ offset: 0, color: glass.deep }, { offset: 0.45, color: glass.base }, { offset: 1, color: glass.light }] },
+            stroke: glass.light,
+            strokeWidth: 1,
+            strokeOpacity: 0.9,
+        };
+        // Sheen: soft gold fading out across the left side of each bar, drawn over it; no tooltip of its own.
+        bars.push({
+            mark: {
+                ...shape,
+                opacity: 0.55,
+                color: { gradient: "linear", x1: 0, y1: 0, x2: 1, y2: 0, stops: [{ offset: 0, color: glass.light }, { offset: 0.35, color: "transparent" }, { offset: 1, color: "transparent" }] },
+            },
+            encoding: { y: { ...(bars[0].encoding.y as Record<string, unknown>), axis: null }, tooltip },
+        });
+        const line = (layers[1].layer as Layer[])[0];
+        line.mark = { type: "line", color: glass.plan, strokeWidth: 2, point: { color: glass.plan, size: 36 } };
+    }
     return spec;
 }
 
-export function projectsWeeklyTrend({ filters = [] }: { filters?: readonly string[] } = {}) {
-    return { connection: "profitmodel", query: applyFilters(query, filters), columnMetadata, vegaLiteSpec: weeklySpec() } as const;
+export function projectsWeeklyTrend({ filters = [], glass }: { filters?: readonly string[]; glass?: GlassBarColors } = {}) {
+    return { connection: "profitmodel", query: applyFilters(query, filters), columnMetadata, vegaLiteSpec: weeklySpec(glass) } as const;
 }
