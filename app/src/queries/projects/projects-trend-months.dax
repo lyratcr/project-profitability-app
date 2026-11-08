@@ -1,0 +1,13 @@
+// P6 weekly trend summary by month: the same four measures for each calendar month in the 12-week window (the first
+// and last months are usually partial: the window cuts them). Months in calendar order.
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_calendar[year_month],
+    dim_calendar[year_month_number],
+    /* @filters */
+    "Hours", [Synerion Hours_app],
+    "PlannedHours", [Planned Hours_app],
+    "HoursVsPlan", [Hours vs Plan_app],
+    "Variance", [Hours vs Plan Variance %_app]
+)
+ORDER BY dim_calendar[year_month_number]

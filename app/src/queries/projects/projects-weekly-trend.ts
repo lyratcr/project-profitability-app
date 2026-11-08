@@ -20,121 +20,109 @@ export const PROJECT_TREND_WEEKS = 12;
 /** `Hours vs Plan Variance %_app`'s format, with a true minus (Auxis: deltas carry a sign, never a hyphen). */
 export const VARIANCE_FORMAT = "+0.0%;−0.0%;0.0%";
 
-const columnMetadata: ColumnMetadataMap = {
+export const trendColumnMetadata: ColumnMetadataMap = {
     [projectsTrendColumns.weekStart]: { name: "WeekStart", displayName: "Week starting" },
     [projectsTrendColumns.hours]: { name: "Hours", displayName: "Synerion hours", format: "#,0" },
-    [projectsTrendColumns.plannedHours]: { name: "PlannedHours", displayName: "Planned hours", format: "#,0" },
-    [projectsTrendColumns.variance]: { name: "Variance", displayName: "Variance vs plan", format: VARIANCE_FORMAT },
+    [projectsTrendColumns.plannedHours]: { name: "PlannedHours", displayName: "Budget hours", format: "#,0" },
+    [projectsTrendColumns.variance]: { name: "Variance", displayName: "Variance vs budget", format: VARIANCE_FORMAT },
     [projectsTrendColumns.week]: { name: "Week", displayName: "Week" },
     [projectsTrendColumns.weekKey]: { name: "WeekKey", displayName: "Week key" },
 };
 
 /**
- * Colours for the liquid glass look (P6; Ion, 2026-11-07), read by the page from the design-system tokens
- * (`--yellow-100`, `--yellow-300`, `--yellow-500`, `--ink`, `--ink-muted`, `--surface`) so the spec never hard-codes
- * a hex value.
+ * Colours for the layered liquid glass trend (P6; Ion, 2026-11-07), read by the page from the design-system tokens so
+ * the specs never hard-code a hex value.
  */
 export interface GlassBarColors {
+    /** `--yellow-100`, `--yellow-300`, `--yellow-500`: the gold bar gradient, top to bottom. */
     light: string;
     base: string;
     deep: string;
-    /**
-     * The plan line: grey and dashed (`--ink-muted`; Ion, 2026-11-07), a reference line. A gold or amber line next to
-     * the gold bars fails the dataviz palette check (normal-vision ΔE 4.8–13.4, floor 15).
-     */
+    /** `--ink`: the budget line, in front of the bars. */
     plan: string;
-    /** The weekly variance segments and their labels (`--ink`): the data, so stronger than the plan line. */
-    variance: string;
-    /** The chart surface (`--surface`): the 2px ring around the plan points. */
+    /** `--ink-muted`: zero line and the labels in the variance panel. */
+    muted: string;
+    /** `--surface`: the 2px ring around points. */
     ring: string;
+    /**
+     * `--chart-2` (blue) below the budget, `--chart-4` (amber) above. Dataviz palette check: normal-vision ΔE 28.4,
+     * CVD ΔE 23.0; light-theme contrast is relieved by the signed label on every point.
+     */
+    below: string;
+    above: string;
 }
 
 /** Bar width in px: at most 24 (dataviz mark spec), leaving air between weeks. */
 export const TREND_BAR_SIZE = 22;
 
+/** Bars sit behind the budget line: translucent glass, so the line reads as the front layer. */
+const BAR_OPACITY = 0.82;
+
+/** Both charts reserve the same y-axis width, so their weeks line up one above the other. */
+export const TREND_Y_AXIS_WIDTH = 46;
+
+export const TREND_TOOLTIP = [
+    { field: "Week", type: "ordinal", title: "Week starting" },
+    { field: "Hours", type: "quantitative", title: "Synerion hours", format: ",.0f" },
+    { field: "PlannedHours", type: "quantitative", title: "Budget hours", format: ",.0f" },
+    { field: "Variance", type: "quantitative", title: "Variance vs budget" },
+];
+
 type Layer = { mark: unknown; encoding: Record<string, unknown>; transform?: unknown[] };
 
 /**
- * The shared bars + line trend on one hours axis, keeping the query's week order (`sort: null`): VegaVisual's
- * layered marks order x labels alphabetically and ignore a sort by another field (log 2026-11-04). With `glass`:
- * bars at most 24px with 4px rounded tops (Auxis premium gold gradient plus a glossy sheen, no border); the plan as
- * a grey dashed 2px line with ringed 8px points; and, per week, a vertical segment from the plan to the hours with
- * the model's variance % above it (Ion, 2026-11-07).
+ * Hours (bars, behind) vs budget (line, in front), one hours axis, in the query's week order (`sort: null`: VegaVisual's
+ * layered marks order x labels alphabetically and ignore a sort by another field, log 2026-11-04). With `glass`: gold
+ * glass bars at most 24px with 4px rounded tops, translucent; the budget as a 2.5px ink line with ringed points. Its
+ * drop shadow is CSS on the rendered SVG (`.ax-trend-layered` in global.css): Vega-Lite has no shadows. The week
+ * labels sit under the variance panel below, so this chart hides them.
  */
 function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
     const spec = trendSpec({ kind: "bars-line", x: "Week", xSort: "WeekKey", y: "Hours", line: "PlannedHours" }) as VisualizationSpec & {
         encoding: { x: Record<string, unknown> };
     };
-    // Transparent ground: the Auxis card is the only surface behind the chart.
     (spec as Record<string, unknown>).background = "transparent";
     spec.encoding.x.sort = null;
-    // Points on the plan line: a Fixed Fee plan has one value a month, which a line alone doesn't draw.
     const layers = (spec as unknown as { layer: { layer: (Layer & { encoding: { y: Record<string, unknown> } })[] }[] }).layer;
+    // Points on the budget line: a Fixed Fee plan has one value a month, which a line alone doesn't draw.
     layers[1].layer[0].mark = { type: "line", point: true };
     // Both series are hours: one shared axis, so the bar and the line can be compared directly.
     layers[0].layer[0].encoding.y.title = "Hours";
     layers[1].layer[0].encoding.y.axis = null;
     layers[1].layer[0].encoding.y.title = "Hours";
     (spec as Record<string, unknown>).resolve = { scale: { y: "shared" } };
-    // One tooltip with both series and the variance (the layered default showed only the plan).
-    const tooltip = [
-        { field: "Week", type: "ordinal", title: "Week starting" },
-        { field: "Hours", type: "quantitative", title: "Synerion hours", format: ",.0f" },
-        { field: "PlannedHours", type: "quantitative", title: "Planned hours", format: ",.0f" },
-        { field: "Variance", type: "quantitative", title: "Variance vs plan" },
-    ];
-    for (const group of layers) for (const layer of group.layer) layer.encoding.tooltip = tooltip;
+    for (const group of layers) for (const layer of group.layer) layer.encoding.tooltip = TREND_TOOLTIP;
     if (glass) {
+        layers[0].layer[0].encoding.y.axis = { minExtent: TREND_Y_AXIS_WIDTH, maxExtent: TREND_Y_AXIS_WIDTH };
+        spec.encoding.x.axis = { labels: false, ticks: false, domain: false, title: null };
         const bars = layers[0].layer as Layer[];
-        const shape = { type: "bar", size: TREND_BAR_SIZE, cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4 };
+        const shape = { type: "bar", size: TREND_BAR_SIZE, cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4, opacity: BAR_OPACITY };
         bars[0].mark = {
             ...shape,
             // Bottom to top: deep gold, brand gold, soft gold.
             color: { gradient: "linear", x1: 0, y1: 1, x2: 0, y2: 0, stops: [{ offset: 0, color: glass.deep }, { offset: 0.45, color: glass.base }, { offset: 1, color: glass.light }] },
         };
-        // Sheen: soft gold fading out across the left side of each bar, drawn over it.
+        // Sheen: soft gold fading out across the left side of each bar.
         bars.push({
             mark: {
                 ...shape,
-                opacity: 0.55,
+                opacity: 0.5,
                 color: { gradient: "linear", x1: 0, y1: 0, x2: 1, y2: 0, stops: [{ offset: 0, color: glass.light }, { offset: 0.35, color: "transparent" }, { offset: 1, color: "transparent" }] },
             },
-            encoding: { y: { ...(bars[0].encoding.y as Record<string, unknown>), axis: null }, tooltip },
+            encoding: { y: { ...(bars[0].encoding.y as Record<string, unknown>), axis: null }, tooltip: TREND_TOOLTIP },
         });
-
-        const lineGroup = layers[1].layer as Layer[];
-        lineGroup[0].mark = {
+        layers[1].layer[0].mark = {
             type: "line",
             color: glass.plan,
-            strokeWidth: 2,
-            strokeDash: [5, 4],
+            strokeWidth: 2.5,
             strokeCap: "round",
+            strokeJoin: "round",
             point: { filled: true, color: glass.plan, size: 64, stroke: glass.ring, strokeWidth: 2 },
         };
-        // Variance per week: a segment from the plan to the hours, centred on the bar (Ion, 2026-11-07), and the model's
-        // % centred above its top end.
-        const withVariance = [{ filter: "isValid(datum.PlannedHours) && isValid(datum.Variance)" }];
-        lineGroup.push({
-            transform: withVariance,
-            mark: { type: "rule", color: glass.variance, strokeWidth: 2, strokeCap: "round" },
-            // No `axis: null` here: Vega merges every layer's axis on the shared scale, and null hid the hours axis.
-            encoding: { y: { field: "PlannedHours", type: "quantitative", title: "Hours" }, y2: { field: "Hours" }, tooltip },
-        });
-        lineGroup.push({
-            transform: [
-                ...withVariance,
-                { calculate: "max(datum.Hours, datum.PlannedHours)", as: "VarianceTop" },
-                // The measure's +0.0% pattern with thousands separators; d3's format writes a true minus. VegaVisual's own text formatting
-                // dropped trailing zeros ("−12%" next to "−12.4%").
-                { calculate: "format(datum.Variance, '+,.1%')", as: "VarianceLabel" },
-            ],
-            mark: { type: "text", align: "center", baseline: "bottom", dy: -6, fontSize: 10, fontWeight: 600, color: glass.variance },
-            encoding: { y: { field: "VarianceTop", type: "quantitative", title: "Hours" }, text: { field: "VarianceLabel" } },
-        });
     }
     return spec;
 }
 
 export function projectsWeeklyTrend({ filters = [], glass }: { filters?: readonly string[]; glass?: GlassBarColors } = {}) {
-    return { connection: "profitmodel", query: applyFilters(query, filters), columnMetadata, vegaLiteSpec: weeklySpec(glass) } as const;
+    return { connection: "profitmodel", query: applyFilters(query, filters), columnMetadata: trendColumnMetadata, vegaLiteSpec: weeklySpec(glass) } as const;
 }
