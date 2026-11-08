@@ -26,23 +26,32 @@ const columnMetadata: ColumnMetadataMap = {
 
 /**
  * Colours for the liquid glass look (P6; Ion, 2026-11-07), read by the page from the design-system tokens
- * `--yellow-100`, `--yellow-300`, `--yellow-500` and `--chart-2` so the spec never hard-codes a hex value.
+ * `--yellow-100`, `--yellow-300`, `--yellow-500`, `--ink` and `--surface` so the spec never hard-codes a hex value.
  */
 export interface GlassBarColors {
     light: string;
     base: string;
     deep: string;
-    /** The plan line: the Auxis comparison series (`--chart-2`, blue), so it stands out from the gold bars. */
+    /**
+     * The plan line, a neutral reference line in the text colour (`--ink`). A gold or amber line next to the gold
+     * bars fails the dataviz palette check (normal-vision ΔE 4.8–13.4, floor 15); ink passes in both themes.
+     */
     plan: string;
+    /** The chart surface (`--surface`): the 2px ring around the plan points. */
+    ring: string;
 }
+
+/** Bar width in px: at most 24 (dataviz mark spec), leaving air between weeks. */
+export const TREND_BAR_SIZE = 22;
 
 type Layer = { mark: unknown; encoding: Record<string, unknown> };
 
 /**
  * The shared bars + line trend on one hours axis, keeping the query's week order (`sort: null`): VegaVisual's
  * layered marks order x labels alphabetically and ignore a sort by another field (log 2026-11-04). With `glass`,
- * the bars get the Auxis premium fill (vertical gold gradient, design-system README), rounded tops, a light rim
- * and a glossy sheen layer on their left side.
+ * the dataviz mark specs apply: bars at most 24px with 4px rounded tops (Auxis premium gold gradient plus a glossy
+ * sheen on their left side, no border), a 2px plan line with 8px points in a 2px surface ring, and one direct
+ * label at the start of the plan line with its value.
  */
 function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
     const spec = trendSpec({ kind: "bars-line", x: "Week", xSort: "WeekKey", y: "Hours", line: "PlannedHours" }) as VisualizationSpec & {
@@ -52,7 +61,7 @@ function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
     (spec as Record<string, unknown>).background = "transparent";
     spec.encoding.x.sort = null;
     // Points on the plan line: a Fixed Fee plan has one value a month, which a line alone doesn't draw.
-    const layers = (spec as unknown as { layer: { layer: { mark: unknown; encoding: { y: Record<string, unknown> } }[] }[] }).layer;
+    const layers = (spec as unknown as { layer: { layer: { mark: unknown; encoding: { y: Record<string, unknown> }; transform?: unknown[] }[] }[] }).layer;
     layers[1].layer[0].mark = { type: "line", point: true };
     // Both series are hours: one shared axis, so the bar and the line can be compared directly.
     layers[0].layer[0].encoding.y.title = "Hours";
@@ -68,14 +77,11 @@ function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
     for (const group of layers) for (const layer of group.layer as Layer[]) layer.encoding.tooltip = tooltip;
     if (glass) {
         const bars = layers[0].layer as Layer[];
-        const shape = { type: "bar", cornerRadiusTopLeft: 6, cornerRadiusTopRight: 6 };
+        const shape = { type: "bar", size: TREND_BAR_SIZE, cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4 };
         bars[0].mark = {
             ...shape,
             // Bottom to top: deep gold, brand gold, soft gold.
             color: { gradient: "linear", x1: 0, y1: 1, x2: 0, y2: 0, stops: [{ offset: 0, color: glass.deep }, { offset: 0.45, color: glass.base }, { offset: 1, color: glass.light }] },
-            stroke: glass.light,
-            strokeWidth: 1,
-            strokeOpacity: 0.9,
         };
         // Sheen: soft gold fading out across the left side of each bar, drawn over it; no tooltip of its own.
         bars.push({
@@ -86,8 +92,27 @@ function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
             },
             encoding: { y: { ...(bars[0].encoding.y as Record<string, unknown>), axis: null }, tooltip },
         });
-        const line = (layers[1].layer as Layer[])[0];
-        line.mark = { type: "line", color: glass.plan, strokeWidth: 2, point: { color: glass.plan, size: 36 } };
+        const lineGroup = layers[1].layer as (Layer & { transform?: unknown[] })[];
+        lineGroup[0].mark = {
+            type: "line",
+            color: glass.plan,
+            strokeWidth: 2,
+            strokeCap: "round",
+            strokeJoin: "round",
+            point: { filled: true, color: glass.plan, size: 64, stroke: glass.ring, strokeWidth: 2 },
+        };
+        // Direct label at the first week with plan: names the line and gives its value ("Plan 5 h"), so a small plan
+        // next to large bars doesn't read as a line at 0. Text in the ink colour, never a series colour.
+        lineGroup.push({
+            transform: [
+                { filter: "isValid(datum.PlannedHours)" },
+                { joinaggregate: [{ op: "min", field: "WeekKey", as: "FirstPlanKey" }] },
+                { filter: "datum.WeekKey === datum.FirstPlanKey" },
+                { calculate: "'Plan ' + format(datum.PlannedHours, ',.0f') + ' h'", as: "PlanLabel" },
+            ],
+            mark: { type: "text", align: "left", baseline: "bottom", dx: -4, dy: -10, fontSize: 11, fontWeight: 600, color: glass.plan },
+            encoding: { y: { field: "PlannedHours", type: "quantitative", axis: null, title: "Hours" }, text: { field: "PlanLabel" } },
+        });
     }
     return spec;
 }

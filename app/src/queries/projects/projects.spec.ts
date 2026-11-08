@@ -83,8 +83,9 @@ describe("P6 project query factories", () => {
         expect(q).toContain("ORDER BY dim_calendar[year_month_number]");
     });
 
-    it("weekly trend has a row for every week (0 hours, not blank), so a plan-only week keeps its place", () => {
-        expect(projectsWeeklyTrend({ filters: week }).query).toContain('"Hours", COALESCE ( [Synerion Hours_app], 0 )');
+    it("weekly trend: 0 hours for a plan-only week (keeps its place), blank for weeks with neither (dropped)", () => {
+        const q = projectsWeeklyTrend({ filters: week }).query;
+        expect(q).toMatch(/IF \(\s*NOT ISBLANK \( \[Synerion Hours_app\] \) \|\| NOT ISBLANK \( \[Planned Hours_app\] \),\s*COALESCE \( \[Synerion Hours_app\], 0 \)\s*\)/);
     });
 
     it("weekly trend tooltip carries both series", () => {
@@ -94,16 +95,23 @@ describe("P6 project query factories", () => {
         expect(json).toContain('"title":"Planned hours"');
     });
 
-    it("glass bars: token colours in a vertical gold gradient, rounded tops, a sheen layer and a blue plan line", () => {
-        const glass = { light: "#ffd866", base: "#ffcb05", deep: "#fab434", plan: "#14b1e7" };
+    it("glass bars and plan line follow the dataviz mark specs, in token colours", () => {
+        const glass = { light: "#ffd866", base: "#ffcb05", deep: "#fab434", plan: "#f4f1ee", ring: "#1f1c1d" };
         const spec = projectsWeeklyTrend({ filters: week, glass }).vegaLiteSpec as unknown as {
             layer: { layer: { mark: Record<string, unknown> }[] }[];
         };
         const [bar, sheen] = spec.layer[0].layer;
-        expect(bar.mark).toMatchObject({ type: "bar", cornerRadiusTopLeft: 6, stroke: glass.light });
+        // At most 24px wide, 4px rounded data-end, no border around the mark.
+        expect(bar.mark).toMatchObject({ type: "bar", size: 22, cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4 });
+        expect(bar.mark).not.toHaveProperty("stroke");
         expect(bar.mark.color).toMatchObject({ gradient: "linear", y1: 1, y2: 0, stops: [{ color: glass.deep }, { color: glass.base }, { color: glass.light }] });
         expect(sheen.mark).toMatchObject({ type: "bar", color: { gradient: "linear", x1: 0, x2: 1 } });
-        expect(spec.layer[1].layer[0].mark).toMatchObject({ type: "line", color: glass.plan });
+        // 2px line; >= 8px points with a 2px ring in the surface colour.
+        expect(spec.layer[1].layer[0].mark).toMatchObject({ type: "line", color: glass.plan, strokeWidth: 2, point: { size: 64, stroke: glass.ring, strokeWidth: 2 } });
+        // One direct label at the first week with plan, in the ink colour.
+        const label = spec.layer[1].layer[1] as unknown as { mark: Record<string, unknown>; transform: { calculate?: string }[] };
+        expect(label.mark).toMatchObject({ type: "text", color: glass.plan });
+        expect(label.transform.at(-1)?.calculate).toContain("'Plan '");
         // Without the tokens (tests, stylesheet not loaded) the theme's plain bars stay.
         const plain = projectsWeeklyTrend({ filters: week }).vegaLiteSpec as unknown as { layer: { layer: unknown[] }[] };
         expect(plain.layer[0].layer).toHaveLength(1);
