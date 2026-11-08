@@ -82,4 +82,30 @@ describe("P6 project query factories", () => {
         expect(q).toContain("[Planned Revenue_app]");
         expect(q).toContain("ORDER BY dim_calendar[year_month_number]");
     });
+
+    it("weekly trend has a row for every week (0 hours, not blank), so a plan-only week keeps its place", () => {
+        expect(projectsWeeklyTrend({ filters: week }).query).toContain('"Hours", COALESCE ( [Synerion Hours_app], 0 )');
+    });
+
+    it("weekly trend tooltip carries both series", () => {
+        const json = JSON.stringify(projectsWeeklyTrend({ filters: week }).vegaLiteSpec);
+        expect(json).toContain('"tooltip":[{"field":"Week"');
+        expect(json).toContain('"title":"Synerion hours"');
+        expect(json).toContain('"title":"Planned hours"');
+    });
+
+    it("glass bars: token colours in a vertical gold gradient, rounded tops, a sheen layer and a blue plan line", () => {
+        const glass = { light: "#ffd866", base: "#ffcb05", deep: "#fab434", plan: "#14b1e7" };
+        const spec = projectsWeeklyTrend({ filters: week, glass }).vegaLiteSpec as unknown as {
+            layer: { layer: { mark: Record<string, unknown> }[] }[];
+        };
+        const [bar, sheen] = spec.layer[0].layer;
+        expect(bar.mark).toMatchObject({ type: "bar", cornerRadiusTopLeft: 6, stroke: glass.light });
+        expect(bar.mark.color).toMatchObject({ gradient: "linear", y1: 1, y2: 0, stops: [{ color: glass.deep }, { color: glass.base }, { color: glass.light }] });
+        expect(sheen.mark).toMatchObject({ type: "bar", color: { gradient: "linear", x1: 0, x2: 1 } });
+        expect(spec.layer[1].layer[0].mark).toMatchObject({ type: "line", color: glass.plan });
+        // Without the tokens (tests, stylesheet not loaded) the theme's plain bars stay.
+        const plain = projectsWeeklyTrend({ filters: week }).vegaLiteSpec as unknown as { layer: { layer: unknown[] }[] };
+        expect(plain.layer[0].layer).toHaveLength(1);
+    });
 });

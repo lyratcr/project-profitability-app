@@ -2,6 +2,7 @@ import { useMemo, type ReactElement } from "react";
 import { formatValue } from "@microsoft/fabric-visuals-core";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { signedChange } from "@/lib/change";
+import { readTokens } from "@/lib/design-tokens";
 import { describeFilterContext } from "@/lib/filter-context";
 import { dateRangeArg, filterArgs, monthWindow, TREND_MONTHS, writeFilters, type FilterOptions, type FilterState } from "@/lib/filters";
 import { describeDaysLeft, parseModelDate, planEndStatus } from "@/lib/plan-end";
@@ -38,6 +39,8 @@ interface ProjectsPageProps {
 }
 
 const PEOPLE_TABLE_ID = "who-logged-time";
+// The weekly trend's spec carries a tooltip with both series; VegaVisual's line crosshair would show only the plan.
+const TREND_CAPABILITIES = { disableLineChartCrosshairTooltip: true } as const;
 
 const dayFormat = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" });
 const dateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -67,6 +70,12 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
     // Calendar day and hour matter (the review window ends Tuesday morning); minutes don't.
     const nowKey = [now.getFullYear(), now.getMonth(), now.getDate(), now.getHours()].join("-");
 
+    // Gold glass bars for the weekly trend (liquid glass look), from the design-system tokens.
+    const glass = useMemo(() => {
+        const c = readTokens(["yellow-100", "yellow-300", "yellow-500", "chart-2"]);
+        return c ? { light: c[0], base: c[1], deep: c[2], plan: c[3] } : undefined;
+    }, []);
+
     const model = useMemo(() => {
         const [y, m, d, h] = nowKey.split("-").map(Number);
         const at = new Date(y, m, d, h);
@@ -86,11 +95,11 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
             kpis: projectsKpis({ filters: project }),
             lastWeekQuery: projectsWeek({ filters: weekArgs(last) }),
             thisWeekQuery: projectsWeek({ filters: weekArgs(current) }),
-            weekly: projectsWeeklyTrend({ filters: [dateRangeArg(trend.start, trend.end), ...project] }),
+            weekly: projectsWeeklyTrend({ filters: [dateRangeArg(trend.start, trend.end), ...project], glass }),
             people: projectsPeople({ filters: weekArgs(filters.week), currentWeek: filters.week.isCurrent }),
             revenue: projectsRevenueByMonth({ filters: [dateRangeArg(months.start, months.end), ...project] }),
         };
-    }, [filters, nowKey]);
+    }, [filters, nowKey, glass]);
 
     const run = (q: { connection: string; query: string }) => ({ connection: q.connection, query: ready ? q.query : "" });
     const kpiResult = useSemanticModelQuery(run(model.kpis));
@@ -185,10 +194,10 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                         <AxCard
                             className="lg:col-span-3"
                             title="Weekly hours vs plan"
-                            subtitle={`Last ${PROJECT_TREND_WEEKS} weeks · ${weekSpan({ ...model.current, start: model.trend.start })} · bars: Synerion hours · line: planned hours · last week is this week, to date`}
+                            subtitle={`Last ${PROJECT_TREND_WEEKS} weeks · ${weekSpan({ ...model.current, start: model.trend.start })} · gold bars: Synerion hours · blue line: planned hours · the last week is this week, to date`}
                         >
                             <QueryStates result={trendResult} shape="chart" title="Weekly hours vs plan">
-                                {(table) => <TrendChart chromeless data={toDataTable(table, model.weekly.columnMetadata)} spec={model.weekly.vegaLiteSpec} title="Weekly hours vs plan" height={280} />}
+                                {(table) => <TrendChart chromeless data={toDataTable(table, model.weekly.columnMetadata)} spec={model.weekly.vegaLiteSpec} title="Weekly hours vs plan" height={360} capabilities={TREND_CAPABILITIES} />}
                             </QueryStates>
                         </AxCard>
                     </div>
