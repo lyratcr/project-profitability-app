@@ -29,7 +29,6 @@ import {
     projectsWeeklyVariance,
 } from "@/queries/projects";
 import { AxCard } from "./ax/ax-card.component";
-import { AxKpiCard } from "./ax/ax-kpi-card.component";
 import { AxPageHeader } from "./ax/ax-page-header.component";
 import { QueryStates, type QueryResult } from "./query-states.component";
 import { ReportTable } from "./report-table.component";
@@ -160,23 +159,15 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                 </div>
             ) : (
                 <>
-                    {/* KPI row, whole project life: billing progress is the hero; revenue left to bill carries the accent bar. */}
-                    <QueryStates result={kpiResult} shape="kpi" title="Project KPIs" emptyMessage="This project has no plan or revenue in the model.">
+                    {/* Project budget (PMs, 2026-11-12): SOW, Actual, Variance and their shares in one card, the way they read it
+                        in Smartsheet (Forecast left out: it's manual and not in the model). The plan end date sits beside it. */}
+                    <QueryStates result={kpiResult} shape="kpi" title="Project budget" emptyMessage="This project has no plan or revenue in the model.">
                         {(table) => {
                             const planEnd = parseModelDate(cell(table, projectsKpiColumns.planEnd));
                             const status = planEnd ? planEndStatus(planEnd, model.at) : null;
                             return (
-                                <div className="grid grid-cols-1 gap-grid sm:grid-cols-2 xl:grid-cols-5">
-                                    <AxKpiCard
-                                        variant="spotlight"
-                                        label="Billing progress"
-                                        value={numberCell(table, projectsKpiColumns.progress)}
-                                        format={PROJECTS_FORMATS.percent}
-                                        note="Billed to date ÷ total plan"
-                                    />
-                                    <AxKpiCard variant="accent" label="Revenue left to bill" value={numberCell(table, projectsKpiColumns.leftToBill)} format={PROJECTS_FORMATS.money} note="Plan minus billed to date" />
-                                    <AxKpiCard label="Total planned revenue" value={numberCell(table, projectsKpiColumns.planned)} format={PROJECTS_FORMATS.money} note="Backlog scenario, whole plan" />
-                                    <AxKpiCard label="Revenue billed to date" value={numberCell(table, projectsKpiColumns.billed)} format={PROJECTS_FORMATS.money} note="Actual scenario, project life" />
+                                <div className="grid grid-cols-1 gap-grid lg:grid-cols-3">
+                                    <ProjectBudget table={table} />
                                     <section className="ax-card" aria-label="Plan end date">
                                         <div className="ax-kpi-label">Plan end date</div>
                                         <div className="ax-kpi-value">{planEnd ? dateFormat.format(planEnd) : "—"}</div>
@@ -477,3 +468,59 @@ function TrendMonths({ table, window }: { table: QueryTable; window: { start: Da
         </div>
     );
 }
+
+/**
+ * The PMs' project budget card (2026-11-12), whole project life: SOW (Backlog), Actual (billed to date), Variance (left
+ * to bill) and their shares, with a billed / left bar. Every figure is a model measure; the bar width shows % Actual.
+ */
+function ProjectBudget({ table }: { table: QueryTable }): ReactElement {
+    const c = projectsKpiColumns;
+    const progress = numberCell(table, c.progress);
+    const money = (raw: string) => {
+        const v = numberCell(table, raw);
+        return v === null ? "—" : String(formatValue(v, PROJECTS_FORMATS.money));
+    };
+    const percent = (raw: string) => {
+        const v = numberCell(table, raw);
+        return v === null ? "—" : String(formatValue(v, PROJECTS_FORMATS.percent));
+    };
+    const rows = [
+        { label: "SOW", note: "Backlog, whole plan", value: money(c.planned) },
+        { label: "Actual", note: "Billed to date", value: money(c.billed) },
+        { label: "Variance", note: "Left to bill", value: money(c.leftToBill) },
+        { label: "% Actual", note: "Actual ÷ SOW", value: percent(c.progress) },
+        { label: "% Variance", note: "Variance ÷ SOW", value: percent(c.leftToBillPct) },
+    ];
+    const width = progress === null ? 0 : Math.min(1, Math.max(0, progress)) * 100;
+    return (
+        <section className="ax-card ax-spotlight ax-kpi-hero lg:col-span-2" aria-label="Project budget">
+            <div className="ax-kpi-label">Project budget · whole project life</div>
+            <div className="mt-3">
+                <div className="ax-budget-track" aria-hidden="true">
+                    <span className="ax-budget-fill" style={{ width: `${width}%` }} />
+                </div>
+                <div className="mt-1 flex justify-between text-200 text-[var(--ink-muted)]">
+                    <span>Billed {percent(c.progress)}</span>
+                    <span>Left {percent(c.leftToBillPct)}</span>
+                </div>
+            </div>
+            {/* Amounts on the left, shares on the right, each in the PMs' order. */}
+            <div className="mt-3 grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+                {[rows.slice(0, 3), rows.slice(3)].map((group, i) => (
+                    <dl key={i} className="m-0">
+                        {group.map((r) => (
+                            <div key={r.label} className="flex items-baseline justify-between gap-3 border-t border-white/10 py-2">
+                                <dt className="m-0">
+                                    <span className="text-300 font-semibold text-[var(--ink)]">{r.label}</span>
+                                    <span className="ml-2 text-200 text-[var(--ink-muted)]">{r.note}</span>
+                                </dt>
+                                <dd className="m-0 text-[20px] font-semibold tabular-nums text-[var(--ink)]">{r.value}</dd>
+                            </div>
+                        ))}
+                    </dl>
+                ))}
+            </div>
+        </section>
+    );
+}
+

@@ -15,8 +15,8 @@ function varianceSpec(glass: GlassBarColors): VisualizationSpec {
     // Over budget (more hours than planned) in red, at or under budget in green.
     const color = { condition: { test: "datum.Variance > 0", value: glass.above }, value: glass.below };
     const withVariance = { filter: "isValid(datum.Variance)" };
-    // Whole percents (Ion, 2026-11-07); d3 writes a true minus.
-    const label = { calculate: "format(datum.Variance, '+,.0%')", as: "VarianceLabel" };
+    // Whole percents (Ion, 2026-11-07); d3 writes a true minus. Under half a percent reads 0%, not −0%.
+    const label = { calculate: "abs(datum.Variance) < 0.005 ? '0%' : format(datum.Variance, '+,.0%')", as: "VarianceLabel" };
     const text = { type: "text", align: "center", fontSize: 10, fontWeight: 600, color: glass.muted };
     // Every y encoding carries the same axis definition: Vega merges the layers' axes on the shared scale, and an
     // `axis: null` in any layer hid it (and with it the width that keeps the weeks aligned with the chart above).

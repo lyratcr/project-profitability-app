@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | 1 | `dim_project` duplicate key `PROMETHEUS`: every query through `dim_project` fails (fix in gold `build_gold_dim_project`: normalize key, dedupe) | P6, any project filter; current Power BI report too | Ion / data engineering | Open (found 2026-11-03) |
 | 2 | Synerion hours stop at 2026-10-17; the PM review needs daily loads incl. unapproved time; get the bronze Synerion ingestion into `pipeline/notebooks/` | P6 | Ion | Open (2026-11-06: loads reach 2026-11-04, about 2 days behind; the last days are incomplete, ~1,000 people a weekday vs ~1,460, and the fact has no approval-status column) |
-| 3 | Confirm Backlog = full planned schedule (EAC), not only the unbilled remainder | P6 KPIs | Finance | Open |
+| 3 | Confirm Backlog = full planned schedule (EAC), not only the unbilled remainder | P6 KPIs | Finance | Open (2026-11-12: the PMs read SOW as the full Backlog; Finance to confirm) |
 | 4 | Add project manager (name + email) to `dim_project` from `msdyn_project` | P6 "my projects" | Ion / data engineering | Open |
 | 5 | Extend `dim_calendar` to the last backlog date (2029-12-01) | P6 plan totals by date | Data engineering | Open |
 | 6 | FTE definition for P3/P5: allocation FTE (current) vs capacity FTE (hours ÷ 40) | P3, P5 | Adan | Done 2026-11-04 (Ion with Adan: allocation FTE, the `Operational FTE % (Last Week)` logic; not hours ÷ 40, people work night and special shifts) |
@@ -35,6 +35,9 @@
 
 ## Log
 
+2026-11-12 | Change | Model | Ion approved; created `Revenue Left to Bill %_app` (left to bill ÷ whole plan) for the P6 project budget card (`08_app_measures.md` § 14). Validated query-scoped and against the model (UIP-101-01 3.4%, PAR-401-05 33.8%, KWP-401-02 83.3%; equal to 1 − billing progress); TMDL re-exported | Ion + Claude
+2026-11-12 | Change | P6 | The four whole-life KPI cards become one "Project budget" spotlight card in the PMs' terms (SOW, Actual, Variance, % Actual, % Variance, with a billed / left bar), next to the plan end date. Also: a variance under half a percent reads "0%", not "−0%" | Claude
+2026-11-12 | Decision | P6 | Review with 3 PMs on 2026-11-11 (Ion): they liked Projects and asked for a quick project status card like their Smartsheet "Project Budget" widget. SOW = the Backlog; their Forecast is manual, not in the model, so it's left out. Their reading of SOW as the full Backlog supports open item #3 (Backlog = full plan), pending Finance's confirmation | Ion
 2026-11-07 | Release | P6 weekly card (budget gaps, red/green) | `npx rayfin up` from `main` @ `31526ba` (PR #36, approved by Ion) to `_Corporate DCOE Backend Dev`. Type-check, lint, 356 tests and build pass; `rayfin up status` reachable. Checked live in Ion's Chrome (page content): KWP-401-02 weeks without plan +100% in red, 8/30 −100% in green, 9/27 +900% in red (= `Hours vs Plan Variance %_app`), totals 60 / 3 / +57 / +1,883%, legend Under / Over budget; no console errors | Ion + Claude
 2026-11-07 | Change | Model | Ion approved; `Hours vs Plan Variance %_app` now returns +100% for hours without plan (blank with neither) and shows whole percents (`08_app_measures.md` § 13 update). Re-validated against the model (21 project-weeks equal to the proposal; weeks with plan unchanged); TMDL re-exported | Ion + Claude
 2026-11-07 | Change | P6 weekly trend | Ion (KWP-401-02): the budget line counts 0 in weeks with hours but no plan, so it stays connected; variance over budget in red and under budget in green with the official Auxis status colours (`--negative` red-500 / `--positive` green-500 for marks, `--negative-ink` / `--positive-ink` for text; dataviz check normal-vision ΔE 26.7, CVD 17.5); all percents in the card without decimals; legend "Under budget" / "Over budget" | Ion + Claude

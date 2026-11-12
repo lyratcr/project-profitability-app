@@ -1510,6 +1510,12 @@ table _Measures
 		displayFolder: _app\Projects
 		lineageTag: e9a3e781-d3b7-4dae-9b23-cc3f90331c8e
 
+	/// ADDED 2026-11-12 (Fabric app): Plan (Backlog) left to bill as a share of the whole plan (SOW). Whole project life.
+	measure 'Revenue Left to Bill %_app' = DIVIDE ( [Revenue Left to Bill_app], [Total Planned Revenue_app] )
+		formatString: 0.0%
+		displayFolder: _app\Projects
+		lineageTag: b8094872-0472-4659-8766-c706f05da75f
+
 	column Column
 		isHidden
 		formatString: 0

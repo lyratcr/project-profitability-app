@@ -41,7 +41,7 @@ describe("P6 project query factories", () => {
 
     it("KPIs carry the whole-life measures and no date filter", () => {
         const q = projectsKpis({ filters: project }).query;
-        for (const m of ["[Total Planned Revenue_app]", "[Revenue Billed to Date_app]", "[Revenue Left to Bill_app]", "[Billing Progress %_app]", "[Plan End Date_app]"]) {
+        for (const m of ["[Total Planned Revenue_app]", "[Revenue Billed to Date_app]", "[Revenue Left to Bill_app]", "[Billing Progress %_app]", "[Revenue Left to Bill %_app]", "[Plan End Date_app]"]) {
             expect(q).toContain(m);
         }
         expect(q).not.toContain("DATESBETWEEN");
@@ -145,6 +145,7 @@ describe("P6 project query factories", () => {
         expect(stem.encoding.y.axis).toMatchObject({ minExtent: 46, maxExtent: 46 });
         const json = JSON.stringify(spec);
         expect(json).toContain("format(datum.Variance, '+,.0%')");
+        expect(json).toContain("abs(datum.Variance) < 0.005 ? '0%'");
         expect(json).toContain("'no plan'");
     });
 
