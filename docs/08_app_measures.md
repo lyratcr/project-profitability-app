@@ -955,3 +955,26 @@ RETURN
 | Sep 27 – Oct 3 | 10 | 1 | +900% | +900% |
 | Oct 4–10 | 13 | — | blank | +100% |
 
+## 14. Project budget card (P6, PMs' request): CREATED 2026-11-12
+
+Three PMs reviewed P6 with Ion on 2026-11-11 and asked for a quick project status card like their Smartsheet "Project Budget" widget: SOW (their name for the Backlog), Actual, Variance, % Actual, % Variance (their manual Forecast is not in the model and is left out). SOW, Actual, Variance and % Actual already existed (`Total Planned Revenue_app`, `Revenue Billed to Date_app`, `Revenue Left to Bill_app`, `Billing Progress %_app`); % Variance is new. Ion approved the DAX on 2026-11-12; created with the Power BI modeling MCP (state Ready), re-validated against the model; TMDL re-exported.
+
+#### Revenue Left to Bill %_app (NEW)
+
+Folder `_app\Projects` · format `0.0%`  
+Description: `ADDED 2026-11-12 (Fabric app): Plan (Backlog) left to bill as a share of the whole plan (SOW). Whole project life.`
+
+```dax
+DIVIDE ( [Revenue Left to Bill_app], [Total Planned Revenue_app] )
+```
+
+### Validation (2026-11-12)
+
+Query-scoped, then against the model measure: equal to 1 − `Billing Progress %_app` in every project checked.
+
+| Project | SOW | Actual | Variance | % Actual | % Variance |
+|---|---|---|---|---|---|
+| UIP-101-01 | $2,770,379 | $2,674,979 | $95,399 | 96.6% | 3.4% |
+| PAR-401-05 | $31,939,891 | $21,145,389 | $10,794,502 | 66.2% | 33.8% |
+| KWP-401-02 | $126,000 | $21,000 | $105,000 | 16.7% | 83.3% |
+

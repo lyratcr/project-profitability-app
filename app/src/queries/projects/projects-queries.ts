@@ -34,6 +34,7 @@ export const projectsKpiColumns = {
     billed: "[Billed]",
     leftToBill: "[LeftToBill]",
     progress: "[Progress]",
+    leftToBillPct: "[LeftToBillPct]",
     planEnd: "[PlanEnd]",
 } as const;
 

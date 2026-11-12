@@ -266,3 +266,18 @@ body {
   background: var(--negative);
 }
 
+/* P6 project budget card: billed share as a gold bar on a glass track, inside the spotlight card. */
+.ax-budget-track {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.ax-budget-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gradient-gold);
+  box-shadow: 0 0 12px var(--glow-gold);
+}
+
