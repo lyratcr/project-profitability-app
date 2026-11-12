@@ -35,6 +35,7 @@
 
 ## Log
 
+2026-11-12 | Release | P6 project budget card | `npx rayfin up` from `main` @ `9d4e30b` (PR #38, approved by Ion) to `_Corporate DCOE Backend Dev`. Type-check, lint, 356 tests and build pass; `rayfin up status` reachable. Checked live in Ion's Chrome (page content): UIP-101-01 SOW $2,770,379, Actual $2,674,979, Variance $95,399, 96.6% / 3.4% (= DAX); no console errors. Sign-in again took two clicks (Fabric, then the app) from the root URL | Ion + Claude
 2026-11-12 | Change | Model | Ion approved; created `Revenue Left to Bill %_app` (left to bill ÷ whole plan) for the P6 project budget card (`08_app_measures.md` § 14). Validated query-scoped and against the model (UIP-101-01 3.4%, PAR-401-05 33.8%, KWP-401-02 83.3%; equal to 1 − billing progress); TMDL re-exported | Ion + Claude
 2026-11-12 | Change | P6 | The four whole-life KPI cards become one "Project budget" spotlight card in the PMs' terms (SOW, Actual, Variance, % Actual, % Variance, with a billed / left bar), next to the plan end date. Also: a variance under half a percent reads "0%", not "−0%" | Claude
 2026-11-12 | Decision | P6 | Review with 3 PMs on 2026-11-11 (Ion): they liked Projects and asked for a quick project status card like their Smartsheet "Project Budget" widget. SOW = the Backlog; their Forecast is manual, not in the model, so it's left out. Their reading of SOW as the full Backlog supports open item #3 (Backlog = full plan), pending Finance's confirmation | Ion
