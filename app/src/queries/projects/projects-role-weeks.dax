@@ -1,0 +1,10 @@
+// P6 people x week, plan not assigned to a person (planned at role level or without resource), by role and
+// Sunday-Saturday week, plus each role's total over the window (IsWeekTotal = 1). Plan only: roles log no hours.
+EVALUATE
+SUMMARIZECOLUMNS (
+    fact_revenue_metrics[resource_role],
+    ROLLUPADDISSUBTOTAL ( dim_calendar[start_of_week_sun], "IsWeekTotal" ),
+    /* @filters */
+    "PlannedHours", [Planned Hours Unassigned_app]
+)
+ORDER BY fact_revenue_metrics[resource_role], [IsWeekTotal], dim_calendar[start_of_week_sun]

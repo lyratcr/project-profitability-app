@@ -20,6 +20,8 @@ interface QueryStatesProps {
     title: string;
     /** Shown when the query succeeds with no rows. */
     emptyMessage?: string;
+    /** No rows is a valid answer (e.g. one block of a composed visual): render the children with the empty table. */
+    allowEmpty?: boolean;
     className?: string;
     children: (table: QueryTable) => ReactNode;
 }
@@ -29,7 +31,7 @@ interface QueryStatesProps {
  * a failed query shows its error, and the previous successful result stays on screen while a new
  * filter reloads (marked busy) instead of flashing a skeleton.
  */
-export function QueryStates({ result, shape, title, emptyMessage = "No data for the selected filters.", className, children }: QueryStatesProps): ReactElement {
+export function QueryStates({ result, shape, title, emptyMessage = "No data for the selected filters.", allowEmpty = false, className, children }: QueryStatesProps): ReactElement {
     const { data, isLoading, refetch } = result;
 
     if (data?.status === "error") {
@@ -56,7 +58,7 @@ export function QueryStates({ result, shape, title, emptyMessage = "No data for 
         return <div className={cn("animate-pulse rounded-xl bg-muted", SKELETON_HEIGHT[shape], className)} aria-busy="true" aria-label={`Loading ${title}`} />;
     }
 
-    if (data.table.rows.length === 0) {
+    if (data.table.rows.length === 0 && !allowEmpty) {
         return (
             <div className={cn("flex items-center justify-center rounded-xl border border-border bg-card px-4 text-center text-300 text-muted-foreground", SKELETON_HEIGHT[shape], className)}>
                 <p>

@@ -47,4 +47,14 @@ describe("QueryStates", () => {
         rerender(<QueryStates result={success([[267322.2809, 0.0442]], true)} shape="kpi" title="Synerion hours">{(t) => <p>rows: {t.rows.length}</p>}</QueryStates>);
         expect(screen.getByText("rows: 1").parentElement).toHaveAttribute("aria-busy", "true");
     });
+
+    it("with allowEmpty, renders the children with the empty table (one block of a composed visual)", () => {
+        render(
+            <QueryStates result={success([])} shape="table" title="Plan by role" allowEmpty>
+                {(t) => <p>rows: {t.rows.length}</p>}
+            </QueryStates>,
+        );
+        expect(screen.getByText("rows: 0")).toBeInTheDocument();
+    });
 });
+

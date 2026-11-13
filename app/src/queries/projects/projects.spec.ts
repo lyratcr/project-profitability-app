@@ -6,6 +6,10 @@ import {
     projectsKpis,
     projectsPeople,
     projectsPeopleColumns,
+    projectsPeopleWeeks,
+    projectsProjectWeeks,
+    projectsRoleWeeks,
+    PEOPLE_MATRIX_WEEKS,
     projectsRevenueByMonth,
     projectsWeek,
     projectsTrendMonths,
@@ -155,4 +159,16 @@ describe("P6 project query factories", () => {
         }
         expect(projectsTrendMonths({ filters: week }).query).toContain("ORDER BY dim_calendar[year_month_number]");
     });
+
+    it("people x week queries use the person measures, the inactive Auxis ID relationship stays inside them", () => {
+        const people = projectsPeopleWeeks({ filters: week }).query;
+        for (const m of ["[Synerion Hours_app]", "[Planned Hours by Person_app]", "[Hours vs Plan by Person_app]", "[Hours vs Plan Variance % by Person_app]"]) expect(people).toContain(m);
+        expect(people).toContain('ROLLUPADDISSUBTOTAL ( dim_calendar[start_of_week_sun], "IsWeekTotal" )');
+        expect(people).toContain("NOT ISBLANK ( dim_employee[employee_number] )");
+        expect(code(people)).not.toMatch(/USERELATIONSHIP/);
+        expect(projectsRoleWeeks({ filters: week }).query).toContain("[Planned Hours Unassigned_app]");
+        expect(projectsProjectWeeks({ filters: week }).query).toContain('TREATAS ( { "not_a_person" }, fact_revenue_metrics[resource_match] )');
+        expect(PEOPLE_MATRIX_WEEKS).toBe(8);
+    });
 });
+

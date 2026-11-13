@@ -281,3 +281,84 @@ body {
   box-shadow: 0 0 12px var(--glow-gold);
 }
 
+/* P6 people x week matrix (PMs, 2026-11-12): hours, "of" budget and a signed difference pill per cell.
+   Green under budget, red over, with the Auxis status colours; the sign always carries the meaning too. */
+.ax-matrix th,
+.ax-matrix td {
+  vertical-align: top;
+  white-space: nowrap;
+}
+/* Every week, total and variance column is centred, header and cell alike (Ion, 2026-11-12); only names align left. */
+.ax-matrix .ax-matrix-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+.ax-matrix .ax-matrix-name {
+  vertical-align: middle;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 170px;
+  text-align: left;
+  font-weight: 600;
+  background: var(--glass-sunken, var(--surface-sunken));
+  -webkit-backdrop-filter: blur(var(--blur-liquid, 0px));
+  backdrop-filter: blur(var(--blur-liquid, 0px));
+}
+.ax-matrix thead .ax-matrix-name {
+  background: var(--surface-sunken);
+}
+/* Row headers are names, not column labels: no uppercase overline style. */
+.ax-matrix tbody th {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+  color: var(--ink);
+}
+.ax-matrix-hours {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ax-matrix-plan {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+.ax-matrix-selected {
+  box-shadow: inset 0 0 0 9999px var(--glow-gold);
+}
+.ax-matrix-sum {
+  border-left: 1px solid var(--line-strong, var(--line));
+}
+.ax-matrix-muted td,
+.ax-matrix-muted th {
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+.ax-matrix-total td,
+.ax-matrix-total th {
+  border-top: 2px solid var(--line-strong, var(--line));
+  background: var(--glass-sunken, var(--surface-sunken));
+}
+.ax-var-pill {
+  display: inline-block;
+  padding: 0 7px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.ax-var-pill.is-under {
+  background: var(--positive-soft);
+  color: var(--positive-ink);
+}
+.ax-var-pill.is-over {
+  background: var(--negative-soft);
+  color: var(--negative-ink);
+}
+.ax-var-pill.is-even {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+
