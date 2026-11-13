@@ -147,6 +147,42 @@ table fact_revenue_metrics
 
 		annotation SummarizationSetBy = Automatic
 
+	column resource_name
+		dataType: string
+		lineageTag: c44c5b99-aaa3-42ce-90f6-3401497ee27e
+		sourceLineageTag: resource_name
+		summarizeBy: none
+		sourceColumn: resource_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column resource_role
+		dataType: string
+		lineageTag: 687085fe-3010-4dd8-b15f-32108a6d5068
+		sourceLineageTag: resource_role
+		summarizeBy: none
+		sourceColumn: resource_role
+
+		annotation SummarizationSetBy = Automatic
+
+	column employee_number
+		dataType: string
+		lineageTag: 65a6b146-2cd6-427d-a9b0-4b4e91bf1cd2
+		sourceLineageTag: employee_number
+		summarizeBy: none
+		sourceColumn: employee_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column resource_match
+		dataType: string
+		lineageTag: 3ee34cb4-7d64-4022-a204-7e9e736ef587
+		sourceLineageTag: resource_match
+		summarizeBy: none
+		sourceColumn: resource_match
+
+		annotation SummarizationSetBy = Automatic
+
 	partition fact_revenue_metrics = entity
 		mode: directLake
 		source
