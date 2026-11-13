@@ -36,6 +36,7 @@
 
 ## Log
 
+2026-11-12 | Release | Auxis logo watermark | `npx rayfin up` from `main` @ `03abc17` (PR #47, approved by Ion) to `_Corporate DCOE Backend Dev`. Type-check, lint, 362 tests and build pass; `rayfin up status` reachable. Checked live in Ion's Chrome (dark, P6 ALK-401-01): reversed logo loaded at 5% opacity, bottom-right inside the viewport, behind the cards; P6 data loads as before | Ion + Claude
 2026-11-12 | Change | App shell | Ion: the official Auxis logo as a faint watermark in the bottom-right of the viewport, behind every page (`components/logo-watermark.component.tsx`, `.ax-watermark` in `global.css`): colour logo at 6% on light, reversed at 5% on dark, never recoloured (logos README); decorative, hidden from assistive tech, no pointer events, not printed | Ion + Claude
 2026-11-12 | Release | P6 week vs plan table | `npx rayfin up` from `main` @ `af4fb71` (PR #45, approved by Ion) to `_Corporate DCOE Backend Dev`. Type-check, lint, 362 tests and build pass; `rayfin up status` reachable. Checked live in Ion's Chrome (page content): ALK-401-01 week table centred; last week +41 / 134% red, this week to date −56 / 42% green | Ion + Claude
 2026-11-12 | Change | P6 | Ion: "Last week and this week vs plan" values centred, and "Hours vs plan" / "Hours / plan" shown as status pills (red over plan, green under; the sign or % always shown), as in the people × week matrix. ALK-401-01: last week +41 / 134% red, this week to date −56 / 42% green; "Hours / plan" without decimals | Ion + Claude
