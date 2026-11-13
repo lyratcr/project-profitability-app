@@ -30,3 +30,8 @@ relationship 42da39d6-6ad1-2fb4-c2bf-7500de3d55ca
 	fromColumn: fact_revenue_metrics.org_key
 	toColumn: dim_organization.org_key
 
+relationship fact_revenue_metrics_employee_number_dim_employee_app
+	isActive: false
+	fromColumn: fact_revenue_metrics.employee_number
+	toColumn: dim_employee.employee_number
+
