@@ -62,7 +62,7 @@ describe("ProjectsPage", () => {
         expect(within(row("Synerion hours")).getAllByRole("cell").map((c) => c.textContent)).toEqual(["388", "388"]);
         expect(within(row("Planned hours")).getAllByRole("cell")[0].textContent).toBe("420");
         expect(within(row("Hours vs plan")).getAllByRole("cell")[0].textContent).toBe("−32");
-        expect(within(row("Hours / plan")).getAllByRole("cell")[0].textContent).toBe("92.5%");
+        expect(within(row("Hours / plan")).getAllByRole("cell")[0].textContent).toBe("92%");
         expect(within(row("People who logged time")).getAllByRole("cell")[0].textContent).toBe("9");
         expect(within(table).getByText("Oct 25 – Oct 31, 2026")).toBeTruthy();
         expect(within(table).getByText("Sun, Nov 1 – Fri, Nov 6, to date")).toBeTruthy();

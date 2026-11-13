@@ -62,7 +62,7 @@ const WEEK_ROWS = [
     { raw: projectsWeekColumns.plannedHours, label: "Planned hours", format: PROJECTS_FORMATS.hours },
     // Status colour (Ion, 2026-11-12): red over plan, green under, as in the people x week matrix.
     { raw: projectsWeekColumns.hoursVsPlan, label: "Hours vs plan", format: PROJECTS_FORMATS.hours, signed: true, tone: "diff" },
-    { raw: projectsWeekColumns.hoursVsPlanPct, label: "Hours / plan", format: PROJECTS_FORMATS.percent, tone: "ratio" },
+    { raw: projectsWeekColumns.hoursVsPlanPct, label: "Hours / plan", format: "0%", tone: "ratio" },
     { raw: projectsWeekColumns.plannedRevenue, label: "Planned revenue", format: PROJECTS_FORMATS.money },
     { raw: projectsWeekColumns.people, label: "People who logged time", format: PROJECTS_FORMATS.people },
     { raw: projectsWeekColumns.notYetBilled, label: "Hours not yet in Project Ops", format: PROJECTS_FORMATS.hours },
@@ -608,7 +608,7 @@ function LastWeekVsBudget({ table, span }: { table: QueryTable; span: string }):
 function WeekValue({ value, format, signed, tone }: { value: number; format: string; signed: boolean; tone?: "diff" | "ratio" }): ReactElement {
     const text = signed ? signedChange(value, format) : String(formatValue(value, format));
     if (!tone) return <>{text}</>;
-    const delta = tone === "ratio" ? Math.round((value - 1) * 1000) : Math.round(value);
+    const delta = tone === "ratio" ? Math.round((value - 1) * 100) : Math.round(value);
     const kind = delta > 0 ? "over" : delta < 0 ? "under" : "even";
     return <span className={`ax-var-pill is-${kind}`}>{text}</span>;
 }
