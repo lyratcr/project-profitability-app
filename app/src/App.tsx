@@ -6,6 +6,7 @@
 //-----------------------------------------------------------------------
 
 import { AppHeader } from "./components/app-header.component";
+import { LogoWatermark } from "./components/logo-watermark.component";
 import { EffortPage } from "./components/effort-page.component";
 import { FlowsPage } from "./components/flows-page.component";
 import { FtePage } from "./components/fte-page.component";
@@ -29,53 +30,57 @@ function App() {
 
     return (
         <div className="min-h-full bg-background">
-            <AppHeader current={page} params={route.params} />
-            {/* Liquid glass on P6 only (Ion, 2026-11-07; design-system bundle.css `.ax-liquid`): filter row and cards. */}
-            <main className={`mx-auto w-full max-w-7xl px-4 py-6 sm:px-8${page.id === "projects" ? " ax-liquid" : ""}`}>
-                <FilterBar
-                    page={page}
-                    state={filters.state}
-                    options={filters.options}
-                    optionsLoading={filters.optionsLoading}
-                    optionsError={filters.optionsError}
-                    customersLoading={filters.customersLoading}
-                    projectsLoading={filters.projectsLoading}
-                    onChange={filters.setFilters}
-                />
-                <div className="pt-6">
-                    {page.id === "effort" ? (
-                        <EffortPage
-                            page={page}
-                            filters={filters.state}
-                            options={filters.options}
-                            view={readOrgView(route.params)}
-                            onViewChange={(view) => {
-                                window.location.hash = pageHref(page, writeOrgView(route.params, view));
-                            }}
-                        />
-                    ) : page.id === "headcount" ? (
-                        <HeadcountPage page={page} filters={filters.state} options={filters.options} />
-                    ) : page.id === "fte" ? (
-                        <FtePage page={page} filters={filters.state} options={filters.options} />
-                    ) : page.id === "flows" ? (
-                        <FlowsPage
-                            page={page}
-                            filters={filters.state}
-                            options={filters.options}
-                            analysis={readFlowAnalysis(route.params)}
-                            onAnalysisChange={(analysis) => {
-                                window.location.hash = pageHref(page, writeFlowAnalysis(route.params, analysis));
-                            }}
-                        />
-                    ) : page.id === "yield" ? (
-                        <YieldPage page={page} filters={filters.state} options={filters.options} />
-                    ) : page.id === "projects" ? (
-                        <ProjectsPage page={page} filters={filters.state} options={filters.options} params={route.params} />
-                    ) : (
-                        <PagePlaceholder page={page} filters={filters.state} options={filters.options} />
-                    )}
-                </div>
-            </main>
+            {/* Auxis logo watermark behind every page (Ion, 2026-11-12); the content layer sits above it. */}
+            <LogoWatermark />
+            <div className="relative z-[1]">
+                <AppHeader current={page} params={route.params} />
+                {/* Liquid glass on P6 only (Ion, 2026-11-07; design-system bundle.css `.ax-liquid`): filter row and cards. */}
+                <main className={`mx-auto w-full max-w-7xl px-4 py-6 sm:px-8${page.id === "projects" ? " ax-liquid" : ""}`}>
+                    <FilterBar
+                        page={page}
+                        state={filters.state}
+                        options={filters.options}
+                        optionsLoading={filters.optionsLoading}
+                        optionsError={filters.optionsError}
+                        customersLoading={filters.customersLoading}
+                        projectsLoading={filters.projectsLoading}
+                        onChange={filters.setFilters}
+                    />
+                    <div className="pt-6">
+                        {page.id === "effort" ? (
+                            <EffortPage
+                                page={page}
+                                filters={filters.state}
+                                options={filters.options}
+                                view={readOrgView(route.params)}
+                                onViewChange={(view) => {
+                                    window.location.hash = pageHref(page, writeOrgView(route.params, view));
+                                }}
+                            />
+                        ) : page.id === "headcount" ? (
+                            <HeadcountPage page={page} filters={filters.state} options={filters.options} />
+                        ) : page.id === "fte" ? (
+                            <FtePage page={page} filters={filters.state} options={filters.options} />
+                        ) : page.id === "flows" ? (
+                            <FlowsPage
+                                page={page}
+                                filters={filters.state}
+                                options={filters.options}
+                                analysis={readFlowAnalysis(route.params)}
+                                onAnalysisChange={(analysis) => {
+                                    window.location.hash = pageHref(page, writeFlowAnalysis(route.params, analysis));
+                                }}
+                            />
+                        ) : page.id === "yield" ? (
+                            <YieldPage page={page} filters={filters.state} options={filters.options} />
+                        ) : page.id === "projects" ? (
+                            <ProjectsPage page={page} filters={filters.state} options={filters.options} params={route.params} />
+                        ) : (
+                            <PagePlaceholder page={page} filters={filters.state} options={filters.options} />
+                        )}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }

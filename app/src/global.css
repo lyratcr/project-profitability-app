@@ -367,3 +367,36 @@ body {
   text-align: center;
 }
 
+/* Auxis logo watermark (Ion, 2026-11-12): the official mark, large and faint in the bottom-right of the viewport,
+   behind everything. Only opacity changes; colour version on light, reversed on dark (logos README). */
+.ax-watermark {
+  position: fixed;
+  right: 2vw;
+  bottom: 1vh;
+  z-index: 0;
+  width: min(44vw, 620px);
+  pointer-events: none;
+  user-select: none;
+}
+.ax-watermark img {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0.06;
+}
+.ax-watermark .ax-watermark-dark {
+  display: none;
+}
+[data-theme="dark"] .ax-watermark .ax-watermark-light {
+  display: none;
+}
+[data-theme="dark"] .ax-watermark .ax-watermark-dark {
+  display: block;
+  opacity: 0.05;
+}
+@media print {
+  .ax-watermark {
+    display: none;
+  }
+}
+
