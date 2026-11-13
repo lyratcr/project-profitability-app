@@ -2,7 +2,10 @@ import { applyFilters } from "@/lib/filters";
 import type { ColumnMetadataMap } from "@/lib/to-data-table";
 import kpisQuery from "./projects-kpis.dax?raw";
 import peopleQuery from "./projects-people.dax?raw";
+import peopleWeeksQuery from "./projects-people-weeks.dax?raw";
+import projectWeeksQuery from "./projects-project-weeks.dax?raw";
 import revenueByMonthQuery from "./projects-revenue-by-month.dax?raw";
+import roleWeeksQuery from "./projects-role-weeks.dax?raw";
 import trendMonthsQuery from "./projects-trend-months.dax?raw";
 import trendSummaryQuery from "./projects-trend-summary.dax?raw";
 import weekQuery from "./projects-week.dax?raw";
@@ -137,5 +140,39 @@ export function projectsTrendSummary({ filters = [] }: ProjectsParams = {}) {
 /** One row per calendar month in the window; the first and last are usually partial. */
 export function projectsTrendMonths({ filters = [] }: ProjectsParams = {}) {
     return { connection: CONNECTION, query: applyFilters(trendMonthsQuery, filters) } as const;
+}
+
+// ---------------------------------------------------------------- people x week (PMs, 2026-11-12)
+
+/** Weeks in the people x week matrix: the current week and the 7 before it. */
+export const PEOPLE_MATRIX_WEEKS = 8;
+
+/** Raw columns shared by the three people x week queries. */
+export const peopleWeekColumns = {
+    employeeNumber: "dim_employee[employee_number]",
+    employeeName: "dim_employee[employee_full_name]",
+    role: "fact_revenue_metrics[resource_role]",
+    weekStart: "dim_calendar[start_of_week_sun]",
+    isWeekTotal: "[IsWeekTotal]",
+    hours: "[Hours]",
+    plannedHours: "[PlannedHours]",
+    diff: "[Diff]",
+    variance: "[Variance]",
+    servicesPlannedHours: "[ServicesPlannedHours]",
+} as const;
+
+/** `filters` = project + the matrix window. One row per person and week, plus each person's window total. */
+export function projectsPeopleWeeks({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(peopleWeeksQuery, filters) } as const;
+}
+
+/** The project row: all hours vs the whole plan by week and in total, with the catalog-service plan (#27). */
+export function projectsProjectWeeks({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(projectWeeksQuery, filters) } as const;
+}
+
+/** Plan not assigned to a person, by role and week, plus each role's window total. */
+export function projectsRoleWeeks({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(roleWeeksQuery, filters) } as const;
 }
 

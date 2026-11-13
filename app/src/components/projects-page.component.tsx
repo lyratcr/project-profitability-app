@@ -8,16 +8,19 @@ import { dateRangeArg, filterArgs, monthWindow, TREND_MONTHS, writeFilters, type
 import { describeDaysLeft, parseModelDate, planEndStatus } from "@/lib/plan-end";
 import { cell, numberCell } from "@/lib/query-table";
 import { pageHref, type PageDef } from "@/lib/routes";
+import { buildPeopleMatrix } from "@/lib/people-week";
 import { toDataTable } from "@/lib/to-data-table";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
-import { describeWeek, lastWeek, reviewWindow, thisWeek, trendWindow, weekSpan, type Week } from "@/lib/weeks";
+import { lastWeek, reviewWindow, thisWeek, trendWindow, weekSpan, type Week } from "@/lib/weeks";
 import {
     PROJECT_TREND_WEEKS,
     PROJECTS_FORMATS,
     projectsKpiColumns,
     projectsKpis,
-    projectsPeople,
-    projectsPeopleColumns,
+    PEOPLE_MATRIX_WEEKS,
+    projectsPeopleWeeks,
+    projectsProjectWeeks,
+    projectsRoleWeeks,
     projectsRevenueByMonth,
     projectsRevenueColumns,
     projectsWeek,
@@ -31,6 +34,7 @@ import {
 import { AxCard } from "./ax/ax-card.component";
 import { AxPageHeader } from "./ax/ax-page-header.component";
 import { QueryStates, type QueryResult } from "./query-states.component";
+import { PeopleWeekMatrix } from "./people-week-matrix.component";
 import { ReportTable } from "./report-table.component";
 import { TrendChart } from "./trend-chart.component";
 
@@ -93,6 +97,10 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
         const trend = trendWindow(at, at, PROJECT_TREND_WEEKS);
         const months = monthWindow(filters.week.weekEnd);
         const trendArgs = [dateRangeArg(trend.start, trend.end), ...project];
+        // People x week matrix: the current week (to date) and the 7 before it, so future weeks never read as -plan.
+        const matrixWindow = trendWindow(at, at, PEOPLE_MATRIX_WEEKS);
+        const matrixArgs = [dateRangeArg(matrixWindow.start, matrixWindow.end), ...project];
+        const matrixWeeks = Array.from({ length: PEOPLE_MATRIX_WEEKS }, (_, i) => new Date(matrixWindow.start.getFullYear(), matrixWindow.start.getMonth(), matrixWindow.start.getDate() + 7 * i));
         return {
             at,
             last,
@@ -107,7 +115,10 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
             variance: glass ? projectsWeeklyVariance({ filters: trendArgs, glass }) : null,
             trendSummary: projectsTrendSummary({ filters: trendArgs }),
             trendMonths: projectsTrendMonths({ filters: trendArgs }),
-            people: projectsPeople({ filters: weekArgs(filters.week), currentWeek: filters.week.isCurrent }),
+            matrixWeeks,
+            peopleWeeks: projectsPeopleWeeks({ filters: matrixArgs }),
+            roleWeeks: projectsRoleWeeks({ filters: matrixArgs }),
+            projectWeeks: projectsProjectWeeks({ filters: matrixArgs }),
             revenue: projectsRevenueByMonth({ filters: [dateRangeArg(months.start, months.end), ...project] }),
         };
     }, [filters, nowKey, glass]);
@@ -119,7 +130,9 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
     const trendResult = useSemanticModelQuery(run(model.weekly));
     const trendSummaryResult = useSemanticModelQuery(run(model.trendSummary));
     const trendMonthsResult = useSemanticModelQuery(run(model.trendMonths));
-    const peopleResult = useSemanticModelQuery(run(model.people));
+    const peopleWeeksResult = useSemanticModelQuery(run(model.peopleWeeks));
+    const roleWeeksResult = useSemanticModelQuery(run(model.roleWeeks));
+    const projectWeeksResult = useSemanticModelQuery(run(model.projectWeeks));
     const revenueResult = useSemanticModelQuery(run(model.revenue));
 
     const context = describeFilterContext(page, filters, options, model.at);
@@ -247,15 +260,33 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
 
                     <div id={PEOPLE_TABLE_ID} className="scroll-mt-4">
                         <AxCard
-                            title="Who logged time on this project"
-                            subtitle={`${describeWeek(filters.week, model.at)} · pick the week in the Week filter · flags: no hours this week${filters.week.isCurrent ? " (none yet)" : ""}, unmapped task, overtime`}
+                            title="Hours vs budget by person"
+                            subtitle={`Last ${PEOPLE_MATRIX_WEEKS} weeks, Sunday to Saturday · each cell: Synerion hours, of the person's budget, and the difference · the highlighted column is the week in the Week filter`}
+                            aside={<MatrixLegend />}
                         >
-                            <QueryStates result={peopleResult} shape="table" title="Who logged time" emptyMessage="Nobody logged time on this project in this week or the 4 weeks before.">
-                                {(table) => <ReportTable chromeless table={table} columnMetadata={model.people.columnMetadata} title="Who logged time" pageSize={25} hiddenColumns={[projectsPeopleColumns.flagOrder]} />}
+                            {/* One model query per block: people, plan by role, and the project row; the matrix only places them. */}
+                            <QueryStates result={peopleWeeksResult} shape="table" title="Hours vs budget by person" emptyMessage="Nobody logged time or was planned on this project in these weeks.">
+                                {(people) => (
+                                    <QueryStates result={roleWeeksResult} shape="table" title="Plan by role" allowEmpty>
+                                        {(roles) => (
+                                            <QueryStates result={projectWeeksResult} shape="table" title="Project total" allowEmpty>
+                                                {(project) => (
+                                                    <PeopleWeekMatrix
+                                                        matrix={buildPeopleMatrix(people, roles, project)}
+                                                        weeks={model.matrixWeeks}
+                                                        currentWeek={model.current.start}
+                                                        selectedWeek={filters.week.start}
+                                                    />
+                                                )}
+                                            </QueryStates>
+                                        )}
+                                    </QueryStates>
+                                )}
                             </QueryStates>
                             <p className="caption m-0 mt-3 text-muted-foreground">
-                                People flagged &quot;No hours this week&quot; logged time on this project in the 4 weeks before the week. Time allocation = hours on this project ÷ all their hours
-                                that week.
+                                Budget = the person&apos;s plan hours (Backlog) matched by Auxis ID. Hours logged without a budget count as over (+); budget without hours as under
+                                (−). Plan not assigned to a person is shown by role; catalog services are not people (open item #27). On Fixed Fee projects the month&apos;s plan
+                                lands in the week that holds the 1st (#26).
                             </p>
                         </AxCard>
                     </div>
@@ -521,6 +552,23 @@ function ProjectBudget({ table }: { table: QueryTable }): ReactElement {
                 ))}
             </div>
         </section>
+    );
+}
+
+/** Legend for the people x week matrix: the pill colours by direction (status colours always carry the sign). */
+function MatrixLegend(): ReactElement {
+    return (
+        <ul className="m-0 flex shrink-0 list-none flex-wrap items-center gap-x-3 gap-y-1 p-0 text-200 text-muted-foreground" aria-label="Legend">
+            <li className="flex items-center gap-1.5">
+                <span className="ax-var-pill is-under">−5</span> under budget
+            </li>
+            <li className="flex items-center gap-1.5">
+                <span className="ax-var-pill is-over">+10</span> over budget
+            </li>
+            <li className="flex items-center gap-1.5">
+                <span className="ax-var-pill is-even">0</span> on budget
+            </li>
+        </ul>
     );
 }
 
