@@ -79,6 +79,8 @@
 
 **Look** (Ion, 2026-11-07): liquid glass on the whole page (filter row, banner, cards, tables), an exception to the Auxis "cards = surface" rule documented in `design-system/README.md`. Other pages keep the solid Auxis cards.
 
+**Layout** (Ion, 2026-11-13, the two things the PMs read first on top): row 1, half the width each, the Project budget card (SOW, Actual, Variance, % Actual, % Variance in one column, plan end date with days left at its foot) and "Last week and this week vs plan"; row 2, "Hours vs budget by person" (people × week); row 3, the weekly trend; row 4, revenue by month vs plan. Stacked in one column on narrow screens.
+
 **Project selector.** The PM picks one or more projects. There's no PM field in the model yet (open item #4 in `04`); until it exists, the selection is remembered per user in the browser.
 
 **Monday review banner** (Mondays, and any day until the integration runs):

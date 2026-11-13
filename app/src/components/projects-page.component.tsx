@@ -5,7 +5,7 @@ import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { signedChange } from "@/lib/change";
 import { describeFilterContext } from "@/lib/filter-context";
 import { dateRangeArg, filterArgs, monthWindow, TREND_MONTHS, writeFilters, type FilterOptions, type FilterState } from "@/lib/filters";
-import { describeDaysLeft, parseModelDate, planEndStatus } from "@/lib/plan-end";
+import { describeDaysLeft, parseModelDate, planEndStatus, type PlanEndStatus } from "@/lib/plan-end";
 import { cell, numberCell } from "@/lib/query-table";
 import { pageHref, type PageDef } from "@/lib/routes";
 import { buildPeopleMatrix } from "@/lib/people-week";
@@ -173,39 +173,57 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                 </div>
             ) : (
                 <>
-                    {/* Project budget (PMs, 2026-11-12): SOW, Actual, Variance and their shares in one card, the way they read it
-                        in Smartsheet (Forecast left out: it's manual and not in the model). The plan end date sits beside it. */}
-                    <QueryStates result={kpiResult} shape="kpi" title="Project budget" emptyMessage="This project has no plan or revenue in the model.">
-                        {(table) => {
-                            const planEnd = parseModelDate(cell(table, projectsKpiColumns.planEnd));
-                            const status = planEnd ? planEndStatus(planEnd, model.at) : null;
-                            return (
-                                <div className="grid grid-cols-1 gap-grid lg:grid-cols-3">
-                                    <ProjectBudget table={table} />
-                                    {/* Right column: plan end date and, below it, last week vs budget (Ion, 2026-11-12). */}
-                                    <div className="flex flex-col gap-grid">
-                                        <section className="ax-card" aria-label="Plan end date">
-                                            <div className="ax-kpi-label">Plan end date</div>
-                                            <div className="ax-kpi-value">{planEnd ? dateFormat.format(planEnd) : "—"}</div>
-                                            <div className="ax-kpi-foot">
-                                                {status ? (
-                                                    <span className="ax-badge">
-                                                        <span className={`ax-dot ax-dot-${status.tone}`} aria-hidden="true" />
-                                                        {describeDaysLeft(status.daysLeft)}
-                                                    </span>
-                                                ) : (
-                                                    <span>No plan dates</span>
+                    {/* Row 1, the two things the PMs read first (Ion, 2026-11-13): the project budget (with the plan end date at its
+                        foot) and last week / this week vs plan, half the width each. Forecast is left out: it's manual and not in the model. */}
+                    <div className="grid grid-cols-1 gap-grid lg:grid-cols-2">
+                        <QueryStates result={kpiResult} shape="kpi" title="Project budget" emptyMessage="This project has no plan or revenue in the model.">
+                            {(table) => {
+                                const planEnd = parseModelDate(cell(table, projectsKpiColumns.planEnd));
+                                return <ProjectBudget table={table} planEnd={planEnd} status={planEnd ? planEndStatus(planEnd, model.at) : null} />;
+                            }}
+                        </QueryStates>
+                        <AxCard className="h-full" title="Last week and this week vs plan" subtitle="Hours in Synerion; plan from the Backlog scenario">
+                            <WeekVsPlan last={{ week: model.last, result: lastWeekResult }} current={{ week: model.current, result: thisWeekResult }} />
+                            <p className="caption m-0 mt-3 text-muted-foreground">
+                                Fixed Fee plan is posted on the first of each month and T&amp;M plan by day, so a week only holds the Fixed Fee plan when it contains the
+                                1st. &quot;Hours not yet in Project Ops&quot; are logged in Synerion but not integrated yet.
+                            </p>
+                        </AxCard>
+                    </div>
+
+                    {/* Row 2: the people x week matrix (Ion, 2026-11-13). */}
+                    <div id={PEOPLE_TABLE_ID} className="scroll-mt-4">
+                        <AxCard
+                            title="Hours vs budget by person"
+                            subtitle={`Last ${PEOPLE_MATRIX_WEEKS} weeks, Sunday to Saturday · the highlighted column is the week in the Week filter`}
+                            aside={<MatrixLegend />}
+                        >
+                            {/* One model query per block: people, plan by role, and the project row; the matrix only places them. */}
+                            <QueryStates result={peopleWeeksResult} shape="table" title="Hours vs budget by person" emptyMessage="Nobody logged time or was planned on this project in these weeks.">
+                                {(people) => (
+                                    <QueryStates result={roleWeeksResult} shape="table" title="Plan by role" allowEmpty>
+                                        {(roles) => (
+                                            <QueryStates result={projectWeeksResult} shape="table" title="Project total" allowEmpty>
+                                                {(project) => (
+                                                    <PeopleWeekMatrix
+                                                        matrix={buildPeopleMatrix(people, roles, project)}
+                                                        weeks={model.matrixWeeks}
+                                                        currentWeek={model.current.start}
+                                                        selectedWeek={filters.week.start}
+                                                    />
                                                 )}
-                                            </div>
-                                        </section>
-                                        <QueryStates result={lastWeekResult} shape="kpi" title="Last week vs budget" emptyMessage="No hours or budget last week.">
-                                            {(week) => <LastWeekVsBudget table={week} span={weekSpan(model.last)} />}
-                                        </QueryStates>
-                                    </div>
-                                </div>
-                            );
-                        }}
-                    </QueryStates>
+                                            </QueryStates>
+                                        )}
+                                    </QueryStates>
+                                )}
+                            </QueryStates>
+                            <p className="caption m-0 mt-3 text-muted-foreground">
+                                Budget = the person&apos;s plan hours (Backlog) matched by Auxis ID. Hours logged without a budget count as over (+); budget without hours as under
+                                (−). Plan not assigned to a person is shown by role; catalog services are not people (open item #27). On Fixed Fee projects the month&apos;s plan
+                                lands in the week that holds the 1st (#26).
+                            </p>
+                        </AxCard>
+                    </div>
 
                     <AxCard
                         title="Weekly hours vs budget"
@@ -245,59 +263,14 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                         </p>
                     </AxCard>
 
-                    <div className="grid grid-cols-1 gap-grid lg:grid-cols-5">
-                        <AxCard className="lg:col-span-2" title="Last week and this week vs plan" subtitle="Hours in Synerion; plan from the Backlog scenario">
-                            <WeekVsPlan last={{ week: model.last, result: lastWeekResult }} current={{ week: model.current, result: thisWeekResult }} />
-                            <p className="caption m-0 mt-3 text-muted-foreground">
-                                Fixed Fee plan is posted on the first of each month and T&amp;M plan by day, so a week only holds the Fixed Fee plan when it contains the
-                                1st. &quot;Hours not yet in Project Ops&quot; are logged in Synerion but not integrated yet.
-                            </p>
-                        </AxCard>
-
-                        <AxCard
-                            className="lg:col-span-3"
-                            title="Revenue by month vs plan"
-                            subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · actual (Actual scenario) vs plan (Backlog scenario)`}
-                        >
-                            <QueryStates result={revenueResult} shape="table" title="Revenue by month">
-                                {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} />}
-                            </QueryStates>
-                        </AxCard>
-                    </div>
-
-                    <div id={PEOPLE_TABLE_ID} className="scroll-mt-4">
-                        <AxCard
-                            title="Hours vs budget by person"
-                            subtitle={`Last ${PEOPLE_MATRIX_WEEKS} weeks, Sunday to Saturday · each cell: Synerion hours, of the person's budget, and the difference · the highlighted column is the week in the Week filter`}
-                            aside={<MatrixLegend />}
-                        >
-                            {/* One model query per block: people, plan by role, and the project row; the matrix only places them. */}
-                            <QueryStates result={peopleWeeksResult} shape="table" title="Hours vs budget by person" emptyMessage="Nobody logged time or was planned on this project in these weeks.">
-                                {(people) => (
-                                    <QueryStates result={roleWeeksResult} shape="table" title="Plan by role" allowEmpty>
-                                        {(roles) => (
-                                            <QueryStates result={projectWeeksResult} shape="table" title="Project total" allowEmpty>
-                                                {(project) => (
-                                                    <PeopleWeekMatrix
-                                                        matrix={buildPeopleMatrix(people, roles, project)}
-                                                        weeks={model.matrixWeeks}
-                                                        currentWeek={model.current.start}
-                                                        selectedWeek={filters.week.start}
-                                                    />
-                                                )}
-                                            </QueryStates>
-                                        )}
-                                    </QueryStates>
-                                )}
-                            </QueryStates>
-                            <p className="caption m-0 mt-3 text-muted-foreground">
-                                Budget = the person&apos;s plan hours (Backlog) matched by Auxis ID. Hours logged without a budget count as over (+); budget without hours as under
-                                (−). Plan not assigned to a person is shown by role; catalog services are not people (open item #27). On Fixed Fee projects the month&apos;s plan
-                                lands in the week that holds the 1st (#26).
-                            </p>
-                        </AxCard>
-                    </div>
-
+                    <AxCard
+                        title="Revenue by month vs plan"
+                        subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · actual (Actual scenario) vs plan (Backlog scenario)`}
+                    >
+                        <QueryStates result={revenueResult} shape="table" title="Revenue by month">
+                            {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} />}
+                        </QueryStates>
+                    </AxCard>
                 </>
             )}
         </section>
@@ -509,9 +482,11 @@ function TrendMonths({ table, window }: { table: QueryTable; window: { start: Da
 
 /**
  * The PMs' project budget card (2026-11-12), whole project life: SOW (Backlog), Actual (billed to date), Variance (left
- * to bill) and their shares, with a billed / left bar. Every figure is a model measure; the bar width shows % Actual.
+ * to bill) and their shares, with a billed / left bar, in one column (Ion, 2026-11-13: % Actual and % Variance under
+ * Variance), and the plan end date with the days left at its foot. Every figure is a model measure; the bar width shows
+ * % Actual; the days left come from the viewer's local date.
  */
-function ProjectBudget({ table }: { table: QueryTable }): ReactElement {
+function ProjectBudget({ table, planEnd, status }: { table: QueryTable; planEnd: Date | null; status: PlanEndStatus | null }): ReactElement {
     const c = projectsKpiColumns;
     const progress = numberCell(table, c.progress);
     const money = (raw: string) => {
@@ -531,7 +506,7 @@ function ProjectBudget({ table }: { table: QueryTable }): ReactElement {
     ];
     const width = progress === null ? 0 : Math.min(1, Math.max(0, progress)) * 100;
     return (
-        <section className="ax-card ax-spotlight ax-kpi-hero lg:col-span-2" aria-label="Project budget">
+        <section className="ax-card ax-spotlight ax-kpi-hero flex h-full flex-col" aria-label="Project budget">
             <div className="ax-kpi-label">Project budget · whole project life</div>
             <div className="mt-3">
                 <div className="ax-budget-track" aria-hidden="true">
@@ -542,62 +517,57 @@ function ProjectBudget({ table }: { table: QueryTable }): ReactElement {
                     <span>Left {percent(c.leftToBillPct)}</span>
                 </div>
             </div>
-            {/* Amounts on the left, shares on the right, each in the PMs' order. */}
-            <div className="mt-3 grid grid-cols-1 gap-x-8 sm:grid-cols-2">
-                {[rows.slice(0, 3), rows.slice(3)].map((group, i) => (
-                    <dl key={i} className="m-0">
-                        {group.map((r) => (
-                            <div key={r.label} className="flex items-baseline justify-between gap-3 border-t border-white/10 py-2">
-                                <dt className="m-0">
-                                    <span className="text-300 font-semibold text-[var(--ink)]">{r.label}</span>
-                                    <span className="ml-2 text-200 text-[var(--ink-muted)]">{r.note}</span>
-                                </dt>
-                                <dd className="m-0 text-[20px] font-semibold tabular-nums text-[var(--ink)]">{r.value}</dd>
-                            </div>
-                        ))}
-                    </dl>
+            {/* The PMs' order: amounts, then the shares under Variance; the rows spread to the height of the week table beside it. */}
+            <dl className="mx-0 mb-3 mt-3 flex flex-1 flex-col justify-evenly">
+                {rows.map((r) => (
+                    <div key={r.label} className="flex items-baseline justify-between gap-3 border-t border-white/10 py-2">
+                        <dt className="m-0">
+                            <span className="text-300 font-semibold text-[var(--ink)]">{r.label}</span>
+                            <span className="ml-2 text-200 text-[var(--ink-muted)]">{r.note}</span>
+                        </dt>
+                        <dd className="m-0 text-[20px] font-semibold tabular-nums text-[var(--ink)]">{r.value}</dd>
+                    </div>
                 ))}
+            </dl>
+            <div className="ax-budget-end mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md px-3 py-2">
+                <span className="text-200 text-[var(--ink-muted)]">
+                    Plan end date <span className="ml-1 text-300 font-semibold tabular-nums text-[var(--ink)]">{planEnd ? dateFormat.format(planEnd) : "—"}</span>
+                </span>
+                {status ? (
+                    <span className="flex items-center gap-1.5 text-200 text-[var(--ink-muted)]">
+                        <span className={`ax-dot ax-dot-${status.tone}`} aria-hidden="true" />
+                        {describeDaysLeft(status.daysLeft)}
+                    </span>
+                ) : (
+                    <span className="text-200 text-[var(--ink-muted)]">No plan dates</span>
+                )}
             </div>
         </section>
     );
 }
 
-/** Legend for the people x week matrix: the pill colours by direction (status colours always carry the sign). */
+/**
+ * Legend for the people x week matrix: what a cell shows and what each pill colour means. No sample numbers (Ion,
+ * 2026-11-13: the old "−5 / +10 / 0" examples read as data). Status colours always carry the sign too.
+ */
 function MatrixLegend(): ReactElement {
     return (
-        <ul className="m-0 flex shrink-0 list-none flex-wrap items-center gap-x-3 gap-y-1 p-0 text-200 text-muted-foreground" aria-label="Legend">
-            <li className="flex items-center gap-1.5">
-                <span className="ax-var-pill is-under">−5</span> under budget
-            </li>
-            <li className="flex items-center gap-1.5">
-                <span className="ax-var-pill is-over">+10</span> over budget
-            </li>
-            <li className="flex items-center gap-1.5">
-                <span className="ax-var-pill is-even">0</span> on budget
-            </li>
-        </ul>
-    );
-}
-
-/** Last Sunday-Saturday week: Synerion hours, of the plan hours, and the model's variance % (red over, green under). */
-function LastWeekVsBudget({ table, span }: { table: QueryTable; span: string }): ReactElement {
-    const c = projectsWeekColumns;
-    const hours = numberCell(table, c.hours);
-    const planned = numberCell(table, c.plannedHours);
-    const variance = numberCell(table, c.variance);
-    const tone = variance === null ? null : Math.round(variance * 100) > 0 ? "over" : Math.round(variance * 100) < 0 ? "under" : "even";
-    return (
-        <section className="ax-card" aria-label="Last week vs budget">
-            <div className="ax-kpi-label">Last week vs budget</div>
-            <div className="flex items-baseline gap-2">
-                <span className="ax-kpi-value">{hours === null ? "—" : `${String(formatValue(hours, "#,0"))} h`}</span>
-                <span className="text-300 text-[var(--ink-muted)]">{planned === null ? "no budget" : `of ${String(formatValue(planned, "#,0"))}`}</span>
-            </div>
-            <div className="ax-kpi-foot">
-                {tone !== null && variance !== null && <span className={`ax-var-pill is-${tone}`}>{signedChange(variance, "#,0%")}</span>}
-                <span>{span}</span>
-            </div>
-        </section>
+        <div className="flex shrink-0 flex-col items-start gap-1 text-200 text-muted-foreground sm:items-end">
+            <span>
+                Each cell: <strong className="font-semibold text-[var(--ink)]">hours</strong> · of budget · difference in hours
+            </span>
+            <ul className="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0" aria-label="Legend">
+                <li className="flex items-center gap-1.5">
+                    <span className="ax-var-pill is-over">+</span> more hours than budget
+                </li>
+                <li className="flex items-center gap-1.5">
+                    <span className="ax-var-pill is-under">−</span> fewer
+                </li>
+                <li className="flex items-center gap-1.5">
+                    <span className="ax-var-pill is-even">0</span> on budget
+                </li>
+            </ul>
+        </div>
     );
 }
 

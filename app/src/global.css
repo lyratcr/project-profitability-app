@@ -280,6 +280,11 @@ body {
   background: var(--gradient-gold);
   box-shadow: 0 0 12px var(--glow-gold);
 }
+/* Plan end date strip at the foot of the budget card (Ion, 2026-11-13), on the same glass as the track. */
+.ax-budget-end {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
 
 /* P6 people x week matrix (PMs, 2026-11-12): hours, "of" budget and a signed difference pill per cell.
    Green under budget, red over, with the Auxis status colours; the sign always carries the meaning too. */
