@@ -12,5 +12,6 @@ SUMMARIZECOLUMNS (
     "HoursVsPlanPct", [Hours vs Plan %_app],
     "PlannedRevenue", [Planned Revenue_app],
     "People", [People With Hours_app],
-    "NotYetBilled", [Hours Not Yet Billed_app]
+    "NotYetBilled", [Hours Not Yet Billed_app],
+    "Variance", [Hours vs Plan Variance %_app]
 )

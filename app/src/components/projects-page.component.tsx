@@ -181,20 +181,26 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                             return (
                                 <div className="grid grid-cols-1 gap-grid lg:grid-cols-3">
                                     <ProjectBudget table={table} />
-                                    <section className="ax-card" aria-label="Plan end date">
-                                        <div className="ax-kpi-label">Plan end date</div>
-                                        <div className="ax-kpi-value">{planEnd ? dateFormat.format(planEnd) : "—"}</div>
-                                        <div className="ax-kpi-foot">
-                                            {status ? (
-                                                <span className="ax-badge">
-                                                    <span className={`ax-dot ax-dot-${status.tone}`} aria-hidden="true" />
-                                                    {describeDaysLeft(status.daysLeft)}
-                                                </span>
-                                            ) : (
-                                                <span>No plan dates</span>
-                                            )}
-                                        </div>
-                                    </section>
+                                    {/* Right column: plan end date and, below it, last week vs budget (Ion, 2026-11-12). */}
+                                    <div className="flex flex-col gap-grid">
+                                        <section className="ax-card" aria-label="Plan end date">
+                                            <div className="ax-kpi-label">Plan end date</div>
+                                            <div className="ax-kpi-value">{planEnd ? dateFormat.format(planEnd) : "—"}</div>
+                                            <div className="ax-kpi-foot">
+                                                {status ? (
+                                                    <span className="ax-badge">
+                                                        <span className={`ax-dot ax-dot-${status.tone}`} aria-hidden="true" />
+                                                        {describeDaysLeft(status.daysLeft)}
+                                                    </span>
+                                                ) : (
+                                                    <span>No plan dates</span>
+                                                )}
+                                            </div>
+                                        </section>
+                                        <QueryStates result={lastWeekResult} shape="kpi" title="Last week vs budget" emptyMessage="No hours or budget last week.">
+                                            {(week) => <LastWeekVsBudget table={week} span={weekSpan(model.last)} />}
+                                        </QueryStates>
+                                    </div>
                                 </div>
                             );
                         }}
@@ -569,6 +575,28 @@ function MatrixLegend(): ReactElement {
                 <span className="ax-var-pill is-even">0</span> on budget
             </li>
         </ul>
+    );
+}
+
+/** Last Sunday-Saturday week: Synerion hours, of the plan hours, and the model's variance % (red over, green under). */
+function LastWeekVsBudget({ table, span }: { table: QueryTable; span: string }): ReactElement {
+    const c = projectsWeekColumns;
+    const hours = numberCell(table, c.hours);
+    const planned = numberCell(table, c.plannedHours);
+    const variance = numberCell(table, c.variance);
+    const tone = variance === null ? null : Math.round(variance * 100) > 0 ? "over" : Math.round(variance * 100) < 0 ? "under" : "even";
+    return (
+        <section className="ax-card" aria-label="Last week vs budget">
+            <div className="ax-kpi-label">Last week vs budget</div>
+            <div className="flex items-baseline gap-2">
+                <span className="ax-kpi-value">{hours === null ? "—" : `${String(formatValue(hours, "#,0"))} h`}</span>
+                <span className="text-300 text-[var(--ink-muted)]">{planned === null ? "no budget" : `of ${String(formatValue(planned, "#,0"))}`}</span>
+            </div>
+            <div className="ax-kpi-foot">
+                {tone !== null && variance !== null && <span className={`ax-var-pill is-${tone}`}>{signedChange(variance, "#,0%")}</span>}
+                <span>{span}</span>
+            </div>
+        </section>
     );
 }
 
