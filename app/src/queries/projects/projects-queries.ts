@@ -27,7 +27,8 @@ export const PROJECTS_FORMATS = {
     money: MONEY,
     hours: "#,0",
     people: "#,0",
-    percent: "0.0%",
+    // Whole percents on P6 (Ion, 2026-11-07 and 2026-11-13: "nada de decimales").
+    percent: "0%",
 } as const;
 
 // ---------------------------------------------------------------- KPI cards (whole project life)
