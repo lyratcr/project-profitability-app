@@ -164,8 +164,11 @@ body { margin: 0; font-family: var(--font-sans); color: var(--ink); background: 
 }
 .ax-liquid .ax-glass, .ax-liquid .ax-liquid-pane { position: relative; }
 
-/* Smoked glass for the one spotlight KPI; the gold glow (::after) stays. */
-.ax-liquid .ax-card.ax-spotlight { background: linear-gradient(180deg, var(--glass-highlight) 0%, transparent 30%), var(--glass-spotlight); }
+/* Spotlight KPI (Ion, 2026-11-12): no white top sheen (in light theme it washed out the label); a soft charcoal
+   diagonal with a gold glow rising from the bottom-right corner towards the centre, and a brighter label. */
+.ax-liquid .ax-card.ax-spotlight { background: radial-gradient(120% 120% at 100% 100%, var(--glow-gold) 0%, transparent 55%), var(--gradient-charcoal); }
+.ax-liquid .ax-card.ax-spotlight::after { display: none; }
+.ax-liquid .ax-spotlight .ax-kpi-label { color: var(--glass-spotlight-label); }
 
 /* Wells and table bands turn to glass too. */
 .ax-liquid .ax-table th, .ax-liquid .ax-pill, .ax-liquid .ax-badge { background: var(--glass-sunken); }

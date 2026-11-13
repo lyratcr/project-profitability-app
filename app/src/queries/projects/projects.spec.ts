@@ -55,7 +55,7 @@ describe("P6 project query factories", () => {
         const current = thisWeek(today);
         const q = projectsWeek({ filters: [dateRangeArg(current.start, current.end), ...project] }).query;
         expect(q).toContain("DATESBETWEEN ( dim_calendar[date], DATE ( 2026, 11, 1 ), DATE ( 2026, 11, 6 ) )");
-        for (const m of ["[Synerion Hours_app]", "[Planned Hours_app]", "[Hours vs Plan_app]", "[Hours vs Plan %_app]", "[Planned Revenue_app]", "[People With Hours_app]", "[Hours Not Yet Billed_app]"]) {
+        for (const m of ["[Synerion Hours_app]", "[Planned Hours_app]", "[Hours vs Plan_app]", "[Hours vs Plan %_app]", "[Planned Revenue_app]", "[People With Hours_app]", "[Hours Not Yet Billed_app]", "[Hours vs Plan Variance %_app]"]) {
             expect(q).toContain(m);
         }
     });

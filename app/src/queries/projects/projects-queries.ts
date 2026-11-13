@@ -56,6 +56,7 @@ export const projectsWeekColumns = {
     plannedRevenue: "[PlannedRevenue]",
     people: "[People]",
     notYetBilled: "[NotYetBilled]",
+    variance: "[Variance]",
 } as const;
 
 /** One row for one week; run once per column (last week, this week to date) with that week's date range. */
