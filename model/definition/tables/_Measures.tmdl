@@ -1516,6 +1516,36 @@ table _Measures
 		displayFolder: _app\Projects
 		lineageTag: b8094872-0472-4659-8766-c706f05da75f
 
+	/// ADDED 2026-11-12 (Fabric app): Plan (Backlog) hours of the person in context, through the inactive Auxis ID relationship fact_revenue_metrics[employee_number] -> dim_employee[employee_number].
+	measure 'Planned Hours by Person_app' = CALCULATE ( [Planned Hours_app], USERELATIONSHIP ( fact_revenue_metrics[employee_number], dim_employee[employee_number] ) )
+		formatString: #,0
+		displayFolder: _app\Projects
+		lineageTag: c8d0b478-b70f-4a34-a6c4-2a799c0678cf
+
+	/// ADDED 2026-11-12 (Fabric app): Synerion hours minus planned hours of the person; a missing side counts as 0 (unplanned hours are positive, planned but not logged negative).
+	measure 'Hours vs Plan by Person_app' =
+			VAR _hours = [Synerion Hours_app]
+			VAR _plan = [Planned Hours by Person_app]
+			RETURN IF ( NOT ISBLANK ( _hours ) || NOT ISBLANK ( _plan ), COALESCE ( _hours, 0 ) - COALESCE ( _plan, 0 ) )
+		formatString: #,0;-#,0;0
+		displayFolder: _app\Projects
+		lineageTag: 5ec4fbd3-0a90-4c4a-82c8-207b4a936aa6
+
+	/// ADDED 2026-11-12 (Fabric app): (hours - plan) / plan for the person; +100% with hours but no plan; blank with neither.
+	measure 'Hours vs Plan Variance % by Person_app' =
+			VAR _hours = [Synerion Hours_app]
+			VAR _plan = [Planned Hours by Person_app]
+			RETURN IF ( NOT ISBLANK ( _plan ) && _plan <> 0, DIVIDE ( _hours - _plan, _plan ), IF ( _hours > 0, 1 ) )
+		formatString: +0%;-0%;0%
+		displayFolder: _app\Projects
+		lineageTag: c697f3b3-807c-4f5d-beb6-9cd1c063a271
+
+	/// ADDED 2026-11-12 (Fabric app): Plan (Backlog) hours not assigned to a person: planned at role level or without resource. Group by fact_revenue_metrics[resource_role].
+	measure 'Planned Hours Unassigned_app' = CALCULATE ( [Planned Hours_app], KEEPFILTERS ( fact_revenue_metrics[resource_match] IN { "role", "no_resource" } ) )
+		formatString: #,0
+		displayFolder: _app\Projects
+		lineageTag: 2f4fb9fd-6d53-4677-9b26-25e586038cc8
+
 	column Column
 		isHidden
 		formatString: 0

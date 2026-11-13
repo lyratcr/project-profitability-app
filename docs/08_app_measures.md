@@ -978,3 +978,53 @@ Query-scoped, then against the model measure: equal to 1 − `Billing Progress %
 | PAR-401-05 | $31,939,891 | $21,145,389 | $10,794,502 | 66.2% | 33.8% |
 | KWP-401-02 | $126,000 | $21,000 | $105,000 | 16.7% | 83.3% |
 
+## 15. Budget per person (P6 people × week, task 4.4): CREATED 2026-11-12
+
+The PMs' people × week table needs each person's plan hours next to their Synerion hours. Plan lines carry the Auxis ID (`fact_revenue_metrics[employee_number]`, matched in gold, log 2026-11-12) and reach `dim_employee` through the **inactive** relationship `fact_revenue_metrics_employee_number_dim_employee_app`, so the existing report is unaffected; these measures activate it. Synerion hours already filter by person through the active `ukg_employee_id` relationship. Ion approved the DAX on 2026-11-12; created with the Power BI modeling MCP (state Ready); re-validated against the model; TMDL re-exported.
+
+Unlike the project-level `Hours vs Plan_app` (blank without plan), the person-level difference counts a missing side as 0, as in the PMs' sheet: hours logged without plan are unplanned (+), plan not logged is negative. The table shows weeks up to the current one, so future weeks never read as −plan.
+
+#### Planned Hours by Person_app (NEW)
+
+Folder `_app\Projects` · format `#,0`
+
+```dax
+CALCULATE ( [Planned Hours_app], USERELATIONSHIP ( fact_revenue_metrics[employee_number], dim_employee[employee_number] ) )
+```
+
+#### Hours vs Plan by Person_app (NEW)
+
+Folder `_app\Projects` · format `#,0;-#,0;0`
+
+```dax
+VAR _hours = [Synerion Hours_app]
+VAR _plan = [Planned Hours by Person_app]
+RETURN IF ( NOT ISBLANK ( _hours ) || NOT ISBLANK ( _plan ), COALESCE ( _hours, 0 ) - COALESCE ( _plan, 0 ) )
+```
+
+#### Hours vs Plan Variance % by Person_app (NEW)
+
+Folder `_app\Projects` · format `+0%;-0%;0%`
+
+```dax
+VAR _hours = [Synerion Hours_app]
+VAR _plan = [Planned Hours by Person_app]
+RETURN IF ( NOT ISBLANK ( _plan ) && _plan <> 0, DIVIDE ( _hours - _plan, _plan ), IF ( _hours > 0, 1 ) )
+```
+
+#### Planned Hours Unassigned_app (NEW)
+
+Folder `_app\Projects` · format `#,0` · group by `fact_revenue_metrics[resource_role]`
+
+```dax
+CALCULATE ( [Planned Hours_app], KEEPFILTERS ( fact_revenue_metrics[resource_match] IN { "role", "no_resource" } ) )
+```
+
+### Validation (2026-11-12)
+
+Query-scoped first, then against the model measures: identical.
+
+- UIP-101-01 (T&M), weeks of Oct 18 and Oct 25 2026: all 30 person × week cells equal an independent sum from the fact columns (Backlog `hours_quantity` by `employee_number`, Synerion `worked_hours` by `synerion_emp_id`). Examples: 60 h vs 31.3 plan → +28.7 / +92%; no hours vs 36.6 plan → −36.6 / −100%; 40 h with no plan → +40 / +100%.
+- Decomposition: people + unassigned + services (`not_a_person`, #27) = `Planned Hours_app`. UIP-101-01 (Oct 18–31): 908 h, all people. PAR-401-02 (October): 1,134 h, all at role level (2 roles).
+- Fixed Fee: the person's plan also lands in the week holding the 1st of the month (#26), so a weekly table shows the month's plan in one column on Fixed Fee projects.
+

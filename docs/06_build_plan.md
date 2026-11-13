@@ -101,7 +101,7 @@
 - [x] 4.2 P6 "Who logged time" table with flags and the Monday banner (released 2026-11-07 with 4.1)
   - 2026-11-06: built with 4.1 (same branch): one row per person (tasks, pay categories, hours on project, all their hours that week, time allocation, flags "No hours this week" / "Unmapped task" / "Overtime"; flagged people first). The Monday banner shows on Monday and Tuesday before 06:00 local (#23) and links to the review week.
 - [ ] 4.4 P6 people × week table (PMs, 2026-11-12): Actuals vs Backlog per person by week, roles for unassigned plan
-  - 2026-11-12: matching rules validated in a read-only notebook (log 2026-11-12). Gold change deployed and the four columns are in the model (2026-11-12). Inactive relationship to `dim_employee[employee_number]` created (2026-11-12). Next: the `_app` budget-per-person measures (Ion approves), then the table.
+  - 2026-11-12: matching rules validated in a read-only notebook (log 2026-11-12). Gold change deployed and the four columns are in the model (2026-11-12). Inactive relationship to `dim_employee[employee_number]` created (2026-11-12). Budget-per-person measures created (`08` § 15, 2026-11-12). Next: the table in P6 (mockup approved by Ion; Fixed Fee shows the month's plan in the week of the 1st, #26).
 - [ ] 4.3 Project selector (remembered; default to the PM's projects once #4 exists)
 
 ## Phase 5 — Release
