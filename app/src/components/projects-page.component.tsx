@@ -60,8 +60,9 @@ const monthLabel = new Intl.DateTimeFormat("en-US", { month: "short", year: "num
 const WEEK_ROWS = [
     { raw: projectsWeekColumns.hours, label: "Synerion hours", format: PROJECTS_FORMATS.hours },
     { raw: projectsWeekColumns.plannedHours, label: "Planned hours", format: PROJECTS_FORMATS.hours },
-    { raw: projectsWeekColumns.hoursVsPlan, label: "Hours vs plan", format: PROJECTS_FORMATS.hours, signed: true },
-    { raw: projectsWeekColumns.hoursVsPlanPct, label: "Hours / plan", format: PROJECTS_FORMATS.percent },
+    // Status colour (Ion, 2026-11-12): red over plan, green under, as in the people x week matrix.
+    { raw: projectsWeekColumns.hoursVsPlan, label: "Hours vs plan", format: PROJECTS_FORMATS.hours, signed: true, tone: "diff" },
+    { raw: projectsWeekColumns.hoursVsPlanPct, label: "Hours / plan", format: PROJECTS_FORMATS.percent, tone: "ratio" },
     { raw: projectsWeekColumns.plannedRevenue, label: "Planned revenue", format: PROJECTS_FORMATS.money },
     { raw: projectsWeekColumns.people, label: "People who logged time", format: PROJECTS_FORMATS.people },
     { raw: projectsWeekColumns.notYetBilled, label: "Hours not yet in Project Ops", format: PROJECTS_FORMATS.hours },
@@ -342,7 +343,7 @@ function WeekVsPlan({ last, current }: { last: WeekColumn; current: WeekColumn }
                             <span className="sr-only">Measure</span>
                         </th>
                         {columns.map((c) => (
-                            <th key={c.heading} scope="col" className="ax-num">
+                            <th key={c.heading} scope="col" className="ax-center">
                                 {c.heading}
                                 <span className="block text-200 font-normal text-muted-foreground">{c.span}</span>
                             </th>
@@ -358,8 +359,8 @@ function WeekVsPlan({ last, current }: { last: WeekColumn; current: WeekColumn }
                             {columns.map((c) => {
                                 const v = value(c, row.raw);
                                 return (
-                                    <td key={c.heading} className="ax-num">
-                                        {v === null ? "—" : "signed" in row && row.signed ? signedChange(v, row.format) : String(formatValue(v, row.format))}
+                                    <td key={c.heading} className="ax-center">
+                                        {v === null ? "—" : <WeekValue value={v} format={row.format} signed={"signed" in row && row.signed} tone={"tone" in row ? row.tone : undefined} />}
                                     </td>
                                 );
                             })}
@@ -598,5 +599,17 @@ function LastWeekVsBudget({ table, span }: { table: QueryTable; span: string }):
             </div>
         </section>
     );
+}
+
+/**
+ * One value of the week vs plan table. With a tone, it shows as a status pill (red over plan, green under): a
+ * difference by its sign, a ratio against 100%. Status is never colour alone: the sign or the % carries it too.
+ */
+function WeekValue({ value, format, signed, tone }: { value: number; format: string; signed: boolean; tone?: "diff" | "ratio" }): ReactElement {
+    const text = signed ? signedChange(value, format) : String(formatValue(value, format));
+    if (!tone) return <>{text}</>;
+    const delta = tone === "ratio" ? Math.round((value - 1) * 1000) : Math.round(value);
+    const kind = delta > 0 ? "over" : delta < 0 ? "under" : "even";
+    return <span className={`ax-var-pill is-${kind}`}>{text}</span>;
 }
 
