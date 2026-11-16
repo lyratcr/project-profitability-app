@@ -112,8 +112,8 @@
 
 After the PMs and Adan validated P6 (2026-11-16), Ion asked for a PM-only app, the PM of each project from Project Operations as a filter, and security: a PM sees their projects, a manager their projects plus their reports', a director their area, an executive everything. Plan agreed with Ion (2026-11-16): one semantic model with roles; the PM app in `pm-app/`.
 
-- [ ] 6.1 PM app in `pm-app/` (P6 only, no security yet)
-  - 2026-11-16: created from `app/` (same template files and lockfile, so the same package versions): the P6 import closure and its tests; one-page routes, header without tabs, app name "Project Progress", Rayfin item `pm-project-progress`, local port 5174. Shared filter-bar / filter-context tests keep the executive pages as fixtures (`src/test/page-fixtures.ts`). 266 tests, lint and build pass. Not deployed: the first `rayfin up` creates the Fabric item (needs Ion's OK); then add the hosting URL to `allowedRedirectUris` and redeploy.
+- [x] 6.1 PM app in `pm-app/` (P6 only, no security yet)
+  - 2026-11-16: created from `app/` (same template files and lockfile, so the same package versions): the P6 import closure and its tests; one-page routes, header without tabs, app name "Project Progress", Rayfin item `pm-project-progress`, local port 5174. Shared filter-bar / filter-context tests keep the executive pages as fixtures (`src/test/page-fixtures.ts`). 266 tests, lint and build pass. Created and released the same day from `main` @ `e3563eb` (PR #56): item `pm-project-progress`, https://magic-maple-28bbbd8e63-eastus2.webapp.fabricapps.net; checked live.
 - [ ] 6.2 Ion's new changes to P6, on the PM app (mockup first)
 - [ ] 6.3 Data discovery, read-only (Ion with Alejandro): PM per project (`msdyn_project.msdyn_projectmanager` + email), UKG supervisor chain and UPN, `audit.rls_mapping_table`, area → director, executives list, projects without PM
 - [ ] 6.4 Gold: PM name and email on `dim_project` (#4); `gold.security_project_access` (user UPN, project key, reason pm / manager / director), flattened
