@@ -345,6 +345,101 @@ body {
   border-top: 2px solid var(--line-strong, var(--line));
   background: var(--glass-sunken, var(--surface-sunken));
 }
+/* Cell tooltip of the people x week matrix (Ion, 2026-11-16): a Power BI style card with what the hours are made of.
+   The cell is a borderless button (hover, keyboard focus or tap); the card is fixed in a portal on <body>. */
+.ax-matrix-hit {
+  display: block;
+  width: 100%;
+  padding: 2px 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ax-matrix-hit:hover {
+  background: var(--glass-sunken, var(--surface-sunken));
+}
+.ax-matrix-hit:focus-visible {
+  outline: 2px solid var(--yellow-500, var(--chart-1));
+  outline-offset: 1px;
+}
+.ax-cell-tooltip {
+  position: fixed;
+  z-index: 50;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-glass);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;
+}
+.ax-cell-tooltip-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.ax-cell-tooltip-muted {
+  color: var(--ink-muted);
+}
+.ax-cell-tooltip-section {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.ax-cell-tooltip-heading {
+  margin-bottom: 4px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ax-cell-tooltip-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 34px;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.ax-cell-tooltip-row.is-empty {
+  color: var(--ink-muted);
+}
+.ax-cell-tooltip-track {
+  display: block;
+  height: 10px;
+}
+.ax-cell-tooltip-track > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+.ax-cell-tooltip-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  font-size: 11px;
+}
+.ax-cell-tooltip-days > div {
+  display: flex;
+  flex-direction: column;
+  padding: 3px 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+.ax-cell-tooltip-days > div.is-empty {
+  color: var(--ink-muted);
+}
+/* A day with more than one pay category (e.g. 8 Regular + 8 Holiday): warning tint, explained in the line below. */
+.ax-cell-tooltip-days > div.is-split {
+  background: var(--color-warning-surface);
+}
+.ax-cell-tooltip-days b {
+  font-weight: 600;
+}
 .ax-var-pill {
   display: inline-block;
   padding: 0 7px;

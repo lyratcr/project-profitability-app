@@ -2,6 +2,7 @@ import { applyFilters } from "@/lib/filters";
 import type { ColumnMetadataMap } from "@/lib/to-data-table";
 import kpisQuery from "./projects-kpis.dax?raw";
 import peopleQuery from "./projects-people.dax?raw";
+import peopleBreakdownQuery from "./projects-people-breakdown.dax?raw";
 import peopleWeeksQuery from "./projects-people-weeks.dax?raw";
 import projectWeeksQuery from "./projects-project-weeks.dax?raw";
 import revenueByMonthQuery from "./projects-revenue-by-month.dax?raw";
@@ -178,3 +179,20 @@ export function projectsRoleWeeks({ filters = [] }: ProjectsParams = {}) {
     return { connection: CONNECTION, query: applyFilters(roleWeeksQuery, filters) } as const;
 }
 
+/** Raw columns of the cell tooltip query (Ion, 2026-11-16). Week and Day are yyyy-mm-dd text; Week is blank on the window rows. */
+export const peopleBreakdownColumns = {
+    employeeNumber: "[Employee]",
+    week: "[Week]",
+    kind: "[Kind]",
+    label: "[Label]",
+    day: "[Day]",
+    hours: "[Hours]",
+} as const;
+
+/**
+ * `filters` = project + the matrix window. What each person's hours are made of: by pay category and by task per
+ * week and for the window, and by day (total and per pay category). Feeds the matrix cell tooltips.
+ */
+export function projectsPeopleBreakdown({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(peopleBreakdownQuery, filters) } as const;
+}

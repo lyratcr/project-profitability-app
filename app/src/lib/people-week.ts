@@ -1,5 +1,5 @@
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
-import { peopleWeekColumns as c } from "@/queries/projects/projects-queries";
+import { peopleBreakdownColumns as b, peopleWeekColumns as c } from "@/queries/projects/projects-queries";
 import { cell, numberCell } from "./query-table";
 
 /**
@@ -103,4 +103,69 @@ export function diffTone(diff: number | null): "over" | "under" | "even" | null 
     if (Math.round(diff) > 0) return "over";
     if (Math.round(diff) < 0) return "under";
     return "even";
+}
+
+// ---------------------------------------------------------------- cell tooltip (Ion, 2026-11-16)
+
+export interface BreakdownPart {
+    label: string;
+    hours: number;
+}
+
+export interface BreakdownDay {
+    /** The day's hours on the project, from the model. */
+    total: number | null;
+    /** The same hours by pay category, largest first. */
+    parts: BreakdownPart[];
+}
+
+/** What one person's hours in one week (or in the whole window) are made of. Every number is a model value. */
+export interface CellBreakdown {
+    categories: BreakdownPart[];
+    tasks: BreakdownPart[];
+    /** Keyed by day, yyyy-mm-dd; empty for the window total. */
+    days: Record<string, BreakdownDay>;
+}
+
+/** Key of a person's breakdown: the Auxis ID and the week's Sunday (yyyy-mm-dd), or "total" for the window. */
+export const breakdownKey = (employeeNumber: string, week: string | null) => `${employeeNumber}|${week ?? "total"}`;
+
+/** Places the breakdown query's rows by person and week; nothing is added up here. */
+export function buildBreakdown(table: QueryTable): Map<string, CellBreakdown> {
+    const out = new Map<string, CellBreakdown>();
+    const get = (key: string) => {
+        let entry = out.get(key);
+        if (!entry) {
+            entry = { categories: [], tasks: [], days: {} };
+            out.set(key, entry);
+        }
+        return entry;
+    };
+    const text = (raw: string, i: number) => {
+        const v = cell(table, raw, i);
+        return typeof v === "string" && v.trim() !== "" ? v.trim() : null;
+    };
+    table.rows.forEach((_, i) => {
+        const employee = text(b.employeeNumber, i);
+        const hours = numberCell(table, b.hours, i);
+        if (employee === null || hours === null) return;
+        const week = weekKey(text(b.week, i));
+        const entry = get(breakdownKey(employee, week));
+        const label = text(b.label, i);
+        const kind = cell(table, b.kind, i);
+        const day = weekKey(text(b.day, i));
+        if (kind === "category" && label) entry.categories.push({ label, hours });
+        else if (kind === "task") entry.tasks.push({ label: label ?? "No task", hours });
+        else if ((kind === "day" || kind === "daytotal") && day) {
+            const d = (entry.days[day] ??= { total: null, parts: [] });
+            if (kind === "daytotal") d.total = hours;
+            else if (label) d.parts.push({ label, hours });
+        }
+    });
+    for (const entry of out.values()) {
+        entry.categories.sort((x, y) => y.hours - x.hours);
+        entry.tasks.sort((x, y) => y.hours - x.hours);
+        for (const d of Object.values(entry.days)) d.parts.sort((x, y) => y.hours - x.hours);
+    }
+    return out;
 }

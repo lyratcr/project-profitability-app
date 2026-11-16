@@ -1,7 +1,8 @@
-import type { ReactElement } from "react";
+import { useEffect, useId, useState, type ReactElement } from "react";
 import { formatValue } from "@microsoft/fabric-visuals-core";
 import { signedChange } from "@/lib/change";
-import { diffTone, weekKey, type MatrixCell, type MatrixRow, type PeopleMatrix } from "@/lib/people-week";
+import { breakdownKey, diffTone, weekKey, type CellBreakdown, type MatrixCell, type MatrixRow, type PeopleMatrix } from "@/lib/people-week";
+import { CellTooltip, type BreakdownState } from "./people-week-tooltip.component";
 import { cn } from "@/lib/utils";
 
 interface PeopleWeekMatrixProps {
@@ -12,9 +13,17 @@ interface PeopleWeekMatrixProps {
     currentWeek: Date;
     /** Sunday of the week picked in the Week filter, highlighted. */
     selectedWeek: Date;
+    /** Cell tooltips (Ion, 2026-11-16): what each person's hours are made of, by person and week. */
+    breakdown: Map<string, CellBreakdown> | null;
+    breakdownState: BreakdownState;
+    /** The project, for the tooltip's period line. */
+    project: string;
 }
 
 const label = new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric" });
+const dayLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
+const yearLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 const hours = (v: number | null) => (v === null ? "—" : String(formatValue(v, "#,0")));
 
 function Pill({ diff }: { diff: number | null }): ReactElement | null {
@@ -32,7 +41,8 @@ function Cell({ value, kind }: { value: MatrixCell | undefined; kind: MatrixRow[
     return (
         <span className="flex flex-col items-center gap-0.5">
             <span className="ax-matrix-hours">{hours(value.hours ?? 0)}</span>
-            <span className="ax-matrix-plan">of {hours(value.planned ?? 0)}</span>
+            {/* No plan in that week reads "no plan", not a budget of zero (Ion, 2026-11-16). */}
+            <span className="ax-matrix-plan">{value.planned === null ? "no plan" : `of ${hours(value.planned)}`}</span>
             <Pill diff={value.diff} />
         </span>
     );
@@ -49,8 +59,75 @@ function VariancePill({ variance }: { variance: number | null }): ReactElement {
  * in each Sunday-Saturday week; plan not assigned to a person by role; catalog services; and the project row.
  * Green under budget, red over (Auxis status colours, with the sign).
  */
-export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek }: PeopleWeekMatrixProps): ReactElement {
+export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, breakdown, breakdownState, project }: PeopleWeekMatrixProps): ReactElement {
     const keys = weeks.map((w) => weekKey(w) ?? "");
+    const tooltipId = useId();
+    const [active, setActive] = useState<{ row: MatrixRow; week: string | null; rect: DOMRect } | null>(null);
+
+    // The tooltip sits at fixed coordinates: close it when the page or the table scrolls, or on Escape.
+    useEffect(() => {
+        if (!active) return;
+        const close = () => setActive(null);
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") close();
+        };
+        window.addEventListener("scroll", close, true);
+        window.addEventListener("resize", close);
+        window.addEventListener("keydown", onKey);
+        return () => {
+            window.removeEventListener("scroll", close, true);
+            window.removeEventListener("resize", close);
+            window.removeEventListener("keydown", onKey);
+        };
+    }, [active]);
+
+    const isActive = (row: MatrixRow, week: string | null) => active?.row.key === row.key && active.week === week;
+    /** A person's cell with hours opens the tooltip on hover, keyboard focus or a tap. */
+    const cellContent = (row: MatrixRow, week: string | null, value: MatrixCell | undefined) => {
+        const content = <Cell value={value} kind={row.kind} />;
+        if (row.kind !== "person" || !value || value.hours === null) return content;
+        const open = (el: HTMLElement) => setActive({ row, week, rect: el.getBoundingClientRect() });
+        const when = week ? `week of ${dayLabel.format(new Date(`${week}T00:00:00`))}` : "total";
+        return (
+            <button
+                type="button"
+                className="ax-matrix-hit"
+                aria-describedby={isActive(row, week) ? tooltipId : undefined}
+                aria-label={`${row.label}, ${when}: what the hours are made of`}
+                onMouseEnter={(e) => open(e.currentTarget)}
+                onMouseLeave={() => setActive(null)}
+                onFocus={(e) => open(e.currentTarget)}
+                onBlur={() => setActive(null)}
+                onClick={(e) => (isActive(row, week) ? setActive(null) : open(e.currentTarget))}
+            >
+                {content}
+            </button>
+        );
+    };
+
+    const tooltip = () => {
+        if (!active) return null;
+        const value = active.week ? active.row.weeks[active.week] : active.row.total;
+        if (!value) return null;
+        const start = active.week ? new Date(`${active.week}T00:00:00`) : null;
+        const first = weeks[0];
+        const last = weeks[weeks.length - 1];
+        const period = start
+            ? `Week ${dayLabel.format(start)} – ${yearLabel.format(addDays(start, 6))}${active.week === current ? ", to date" : ""} · ${project}`
+            : `Last ${weeks.length} weeks · ${dayLabel.format(first)} – ${yearLabel.format(addDays(last, 6))} · ${project}`;
+        return (
+            <CellTooltip
+                id={tooltipId}
+                anchor={active.rect}
+                name={active.row.label}
+                period={period}
+                weekStart={start}
+                value={value}
+                breakdown={breakdown?.get(breakdownKey(active.row.key, active.week))}
+                state={breakdownState}
+            />
+        );
+    };
     const current = weekKey(currentWeek);
     const selected = weekKey(selectedWeek);
     const rows: MatrixRow[] = [...matrix.people, ...matrix.roles, ...(matrix.services ? [matrix.services] : [])];
@@ -63,11 +140,11 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek }: P
             </th>
             {keys.map((k) => (
                 <td key={k} className={cn("ax-matrix-cell", k === selected && "ax-matrix-selected")}>
-                    <Cell value={row.weeks[k]} kind={row.kind} />
+                    {cellContent(row, k, row.weeks[k])}
                 </td>
             ))}
             <td className="ax-matrix-cell ax-matrix-sum">
-                <Cell value={row.total} kind={row.kind} />
+                {cellContent(row, null, row.total)}
             </td>
             <td className="ax-matrix-cell">{row.kind === "person" || row.kind === "project" ? <VariancePill variance={row.total.variance} /> : null}</td>
         </tr>
@@ -101,6 +178,7 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek }: P
                     {matrix.project && renderRow(matrix.project)}
                 </tbody>
             </table>
+            {tooltip()}
         </div>
     );
 }

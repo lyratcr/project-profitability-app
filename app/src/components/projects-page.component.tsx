@@ -8,7 +8,7 @@ import { dateRangeArg, filterArgs, monthWindow, TREND_MONTHS, writeFilters, type
 import { describeDaysLeft, parseModelDate, planEndStatus, type PlanEndStatus } from "@/lib/plan-end";
 import { cell, numberCell } from "@/lib/query-table";
 import { pageHref, type PageDef } from "@/lib/routes";
-import { buildPeopleMatrix } from "@/lib/people-week";
+import { buildBreakdown, buildPeopleMatrix } from "@/lib/people-week";
 import { toDataTable } from "@/lib/to-data-table";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { lastWeek, reviewWindow, thisWeek, trendWindow, weekSpan, type Week } from "@/lib/weeks";
@@ -18,6 +18,7 @@ import {
     projectsKpiColumns,
     projectsKpis,
     PEOPLE_MATRIX_WEEKS,
+    projectsPeopleBreakdown,
     projectsPeopleWeeks,
     projectsProjectWeeks,
     projectsRoleWeeks,
@@ -118,6 +119,7 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
             trendMonths: projectsTrendMonths({ filters: trendArgs }),
             matrixWeeks,
             peopleWeeks: projectsPeopleWeeks({ filters: matrixArgs }),
+            peopleBreakdown: projectsPeopleBreakdown({ filters: matrixArgs }),
             roleWeeks: projectsRoleWeeks({ filters: matrixArgs }),
             projectWeeks: projectsProjectWeeks({ filters: matrixArgs }),
             revenue: projectsRevenueByMonth({ filters: [dateRangeArg(months.start, months.end), ...project] }),
@@ -132,6 +134,10 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
     const trendSummaryResult = useSemanticModelQuery(run(model.trendSummary));
     const trendMonthsResult = useSemanticModelQuery(run(model.trendMonths));
     const peopleWeeksResult = useSemanticModelQuery(run(model.peopleWeeks));
+    // Cell tooltips: loaded beside the matrix, which never waits for it; the tooltip shows its own loading / error line.
+    const breakdownData = useSemanticModelQuery(run(model.peopleBreakdown)).data;
+    const breakdown = useMemo(() => (breakdownData?.status === "success" ? buildBreakdown(breakdownData.table) : null), [breakdownData]);
+    const breakdownState = breakdownData?.status === "success" ? "ready" : breakdownData?.status === "error" ? "error" : "loading";
     const roleWeeksResult = useSemanticModelQuery(run(model.roleWeeks));
     const projectWeeksResult = useSemanticModelQuery(run(model.projectWeeks));
     const revenueResult = useSemanticModelQuery(run(model.revenue));
@@ -210,6 +216,9 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                                                         weeks={model.matrixWeeks}
                                                         currentWeek={model.current.start}
                                                         selectedWeek={filters.week.start}
+                                                        breakdown={breakdown}
+                                                        breakdownState={breakdownState}
+                                                        project={filters.project ?? ""}
                                                     />
                                                 )}
                                             </QueryStates>

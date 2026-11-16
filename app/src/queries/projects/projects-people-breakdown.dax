@@ -1,0 +1,59 @@
+// P6 people x week matrix, cell tooltip (Ion, 2026-11-16): what a person's Synerion hours on the project are made of,
+// per Sunday-Saturday week of the matrix window: by pay category and by task (each also for the whole window, with
+// Week blank), and by day (total, and split by pay category). One query for the whole window, so hovering a cell
+// never waits on the model. Every figure is [Synerion Hours_app]; the GROUPBYs only roll the day x category x task
+// grain up. Week and Day are yyyy-mm-dd text (a UNION with blank dates would turn them into numbers). Names are not
+// returned: the app matches rows to the matrix by Auxis ID.
+EVALUATE
+VAR base =
+    FILTER (
+        SUMMARIZECOLUMNS (
+            dim_employee[employee_number],
+            dim_calendar[start_of_week_sun],
+            dim_calendar[date],
+            fact_profitability_metrics[pay_category_description],
+            fact_profitability_metrics[task_name],
+            /* @filters */
+            "H", [Synerion Hours_app]
+        ),
+        NOT ISBLANK ( dim_employee[employee_number] ) && NOT ISBLANK ( [H] )
+    )
+VAR categoryWeek =
+    SELECTCOLUMNS (
+        GROUPBY ( base, dim_employee[employee_number], dim_calendar[start_of_week_sun], fact_profitability_metrics[pay_category_description], "S", SUMX ( CURRENTGROUP (), [H] ) ),
+        "Employee", dim_employee[employee_number], "Week", FORMAT ( dim_calendar[start_of_week_sun], "yyyy-mm-dd" ), "Kind", "category",
+        "Label", fact_profitability_metrics[pay_category_description], "Day", BLANK (), "Hours", [S]
+    )
+VAR categoryWindow =
+    SELECTCOLUMNS (
+        GROUPBY ( base, dim_employee[employee_number], fact_profitability_metrics[pay_category_description], "S", SUMX ( CURRENTGROUP (), [H] ) ),
+        "Employee", dim_employee[employee_number], "Week", BLANK (), "Kind", "category",
+        "Label", fact_profitability_metrics[pay_category_description], "Day", BLANK (), "Hours", [S]
+    )
+VAR taskWeek =
+    SELECTCOLUMNS (
+        GROUPBY ( base, dim_employee[employee_number], dim_calendar[start_of_week_sun], fact_profitability_metrics[task_name], "S", SUMX ( CURRENTGROUP (), [H] ) ),
+        "Employee", dim_employee[employee_number], "Week", FORMAT ( dim_calendar[start_of_week_sun], "yyyy-mm-dd" ), "Kind", "task",
+        "Label", fact_profitability_metrics[task_name], "Day", BLANK (), "Hours", [S]
+    )
+VAR taskWindow =
+    SELECTCOLUMNS (
+        GROUPBY ( base, dim_employee[employee_number], fact_profitability_metrics[task_name], "S", SUMX ( CURRENTGROUP (), [H] ) ),
+        "Employee", dim_employee[employee_number], "Week", BLANK (), "Kind", "task",
+        "Label", fact_profitability_metrics[task_name], "Day", BLANK (), "Hours", [S]
+    )
+VAR dayCategory =
+    SELECTCOLUMNS (
+        GROUPBY ( base, dim_employee[employee_number], dim_calendar[start_of_week_sun], dim_calendar[date], fact_profitability_metrics[pay_category_description], "S", SUMX ( CURRENTGROUP (), [H] ) ),
+        "Employee", dim_employee[employee_number], "Week", FORMAT ( dim_calendar[start_of_week_sun], "yyyy-mm-dd" ), "Kind", "day",
+        "Label", fact_profitability_metrics[pay_category_description], "Day", FORMAT ( dim_calendar[date], "yyyy-mm-dd" ), "Hours", [S]
+    )
+VAR dayTotal =
+    SELECTCOLUMNS (
+        GROUPBY ( base, dim_employee[employee_number], dim_calendar[start_of_week_sun], dim_calendar[date], "S", SUMX ( CURRENTGROUP (), [H] ) ),
+        "Employee", dim_employee[employee_number], "Week", FORMAT ( dim_calendar[start_of_week_sun], "yyyy-mm-dd" ), "Kind", "daytotal",
+        "Label", BLANK (), "Day", FORMAT ( dim_calendar[date], "yyyy-mm-dd" ), "Hours", [S]
+    )
+RETURN
+    UNION ( categoryWeek, categoryWindow, taskWeek, taskWindow, dayCategory, dayTotal )
+ORDER BY [Employee], [Week], [Kind], [Day], [Hours] DESC

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
-import { buildPeopleMatrix, diffTone, weekKey } from "./people-week";
+import { breakdownKey, buildBreakdown, buildPeopleMatrix, diffTone, weekKey } from "./people-week";
 
 // Column shapes as returned by the three people x week queries on the published model (UIP-101-01 / PAR-401-02,
 // 2026-11-12). Names replaced: they are HR data.
@@ -81,5 +81,39 @@ describe("people x week helpers", () => {
         expect(diffTone(-36.56)).toBe("under");
         expect(diffTone(0.3)).toBe("even");
         expect(diffTone(null)).toBeNull();
+    });
+});
+
+// Shape of the cell tooltip query on the published model (GOT-401-05, week of Nov 1, 2026-11-16).
+const breakdown = {
+    columns: [{ name: "[Employee]" }, { name: "[Week]" }, { name: "[Kind]" }, { name: "[Label]" }, { name: "[Day]" }, { name: "[Hours]" }],
+    rows: [
+        ["C253", null, "category", "Regular Time", null, 313],
+        ["C253", null, "category", "Holiday", null, 16],
+        ["C253", "2026-11-01", "category", "Holiday", null, 8],
+        ["C253", "2026-11-01", "category", "Regular Time", null, 44],
+        ["C253", "2026-11-01", "day", "Holiday", "2026-11-02", 8],
+        ["C253", "2026-11-01", "day", "Regular Time", "2026-11-02", 8],
+        ["C253", "2026-11-01", "daytotal", null, "2026-11-02", 16],
+        ["C253", "2026-11-01", "daytotal", null, "2026-11-03", 9],
+        ["C253", "2026-11-01", "task", "Pod 1 - Project Delivery Services", null, 52],
+        ["", "2026-11-01", "task", "No person", null, 4],
+    ],
+} as unknown as QueryTable;
+
+describe("buildBreakdown", () => {
+    it("places each model value by person and week, largest first, with the window apart", () => {
+        const m = buildBreakdown(breakdown);
+        const week = m.get(breakdownKey("C253", "2026-11-01"));
+        expect(week?.categories).toEqual([
+            { label: "Regular Time", hours: 44 },
+            { label: "Holiday", hours: 8 },
+        ]);
+        expect(week?.tasks).toEqual([{ label: "Pod 1 - Project Delivery Services", hours: 52 }]);
+        expect(week?.days["2026-11-02"]).toEqual({ total: 16, parts: [{ label: "Holiday", hours: 8 }, { label: "Regular Time", hours: 8 }] });
+        expect(week?.days["2026-11-03"]).toEqual({ total: 9, parts: [] });
+        expect(m.get(breakdownKey("C253", null))?.categories.map((c) => c.hours)).toEqual([313, 16]);
+        // Rows without an Auxis ID can't be matched to a matrix row.
+        expect(m.size).toBe(2);
     });
 });
