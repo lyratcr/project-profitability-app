@@ -9,6 +9,7 @@ services:
     allowedRedirectUris:
       - http://localhost:5174
       - http://127.0.0.1:5174
+      - https://magic-maple-28bbbd8e63-eastus2.webapp.fabricapps.net
   data:
     enabled: false
   storage:
