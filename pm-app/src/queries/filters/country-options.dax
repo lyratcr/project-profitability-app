@@ -1,0 +1,4 @@
+// Filter options: employee countries with Synerion hours.
+EVALUATE
+FILTER ( DISTINCT ( fact_profitability_metrics[employee_country] ), NOT ISBLANK ( fact_profitability_metrics[employee_country] ) )
+ORDER BY fact_profitability_metrics[employee_country]

@@ -1,0 +1,10 @@
+// P6 weekly trend summary: Synerion hours, budget (plan, Backlog scenario) hours, the difference and the variance %
+// over the trend's 12-week window (the app sends the window and the project). One row.
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "Hours", [Synerion Hours_app],
+    "PlannedHours", [Planned Hours_app],
+    "HoursVsPlan", [Hours vs Plan_app],
+    "Variance", [Hours vs Plan Variance %_app]
+)

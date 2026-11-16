@@ -1,0 +1,34 @@
+id: pm-project-progress
+name: pm-project-progress
+version: 1.0.0
+services:
+  auth:
+    enabled: true
+    fabric:
+      enabled: true
+    allowedRedirectUris:
+      - http://localhost:5174
+      - http://127.0.0.1:5174
+  data:
+    enabled: false
+  storage:
+    enabled: false
+  staticHosting:
+    enabled: true
+    folder: dist
+    buildCommand: npm run build:fabric
+    indexDocument: index.html
+    assetAccess: protected
+  functions:
+    enabled: false
+connectors:
+  - name: profitmodel
+    type: fabric-semanticmodel
+    config:
+      workspaceId: d8218373-5db6-4ccc-b4c6-b2c787c63d00
+      itemId: 48ad695a-a31f-4f3a-852b-7bd2f3bbc39e
+    auth:
+      type: delegated
+    version: "1"
+    operations:
+      - name: executeQuery

@@ -1,0 +1,15 @@
+// P1 weekly trend: Sunday–Saturday weeks (dim_calendar[start_of_week_sun], never year_week: open item #22),
+// stacked by pay category. The app sends the week window (lib/weeks.ts trendWindow) instead of the period.
+EVALUATE
+ADDCOLUMNS (
+    SUMMARIZECOLUMNS (
+        dim_calendar[start_of_week_sun],
+        fact_profitability_metrics[pay_category_description],
+        /* @filters */
+        "Hours", [@Hours]
+    ),
+    "Week", FORMAT ( dim_calendar[start_of_week_sun], "m/d" ),
+    // Numeric sort key: the chart sorts with an aggregate, which a date string can't take.
+    "WeekKey", VALUE ( FORMAT ( dim_calendar[start_of_week_sun], "yyyymmdd" ) )
+)
+ORDER BY dim_calendar[start_of_week_sun]

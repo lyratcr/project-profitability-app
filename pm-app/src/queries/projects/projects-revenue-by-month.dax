@@ -1,0 +1,13 @@
+// P6 revenue by month for the project: actual revenue (Actual scenario) vs plan (Backlog scenario), and actual / plan.
+// The app sends the 12-month window that ends with the selected week's month. Months in calendar order.
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_calendar[year_month],
+    dim_calendar[year_month_number],
+    /* @filters */
+    "Actual", [Actual Revenue_app],
+    "Planned", [Planned Revenue_app],
+    "VsPlan", [Revenue vs Plan_app],
+    "VsPlanPct", [Revenue vs Plan %_app]
+)
+ORDER BY dim_calendar[year_month_number]
