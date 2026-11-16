@@ -19,12 +19,14 @@ export interface PageDef {
     periodKinds: readonly PeriodKind[];
 }
 
-// The PM app has one page (Ion, 2026-11-16): Project Progress, moved out of the executive app (app/, P1-P5).
-// It works by Sunday-Saturday week (lib/weeks.ts) instead of a period.
-export type PageId = "projects";
+// PM app pages (Ion, 2026-11-16): Project Progress, moved out of the executive app (app/, P1-P5), is the home page;
+// it works by Sunday-Saturday week (lib/weeks.ts) instead of a period. Team Utilization is a placeholder tab for now
+// (an urgent need in the company; to be designed later, build plan task 6.8): no filters, no data.
+export type PageId = "projects" | "utilization";
 
 export const PAGES: readonly PageDef[] = [
     { id: "projects", path: "/projects", label: "Projects", title: "Project Progress", purpose: "Progress of my projects against plan, and the Monday timesheet review.", task: "4.1", filters: ["week", "project"], periodKinds: [] },
+    { id: "utilization", path: "/utilization", label: "Utilization", title: "Team Utilization", purpose: "How the team members' time is used.", task: "6.8", filters: [], periodKinds: [] },
 ];
 
 export const DEFAULT_PAGE: PageDef = PAGES[0];

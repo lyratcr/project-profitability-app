@@ -39,11 +39,13 @@ describe("AppHeader", () => {
         hook.result = { data: undefined, isLoading: true, error: undefined, refetch: async () => {} };
     });
 
-    it("shows the PM app name and no tab strip, since there is one page", () => {
+    it("shows the PM app name and a tab per page, marking the current one", () => {
         renderHeader();
         expect(screen.getByText("Project Progress")).toBeInTheDocument();
-        expect(screen.queryByRole("tablist")).toBeNull();
-        expect(screen.queryAllByRole("tab")).toHaveLength(0);
+        const tabs = screen.getAllByRole("tab");
+        expect(tabs.map((t) => t.textContent)).toEqual(["Projects", "Utilization"]);
+        expect(screen.getByRole("tab", { current: "page" })).toHaveTextContent("Projects");
+        expect(screen.getByRole("tab", { name: "Utilization" })).toHaveAttribute("href", "#/utilization");
     });
 
     it("shows a loading placeholder for the data dates", () => {

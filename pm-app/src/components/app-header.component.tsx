@@ -88,7 +88,7 @@ export function AppHeader({ current, params, today = new Date() }: AppHeaderProp
                 <img className="ax-logo ax-logo-dark" src={logoReversed} alt="Auxis" />
                 <span className="ax-header-title hidden sm:inline">{APP_NAME}</span>
                 <div className="ax-header-spacer" />
-                {/* One page today: no tab strip. Tabs come back on their own if PAGES grows. */}
+                {/* Page tabs only when there is more than one page. */}
                 {PAGES.length > 1 && (
                 <nav aria-label="Pages" className="min-w-0 overflow-x-auto">
                     <div className="ax-tabs" role="tablist">

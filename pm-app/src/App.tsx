@@ -8,11 +8,12 @@
 import { AppHeader } from "./components/app-header.component";
 import { LogoWatermark } from "./components/logo-watermark.component";
 import { ProjectsPage } from "./components/projects-page.component";
+import { PagePlaceholder } from "./components/page-placeholder.component";
 import { FilterBar } from "./components/filter-bar.component";
 import { useGlobalFilters } from "./hooks/use-global-filters";
 import { useHashRoute } from "./hooks/use-hash-route";
 
-// PM app shell (Ion, 2026-11-16): Project Progress (P6) is the only page, moved out of the executive app (app/).
+// PM app shell (Ion, 2026-11-16): Project Progress (P6, moved out of the executive app) and a Team Utilization placeholder.
 // Same Auxis look: logo watermark, glass header, liquid glass on the page (design-system bundle.css `.ax-liquid`).
 function App() {
     const route = useHashRoute();
@@ -36,7 +37,11 @@ function App() {
                         onChange={filters.setFilters}
                     />
                     <div className="pt-6">
-                        <ProjectsPage page={page} filters={filters.state} options={filters.options} params={route.params} />
+                        {page.id === "projects" ? (
+                            <ProjectsPage page={page} filters={filters.state} options={filters.options} params={route.params} />
+                        ) : (
+                            <PagePlaceholder page={page} />
+                        )}
                     </div>
                 </main>
             </div>
