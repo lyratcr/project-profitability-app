@@ -1,0 +1,7 @@
+// Top bar: how current the data is (no filters; the measures ignore them).
+EVALUATE
+ROW (
+    "Last Synerion Date", [Last Synerion Date_app],
+    "Last Revenue Date", [Last Revenue Date_app],
+    "Last Refresh", [Last Refresh Date]
+)

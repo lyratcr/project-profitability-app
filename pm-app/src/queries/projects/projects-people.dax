@@ -1,0 +1,38 @@
+// P6 who logged time on the project in the selected week (employee names allowed here by the design; no rates
+// or costs). One row per person who logged on the project in the week, or in the 4 weeks before it but not in it
+// (Missing This Week_app). Total hours = all the person's hours that week, the denominator of Time Allocation %_app.
+// Grouped by the UKG id so people with the same name stay apart; the id is not returned.
+EVALUATE
+SELECTCOLUMNS (
+    SUMMARIZECOLUMNS (
+        fact_profitability_metrics[ukg_employee_id],
+        fact_profitability_metrics[employee_full_name],
+        /* @filters */
+        "Hours", [Synerion Hours_app],
+        "Missing", [Missing This Week_app],
+        "TotalHours",
+            IF (
+                NOT ISBLANK ( [Synerion Hours_app] ) || [Missing This Week_app] = 1,
+                CALCULATE ( [Synerion Hours_app], ALLEXCEPT ( fact_profitability_metrics, dim_calendar, fact_profitability_metrics[ukg_employee_id] ) )
+            ),
+        "TimeAllocation", [Time Allocation %_app],
+        "Tasks", IF ( NOT ISBLANK ( [Synerion Hours_app] ), CONCATENATEX ( VALUES ( fact_profitability_metrics[task_name] ), fact_profitability_metrics[task_name], ", ", fact_profitability_metrics[task_name], ASC ) ),
+        "PayCategories", IF ( NOT ISBLANK ( [Synerion Hours_app] ), CONCATENATEX ( VALUES ( fact_profitability_metrics[pay_category_description] ), fact_profitability_metrics[pay_category_description], ", ", fact_profitability_metrics[pay_category_description], ASC ) ),
+        "Overtime", CALCULATE ( [Synerion Hours_app], fact_profitability_metrics[pay_category_description] = "Overtime" ),
+        "Unmapped", CALCULATE ( [Synerion Hours_app], fact_profitability_metrics[task_name] = "Unmapped Task" )
+    ),
+    "Employee", fact_profitability_metrics[employee_full_name],
+    "Tasks", [Tasks],
+    "PayCategories", [PayCategories],
+    "Hours", [Hours],
+    "TotalHours", [TotalHours],
+    "TimeAllocation", [TimeAllocation],
+    "Flags",
+        VAR _missing = IF ( [Missing] = 1, "No hours this week" )
+        VAR _unmapped = IF ( [Unmapped] > 0, "Unmapped task" )
+        VAR _overtime = IF ( [Overtime] > 0, "Overtime" )
+        VAR _a = IF ( _missing <> "" && _unmapped <> "", _missing & " · " & _unmapped, _missing & _unmapped )
+        RETURN IF ( _a <> "" && _overtime <> "", _a & " · " & _overtime, _a & _overtime ),
+    "FlagOrder", IF ( [Missing] = 1 || [Unmapped] > 0, 0, 1 )
+)
+ORDER BY [FlagOrder], [Hours] DESC

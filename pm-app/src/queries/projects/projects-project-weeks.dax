@@ -1,0 +1,13 @@
+// P6 people x week, the project row: all Synerion hours vs the whole plan per Sunday-Saturday week and over the
+// window (IsWeekTotal = 1), and the plan on catalog-service lines (not people; open item #27) so the rows add up.
+EVALUATE
+SUMMARIZECOLUMNS (
+    ROLLUPADDISSUBTOTAL ( dim_calendar[start_of_week_sun], "IsWeekTotal" ),
+    /* @filters */
+    "Hours", [Synerion Hours_app],
+    "PlannedHours", [Planned Hours by Person_app],
+    "Diff", [Hours vs Plan by Person_app],
+    "Variance", [Hours vs Plan Variance % by Person_app],
+    "ServicesPlannedHours", CALCULATE ( [Planned Hours_app], KEEPFILTERS ( TREATAS ( { "not_a_person" }, fact_revenue_metrics[resource_match] ) ) )
+)
+ORDER BY [IsWeekTotal], dim_calendar[start_of_week_sun]

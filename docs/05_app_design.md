@@ -75,6 +75,9 @@
 - **Customers that grew / dropped most:** `[Actual Revenue MoM $_app]`, top 10 each, ranked in the query (TOPN) until `[Customer Rank by Revenue Growth_app]` / `[… Decline_app]` exist (#1).
 
 ### P6 · Project Progress, for PMs (`/projects`)
+
+**Own app** (Ion, 2026-11-16): P6 moves to a PM-only Fabric App, `pm-app/` in this repo (its own Rayfin project, item `pm-project-progress`, same workspace and semantic model). Project Progress is its only page and home page; the header has no page tabs. The executive app keeps its Projects tab until the PM app is validated, then hides it. PM by project (#4) and per-person security (PM, their managers, directors, executives) follow, on the semantic model (see `04` and `06` Phase 6).
+
 **Purpose:** day-by-day progress of my projects, and the Monday timesheet review.
 
 **Look** (Ion, 2026-11-07): liquid glass on the whole page (filter row, banner, cards, tables), an exception to the Auxis "cards = surface" rule documented in `design-system/README.md`. Other pages keep the solid Auxis cards.

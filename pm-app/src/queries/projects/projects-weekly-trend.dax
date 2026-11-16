@@ -1,0 +1,28 @@
+// P6 weekly trend: Synerion hours (bars) vs plan hours (line) and the variance % per week by Sunday-Saturday week (dim_calendar[start_of_week_sun],
+// never year_week: open item #22). The app sends the 12-week window; the last week may be the current one, to date.
+EVALUATE
+ADDCOLUMNS (
+    SUMMARIZECOLUMNS (
+        dim_calendar[start_of_week_sun],
+        /* @filters */
+        // 0 for a week with plan but no hours, so the bar layer keeps the query's week order (a plan-only week was
+        // appended after the last one, 2026-11-07). Weeks with neither hours nor plan (before the project starts)
+        // stay blank and drop out (Ion, 2026-11-07).
+        "Hours",
+            IF (
+                NOT ISBLANK ( [Synerion Hours_app] ) || NOT ISBLANK ( [Planned Hours_app] ),
+                COALESCE ( [Synerion Hours_app], 0 )
+            ),
+        // 0 budget in a week that has hours but no plan rows, so the budget line stays connected (Ion, 2026-11-07).
+        // Weeks with neither stay blank and drop out (the Hours column above).
+        "PlannedHours",
+            IF (
+                NOT ISBLANK ( [Synerion Hours_app] ) || NOT ISBLANK ( [Planned Hours_app] ),
+                COALESCE ( [Planned Hours_app], 0 )
+            ),
+        "Variance", [Hours vs Plan Variance %_app]
+    ),
+    "Week", FORMAT ( dim_calendar[start_of_week_sun], "m/d" ),
+    "WeekKey", VALUE ( FORMAT ( dim_calendar[start_of_week_sun], "yyyymmdd" ) )
+)
+ORDER BY dim_calendar[start_of_week_sun]

@@ -1,0 +1,4 @@
+// Filter options: master hierarchy L1 > L2 > L3 combinations (41 rows on 2026-11-04).
+EVALUATE
+SUMMARIZECOLUMNS ( dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] )
+ORDER BY dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3]

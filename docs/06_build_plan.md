@@ -108,6 +108,19 @@
   - 2026-11-16: cell tooltip on the matrix (pay category, task, day) and "no plan" instead of "of 0" (Ion). Released from `main` @ `539ec61` (PR #51) the same day.
 - [ ] 4.3 Project selector (remembered; default to the PM's projects once #4 exists)
 
+## Phase 6 — PM app and per-person security (Ion, 2026-11-16)
+
+After the PMs and Adan validated P6 (2026-11-16), Ion asked for a PM-only app, the PM of each project from Project Operations as a filter, and security: a PM sees their projects, a manager their projects plus their reports', a director their area, an executive everything. Plan agreed with Ion (2026-11-16): one semantic model with roles; the PM app in `pm-app/`.
+
+- [ ] 6.1 PM app in `pm-app/` (P6 only, no security yet)
+  - 2026-11-16: created from `app/` (same template files and lockfile, so the same package versions): the P6 import closure and its tests; one-page routes, header without tabs, app name "Project Progress", Rayfin item `pm-project-progress`, local port 5174. Shared filter-bar / filter-context tests keep the executive pages as fixtures (`src/test/page-fixtures.ts`). 266 tests, lint and build pass. Not deployed: the first `rayfin up` creates the Fabric item (needs Ion's OK); then add the hosting URL to `allowedRedirectUris` and redeploy.
+- [ ] 6.2 Ion's new changes to P6, on the PM app (mockup first)
+- [ ] 6.3 Data discovery, read-only (Ion with Alejandro): PM per project (`msdyn_project.msdyn_projectmanager` + email), UKG supervisor chain and UPN, `audit.rls_mapping_table`, area → director, executives list, projects without PM
+- [ ] 6.4 Gold: PM name and email on `dim_project` (#4); `gold.security_project_access` (user UPN, project key, reason pm / manager / director), flattened
+- [ ] 6.5 Model (after Ion confirms the DAX): PM columns, hidden security table, roles `All company_app` (no filter; executives and the executive app's audience first) and `Project access_app` (dynamic, on `dim_project`); export TMDL
+- [ ] 6.6 PM filter in the PM app; access: Entra group as workspace Viewer (or item access + Read/Build on the model), never Member (Admin / Member / Contributor bypass RLS)
+- [ ] 6.7 Security tests ("Test as role" with other users: PM, manager, director, executive; a real PM in the app), open to all PMs, hide Projects in the executive app
+
 ## Phase 5 — Release
 
 - [ ] 5.1 Reconciliation table per page against DAX on Fabric

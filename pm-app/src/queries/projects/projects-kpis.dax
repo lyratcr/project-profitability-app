@@ -1,0 +1,14 @@
+// P6 project budget card, whole project life (the measures ignore the date filter), as the PMs read it (2026-11-12):
+// SOW = total plan (Backlog scenario), Actual = revenue billed to date, Variance = plan left to bill, % Actual =
+// billing progress, % Variance = share left to bill; plus the plan's last date. The project filter goes
+// to each fact's own project_key (no dim_project until open item #1 is fixed).
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "Planned", [Total Planned Revenue_app],
+    "Billed", [Revenue Billed to Date_app],
+    "LeftToBill", [Revenue Left to Bill_app],
+    "Progress", [Billing Progress %_app],
+    "LeftToBillPct", [Revenue Left to Bill %_app],
+    "PlanEnd", [Plan End Date_app]
+)

@@ -1,0 +1,19 @@
+// P6 people x week (PMs, 2026-11-12): per person and Sunday-Saturday week, Synerion hours vs the person's plan
+// (Backlog through the Auxis ID), the difference and the variance %; plus each person's total over the window
+// (IsWeekTotal = 1). People come from dim_employee: hours through the active ukg_employee_id relationship, plan
+// through the inactive employee_number one (inside the measures). Employee names are allowed here by the design.
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        dim_employee[employee_number],
+        dim_employee[employee_full_name],
+        ROLLUPADDISSUBTOTAL ( dim_calendar[start_of_week_sun], "IsWeekTotal" ),
+        /* @filters */
+        "Hours", [Synerion Hours_app],
+        "PlannedHours", [Planned Hours by Person_app],
+        "Diff", [Hours vs Plan by Person_app],
+        "Variance", [Hours vs Plan Variance % by Person_app]
+    ),
+    NOT ISBLANK ( dim_employee[employee_number] )
+)
+ORDER BY dim_employee[employee_full_name], dim_employee[employee_number], [IsWeekTotal], dim_calendar[start_of_week_sun]

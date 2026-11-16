@@ -1,0 +1,502 @@
+@layer fabric-visual-tokens, theme, base, fabric-visuals, components, utilities;
+
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* These tokens are consumed directly as CSS variables, so emit them
+   even when no Tailwind utility references them. */
+@theme static {
+  /* Every colour below points at an Auxis design-system token (../design-system/tokens.css), which switches
+     with data-theme on <html>; no hex values here. */
+  --color-brand:            var(--accent);       /* branded surfaces: Cyber Yellow, earned (active, selected) */
+  --color-brand-foreground: var(--accent-ink);   /* gold text on light grounds */
+  --color-hover:            var(--surface-sunken);  /* row/cell hover surface in DataGrid + visuals */
+  --color-emphasis-foreground: var(--ink);       /* page and visual titles, KPI values */
+  --font-page-title: var(--font-heading);
+  --font-page-subtitle: var(--font-base);
+  --font-visual-title: var(--font-heading);
+  --font-visual-subtitle: var(--font-base);
+  --font-data-label: var(--font-base);
+  --text-page-title: var(--text-600);
+  --text-page-title--font-weight: var(--font-weight-semibold);
+  --text-page-subtitle: var(--text-300);
+  --text-page-subtitle--font-weight: var(--font-weight-regular);
+  --text-visual-title: var(--text-400);
+  --text-visual-title--font-weight: var(--font-weight-semibold);
+  --text-visual-subtitle: var(--text-300);
+  --text-visual-subtitle--font-weight: var(--font-weight-regular);
+  --text-data-label: 11px;
+  --text-data-label--font-weight: var(--font-weight-regular);
+  --text-kpi-value: var(--text-600);
+  --text-kpi-value--font-weight: var(--font-weight-bold);
+
+  /* Categorical data colors for charts (VegaVisual reads --color-data-1..10): the Auxis series in order,
+     chart-1 (gold, the main measure) to chart-6, then the remaining brand scale steps. */
+  --color-data-1: var(--chart-1);
+  --color-data-2: var(--chart-2);
+  --color-data-3: var(--chart-3);
+  --color-data-4: var(--chart-4);
+  --color-data-5: var(--chart-5);
+  --color-data-6: var(--chart-6);
+  --color-data-7: var(--yellow-500);
+  --color-data-8: var(--blue-500);
+  --color-data-9: var(--grey-300);
+  --color-data-10: var(--yellow-100);
+}
+
+@theme {
+  /* Color tokens — light theme
+     Usage: bg-*, text-*, border-* (e.g. bg-brand text-on-brand). */
+  --color-background: var(--bg-base);           /* page ground (the canvas gradient is on body) */
+  --color-foreground: var(--ink);               /* default text */
+
+  --color-card: var(--surface);                 /* card and elevated surfaces */
+
+  --color-on-brand: var(--on-accent);           /* text/icons on brand (gold) surfaces */
+
+  --color-muted: var(--surface-sunken);         /* wells, table headers, skeletons */
+  --color-muted-foreground: var(--ink-muted);   /* labels, subtitles, axes */
+
+  --color-accent: var(--surface-sunken);        /* subtle highlights */
+
+  --color-destructive: var(--negative-ink);     /* errors & destructive actions */
+  --color-destructive-foreground: var(--surface);
+
+  --color-success: var(--positive-ink);         /* success text */
+  --color-success-foreground: var(--surface);
+
+  --color-border: var(--line);                  /* hairlines inside cards */
+  --color-ring: var(--focus-ring);              /* focus rings */
+
+  --color-warning: var(--accent-ink);           /* stale-data and caution text */
+  --color-warning-surface: var(--glow-gold);    /* stale-data banner background */
+
+  --shadow-container-2:  var(--shadow-xs);
+  --shadow-container-4:  var(--shadow-sm);
+  --shadow-container-8:  var(--shadow-md);
+  --shadow-container-16: var(--shadow-lg);
+
+  --radius-none: 0;
+  --radius-sm: calc(2px * var(--radius-scale, 1));
+  --radius-md: calc(4px * var(--radius-scale, 1));
+  --radius-lg: calc(6px * var(--radius-scale, 1));
+  --radius-xl: calc(8px * var(--radius-scale, 1));
+  --radius-2xl: calc(12px * var(--radius-scale, 1));
+  --radius-3xl: calc(16px * var(--radius-scale, 1));
+  --radius-4xl: calc(24px * var(--radius-scale, 1));
+  --radius-5xl: calc(32px * var(--radius-scale, 1));
+  --radius-6xl: calc(40px * var(--radius-scale, 1));
+  --radius-full: calc(9999px * var(--radius-scale, 1));
+  --radius: calc(6px * var(--radius-scale, 1));
+
+  /* Spacing base unit
+     Usage: p-*, m-*, gap-* (e.g. p-4 gap-3) */
+  --spacing: 4px;
+
+  /* Font Sizes — 100-based scale 
+     Usage: text-* (e.g. text-300, text-hero-900) */
+  --text-100: 10px;
+  --text-200: 12px;
+  --text-300: 14px;
+  --text-400: 16px;
+  --text-500: 20px;
+  --text-600: 24px;
+  --text-hero-700: 28px;
+  --text-hero-800: 32px;
+  --text-hero-900: 40px;
+  --text-hero-1000: 68px;
+
+  /* Line Heights — paired with font sizes
+     Usage: leading-* (e.g. leading-300) */
+  --leading-100: 14px;
+  --leading-200: 16px;
+  --leading-300: 20px;
+  --leading-400: 22px;
+  --leading-500: 28px;
+  --leading-600: 32px;
+  --leading-hero-700: 36px;
+  --leading-hero-800: 40px;
+  --leading-hero-900: 52px;
+  --leading-hero-1000: 92px;
+
+  /* Font Weights
+     Usage: font-* (e.g. font-semibold) */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Font Families
+     Usage: font-* (e.g. font-heading, font-base) */
+  --font-heading: var(--font-display);   /* Auxis display face (Poppins): page titles, card titles */
+  --font-base: var(--font-sans);         /* Auxis data face (Segoe UI): body, labels, controls */
+  --font-monospace: Consolas, 'Courier New', monospace;
+  --font-numeric: var(--font-sans);      /* KPI values and numbers, tabular figures */
+
+  /* Icon Sizes — 100-based scale
+     Usage: icon-size-* custom utility (e.g. icon-size-200) */
+  --icon-size-100: 12px;
+  --icon-size-200: 16px;
+  --icon-size-300: 20px;
+  --icon-size-400: 24px;
+  --icon-size-500: 28px;
+  --icon-size-600: 32px;
+  --icon-size-700: 48px;
+}
+
+@utility gap-grid {
+  gap: var(--grid-gap, calc(var(--spacing) * 4));
+}
+
+@utility icon-size-* {
+  width: --value(--icon-size-*);
+  height: --value(--icon-size-*);
+}
+
+@layer base {
+  :root {
+    --radius-scale: 0.75; /* precise, ledger-like corners */
+  }
+
+  /* Dark theme: the Auxis tokens switch on [data-theme="dark"] (set with .dark by hooks/use-theme.ts), and
+     every colour above points at them, so no overrides are needed here. */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-base);
+    font-variant-numeric: tabular-nums;
+  }
+
+  select,
+  input,
+  textarea,
+  button {
+    font-family: inherit;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Auxis canvas: the page gradient (bg-base -> bg-deep, gold glow top-left, blue glow bottom-right). */
+body {
+  background: var(--ax-page-gradient);
+  background-attachment: fixed;
+}
+
+/* Narrow Auxis dropdowns for short org codes (L1–L3); the design-system .ax-select keeps a 180px minimum. */
+.ax-select.app-select-narrow {
+  min-width: 96px;
+}
+
+/* Long customer and project names: cap the Auxis dropdown so the filter row wraps instead of stretching. */
+.ax-select {
+  max-width: 320px;
+}
+
+/* Neutral delta pill inside the spotlight card: the design-system pill takes surface-sunken, which in the light
+   theme is a pale band under the spotlight's light text (low contrast). Use a mid grey from the brand scale so
+   the pill reads in both themes; up/down pills keep their own spotlight tokens. */
+.ax-spotlight .ax-pill:not(.ax-pill-up):not(.ax-pill-down) {
+  background: var(--grey-500);
+  color: var(--ink);
+}
+
+/* Liquid glass on P6 (design-system bundle.css `.ax-liquid`): the Fabric DataGrid paints its own table, header
+   and footer grounds; inside glass cards they become the glass wells instead. */
+.ax-liquid .data-grid-root,
+.ax-liquid .data-grid-root tfoot,
+.ax-liquid .data-grid-root tfoot tr,
+.ax-liquid .data-grid-root tfoot td,
+.ax-liquid .ax-card [role="navigation"][aria-label="Pagination"] {
+  background: transparent;
+}
+.ax-liquid .data-grid-root thead,
+.ax-liquid .data-grid-root thead th {
+  background: var(--glass-sunken);
+}
+
+/* P6 weekly trend, layered (Ion, 2026-11-07). Vega-Lite has no shadows, so they go on the rendered SVG: the budget line
+   and its points float in front of the translucent glass bars; the variance lollipops get a softer one. */
+.ax-trend-layered g.mark-line path {
+  filter: drop-shadow(0 6px 6px var(--glass-line-shadow));
+}
+.ax-trend-layered g.mark-symbol path,
+.ax-trend-lollipop g.mark-symbol path {
+  filter: drop-shadow(0 3px 4px var(--glass-line-shadow));
+}
+.ax-trend-lollipop g.mark-rule line {
+  filter: drop-shadow(0 2px 3px var(--glass-line-shadow));
+}
+
+/* Month rows under the trend: hours as gold glass, budget as an ink outline, variance green under budget, red over. */
+.ax-month-bar {
+  display: inline-block;
+  height: 10px;
+  max-width: 60%;
+  min-width: 2px;
+  flex: 0 1 auto;
+  border-radius: 0 3px 3px 0;
+}
+.ax-month-bar-hours {
+  background: var(--gradient-gold);
+  opacity: 0.7;
+}
+.ax-month-bar-plan {
+  border: 1.5px solid var(--ink);
+  filter: drop-shadow(0 2px 2px var(--glass-line-shadow));
+}
+.ax-month-bar-variance {
+  height: 4px;
+}
+.ax-month-bar-variance.is-below {
+  background: var(--positive);
+}
+.ax-month-bar-variance.is-above {
+  background: var(--negative);
+}
+
+/* P6 project budget card: billed share as a gold bar on a glass track, inside the spotlight card. */
+.ax-budget-track {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.ax-budget-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gradient-gold);
+  box-shadow: 0 0 12px var(--glow-gold);
+}
+/* Plan end date strip at the foot of the budget card (Ion, 2026-11-13), on the same glass as the track. */
+.ax-budget-end {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* P6 people x week matrix (PMs, 2026-11-12): hours, "of" budget and a signed difference pill per cell.
+   Green under budget, red over, with the Auxis status colours; the sign always carries the meaning too. */
+.ax-matrix th,
+.ax-matrix td {
+  vertical-align: top;
+  white-space: nowrap;
+}
+/* Every week, total and variance column is centred, header and cell alike (Ion, 2026-11-12); only names align left. */
+.ax-matrix .ax-matrix-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+.ax-matrix .ax-matrix-name {
+  vertical-align: middle;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 170px;
+  text-align: left;
+  font-weight: 600;
+  background: var(--glass-sunken, var(--surface-sunken));
+  -webkit-backdrop-filter: blur(var(--blur-liquid, 0px));
+  backdrop-filter: blur(var(--blur-liquid, 0px));
+}
+.ax-matrix thead .ax-matrix-name {
+  background: var(--surface-sunken);
+}
+/* Row headers are names, not column labels: no uppercase overline style. */
+.ax-matrix tbody th {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+  color: var(--ink);
+}
+.ax-matrix-hours {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ax-matrix-plan {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+.ax-matrix-selected {
+  box-shadow: inset 0 0 0 9999px var(--glow-gold);
+}
+.ax-matrix-sum {
+  border-left: 1px solid var(--line-strong, var(--line));
+}
+.ax-matrix-muted td,
+.ax-matrix-muted th {
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+.ax-matrix-total td,
+.ax-matrix-total th {
+  border-top: 2px solid var(--line-strong, var(--line));
+  background: var(--glass-sunken, var(--surface-sunken));
+}
+/* Cell tooltip of the people x week matrix (Ion, 2026-11-16): a Power BI style card with what the hours are made of.
+   The cell is a borderless button (hover, keyboard focus or tap); the card is fixed in a portal on <body>. */
+.ax-matrix-hit {
+  display: block;
+  width: 100%;
+  padding: 2px 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ax-matrix-hit:hover {
+  background: var(--glass-sunken, var(--surface-sunken));
+}
+.ax-matrix-hit:focus-visible {
+  outline: 2px solid var(--yellow-500, var(--chart-1));
+  outline-offset: 1px;
+}
+.ax-cell-tooltip {
+  position: fixed;
+  z-index: 50;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-glass);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;
+}
+.ax-cell-tooltip-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.ax-cell-tooltip-muted {
+  color: var(--ink-muted);
+}
+.ax-cell-tooltip-section {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.ax-cell-tooltip-heading {
+  margin-bottom: 4px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.ax-cell-tooltip-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 34px;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.ax-cell-tooltip-row.is-empty {
+  color: var(--ink-muted);
+}
+.ax-cell-tooltip-track {
+  display: block;
+  height: 10px;
+}
+.ax-cell-tooltip-track > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+.ax-cell-tooltip-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  font-size: 11px;
+}
+.ax-cell-tooltip-days > div {
+  display: flex;
+  flex-direction: column;
+  padding: 3px 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+.ax-cell-tooltip-days > div.is-empty {
+  color: var(--ink-muted);
+}
+/* A day with more than one pay category (e.g. 8 Regular + 8 Holiday): warning tint, explained in the line below. */
+.ax-cell-tooltip-days > div.is-split {
+  background: var(--color-warning-surface);
+}
+.ax-cell-tooltip-days b {
+  font-weight: 600;
+}
+.ax-var-pill {
+  display: inline-block;
+  padding: 0 7px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.ax-var-pill.is-under {
+  background: var(--positive-soft);
+  color: var(--positive-ink);
+}
+.ax-var-pill.is-over {
+  background: var(--negative-soft);
+  color: var(--negative-ink);
+}
+.ax-var-pill.is-even {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+
+/* Centred value columns in Auxis tables (P6 week table, Ion 2026-11-12); beats .ax-table th { text-align: left }. */
+.ax-table .ax-center {
+  text-align: center;
+}
+
+/* Auxis logo watermark (Ion, 2026-11-12): the official mark, large and faint in the bottom-right of the viewport,
+   behind everything. Only opacity changes; colour version on light, reversed on dark (logos README). */
+.ax-watermark {
+  position: fixed;
+  right: 2vw;
+  bottom: 1vh;
+  z-index: 0;
+  width: min(44vw, 620px);
+  pointer-events: none;
+  user-select: none;
+}
+.ax-watermark img {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0.06;
+}
+.ax-watermark .ax-watermark-dark {
+  display: none;
+}
+[data-theme="dark"] .ax-watermark .ax-watermark-light {
+  display: none;
+}
+[data-theme="dark"] .ax-watermark .ax-watermark-dark {
+  display: block;
+  opacity: 0.05;
+}
+@media print {
+  .ax-watermark {
+    display: none;
+  }
+}
+
