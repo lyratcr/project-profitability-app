@@ -1085,3 +1085,22 @@ Ion approved this on 2026-11-16 ("Sí, retómalos"). The roles exist but have **
 
 Impersonating a named user (`EffectiveUserName`) fails until that user has Read on the model. Once Ion shares the model, repeat the test as Iliak and Franklin, or use "Test as role" with "Other user" in the service.
 
+## 18. Signed-in user's name and job title (PM app header): APPLIED 2026-11-16
+
+Ion approved this on 2026-11-16 ("Sí, agrégala").
+
+- **Gold:** `gold.app_user_profile` (gold notebook step 4c, `build_gold_app_user_profile`), one row per UPN.
+  - `display_name` is the Dataverse resource name (e.g. "Iliak Herrera"), else the HR name.
+  - `job_title` is the UKG job catalog title for the employee's job code (`hr.ukg_jobs_details.title` via `vw_dim_employee_details.job_code`). `ukg_employment_details.jobtitle` and the job history only had 50 titles.
+- **Model:** `app_user_profile_app`, a hidden Direct Lake table with no relationships. Role `Project access_app` filters it with `[user_upn] = LOWER ( USERPRINCIPALNAME () )`, so a user can read only their own row.
+- **App query** (`pm-app/src/queries/shell/user-profile.dax`):
+  ```dax
+  EVALUATE SELECTCOLUMNS ( FILTER ( app_user_profile_app, app_user_profile_app[user_upn] = LOWER ( USERPRINCIPALNAME () ) ), "Display Name", app_user_profile_app[display_name], "Job Title", app_user_profile_app[job_title] )
+  ```
+
+**Validated (2026-11-16):**
+- 2,526 users, 2,525 with a job title.
+- Adan Rivera: Chief Financial Officer. Ion San Lee: Sr. Applications Analyst. Iliak Herrera: Program Manager Sr. Franklin Calderon: Project Manager.
+- With the role on an identity that has no profile, no row is visible.
+- The first table refresh failed because the gold table didn't exist yet (the SQL endpoint hadn't been refreshed). After Ion refreshed it, the table refresh completed.
+
