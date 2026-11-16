@@ -41,8 +41,8 @@ function Cell({ value, kind }: { value: MatrixCell | undefined; kind: MatrixRow[
     return (
         <span className="flex flex-col items-center gap-0.5">
             <span className="ax-matrix-hours">{hours(value.hours ?? 0)}</span>
-            {/* No plan in that week reads "no plan", not a budget of zero (Ion, 2026-11-16). */}
-            <span className="ax-matrix-plan">{value.planned === null ? "no plan" : `of ${hours(value.planned)}`}</span>
+            {/* No plan in that week reads "of 0", as the PMs asked (Ion, 2026-11-16: keep "0", not "no plan"). */}
+            <span className="ax-matrix-plan">of {hours(value.planned ?? 0)}</span>
             <Pill diff={value.diff} />
         </span>
     );
