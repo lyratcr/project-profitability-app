@@ -105,7 +105,7 @@
 - [ ] 4.4 P6 people × week table (PMs, 2026-11-12): Actuals vs Backlog per person by week, roles for unassigned plan
   - 2026-11-12: matching rules validated in a read-only notebook (log 2026-11-12). Gold change deployed and the four columns are in the model (2026-11-12). Inactive relationship to `dim_employee[employee_number]` created (2026-11-12). Budget-per-person measures created (`08` § 15, 2026-11-12). Table built in P6 (2026-11-12, "Hours vs budget by person", replaces "Who logged time"); released from `main` @ `94b265f` the same day. Then: spotlight gradient fixed for light theme and a "Last week vs budget" card under Plan end date; released from `main` @ `6b5f368` the same day. Then the "Last week and this week vs plan" values centred, as red / green pills, whole percents; released from `main` @ `af4fb71` the same day. To review with the PMs: role-planned projects show people over budget; the old table's Monday-review flags.
   - 2026-11-13: page re-laid out for the PMs (Ion): budget card and week vs plan on row 1, the matrix on row 2; "Last week vs budget" card removed (it repeated the table); matrix legend without sample numbers. Released from `main` @ `254ddca` (PR #49) the same day.
-  - 2026-11-16: cell tooltip on the matrix (pay category, task, day) and "no plan" instead of "of 0" (Ion). Branch `feat/p6-matrix-cell-tooltip`, not released.
+  - 2026-11-16: cell tooltip on the matrix (pay category, task, day) and "no plan" instead of "of 0" (Ion). Released from `main` @ `539ec61` (PR #51) the same day.
 - [ ] 4.3 Project selector (remembered; default to the PM's projects once #4 exists)
 
 ## Phase 5 — Release
