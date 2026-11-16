@@ -1,5 +1,7 @@
 # PM app access list
 
+`gold_pm_access.py` holds the gold code: the PM per project key, `dim_project[project_manager_name]` and `gold.security_project_access`. The file's header says where to paste it in the gold notebook and how to preview it read-only.
+
 `pm_app_access_list.template.csv` is the empty template of the manual access list for the PM app (PM Performance Hub). Ion fills it in and uploads it to the Lakehouse as `Files/security/pm_app_access_list.csv`. The gold notebook reads that file on every run and turns it into rows of `gold.security_project_access`. Decided by Ion on 2026-11-16 (see `docs/04_decisions_and_open_items.md`).
 
 Who sees what in the PM app (the rules add up):
