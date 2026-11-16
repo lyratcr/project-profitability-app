@@ -7,6 +7,7 @@
 | **Semantic model** | `SM_Corp_Project_Real_Profitability` |
 | **Owner** | Ion (DCOE) |
 | **Version** | 1.0, 2026-11-16 |
+| **Word version** | `docs/09_pm_app_access_sop.docx`, built from this file by `docs/tools/make_sop_docx.js` (Node, `docx` package). Change this Markdown first, then regenerate the Word file. |
 
 ## 1. Purpose and scope
 
