@@ -119,6 +119,8 @@ After the PMs and Adan validated P6 (2026-11-16), Ion asked for a PM-only app, t
 - [ ] 6.4 Gold: PM name and email on `dim_project` (#4); `gold.security_project_access` (user UPN, project key, reason pm / manager / director), flattened
 - [ ] 6.5 Model (after Ion confirms the DAX): PM columns, hidden security table, roles `All company_app` (no filter; executives and the executive app's audience first) and `Project access_app` (dynamic, on `dim_project`); export TMDL
 - [ ] 6.6 PM filter in the PM app; access: Entra group as workspace Viewer (or item access + Read/Build on the model), never Member (Admin / Member / Contributor bypass RLS)
+- [ ] 6.8 Resource Utilization tab in the PM app (app named "PM Performance Hub", tabs "Project Health" and "Resource Utilization", Ion 2026-11-16) (Ion, 2026-11-16: utilization of the team members, another urgent need in the company)
+  - 2026-11-16: empty placeholder tab ("Resource Utilization", `#/utilization`, no filters, no data) so the app shows it; content to be designed later (mockup first, definition of utilization with Ion). Branch `feat/pm-app-utilization-tab`, not released.
 - [ ] 6.7 Security tests ("Test as role" with other users: PM, manager, director, executive; a real PM in the app), open to all PMs, hide Projects in the executive app
 
 ## Phase 5 — Release

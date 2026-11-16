@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PAGE, PAGES, pageHref, parseHash } from "./routes";
 
-// PM app (Ion, 2026-11-16): one page, Project Progress, which is also the home page.
+// PM app (Ion, 2026-11-16): Project Health (Project Progress page) is the home page; Resource Utilization is a placeholder tab.
 describe("routes", () => {
-    it("has Project Progress as its only page and home page", () => {
-        expect(PAGES.map((p) => p.path)).toEqual(["/projects"]);
+    it("has Project Progress as home page and a Utilization tab", () => {
+        expect(PAGES.map((p) => p.path)).toEqual(["/projects", "/utilization"]);
         expect(DEFAULT_PAGE.id).toBe("projects");
+        expect(parseHash("#/utilization").page.id).toBe("utilization");
+    });
+
+    it("shows no filters on the Utilization placeholder", () => {
+        expect(PAGES.find((p) => p.id === "utilization")!.filters).toEqual([]);
     });
 
     it("resolves the page hash, any case or trailing slash", () => {
