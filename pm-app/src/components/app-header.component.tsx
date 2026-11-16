@@ -5,6 +5,7 @@ import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { formatDay, isHoursStale, parseModelDate } from "@/lib/freshness";
 import { PAGES, pageHref, type PageDef } from "@/lib/routes";
 import { dataFreshness, freshnessColumns } from "@/queries/shell";
+import { UserAvatar } from "./user-avatar.component";
 // Official Auxis logos (design-system/assets/logos): colour on light grounds, reversed on dark. Never recoloured.
 import logoColor from "../../../design-system/assets/logos/auxis-logo-color.png";
 import logoReversed from "../../../design-system/assets/logos/auxis-logo-reversed.png";
@@ -118,6 +119,7 @@ export function AppHeader({ current, params, today = new Date() }: AppHeaderProp
                 >
                     {isDark ? <Sun className="icon-size-200" aria-hidden="true" /> : <Moon className="icon-size-200" aria-hidden="true" />}
                 </button>
+                <UserAvatar />
             </header>
             <div className="mx-auto flex max-w-7xl justify-end px-4 pt-3 sm:px-8">{freshness}</div>
             {staleBanner}

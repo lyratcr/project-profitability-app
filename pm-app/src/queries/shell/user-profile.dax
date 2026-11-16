@@ -1,0 +1,8 @@
+// Header: the signed-in user's name and job title (gold.app_user_profile, 2026-11-16). The query runs as the viewer
+// (delegated), so USERPRINCIPALNAME() is the viewer's UPN; role Project access_app also limits the table to that row.
+EVALUATE
+SELECTCOLUMNS (
+    FILTER ( app_user_profile_app, app_user_profile_app[user_upn] = LOWER ( USERPRINCIPALNAME () ) ),
+    "Display Name", app_user_profile_app[display_name],
+    "Job Title", app_user_profile_app[job_title]
+)

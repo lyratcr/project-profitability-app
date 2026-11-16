@@ -500,3 +500,11 @@ body {
   }
 }
 
+/* Signed-in user circle in the PM app header (Ion, 2026-11-16): Auxis ax-avatar with a gold ring, like the logo accent. */
+.ax-user-avatar {
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--yellow-500, var(--chart-1));
+  flex-shrink: 0;
+}
+

@@ -6,3 +6,5 @@ role 'Project access_app'
 
 	tablePermission dim_project = [project_key] IN CALCULATETABLE ( VALUES ( security_project_access_app[project_key] ), security_project_access_app[user_upn] = LOWER ( USERPRINCIPALNAME () ) )
 
+	tablePermission app_user_profile_app = [user_upn] = LOWER ( USERPRINCIPALNAME () )
+

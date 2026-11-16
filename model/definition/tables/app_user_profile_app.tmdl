@@ -1,0 +1,30 @@
+/// ADDED 2026-11-16 (Fabric app): signed-in user's name and job title for the PM app header (gold.app_user_profile: Dataverse resource name, UKG job catalog title). One row per UPN; role Project access_app limits each user to their own row. No relationships.
+table app_user_profile_app
+	isHidden
+	lineageTag: f627ce65-f5b0-419d-b769-b87f57c71495
+
+	column user_upn
+		dataType: string
+		isHidden
+		lineageTag: 22f7bc85-0eda-4785-97c4-185f97be3487
+		sourceColumn: user_upn
+
+	column display_name
+		dataType: string
+		isHidden
+		lineageTag: b0c7c65f-0482-451c-82c5-966ea58cd74b
+		sourceColumn: display_name
+
+	column job_title
+		dataType: string
+		isHidden
+		lineageTag: 1f36100e-1458-4279-beb7-7c65429567ee
+		sourceColumn: job_title
+
+	partition app_user_profile_app = entity
+		mode: directLake
+		source
+			entityName: app_user_profile
+			schemaName: gold
+			expressionSource: 'DirectLake - LH_Corp_DataHub'
+
