@@ -19,7 +19,7 @@ from pyspark.sql.window import Window
 
 CATALOG = "LH_Corp_DataHub"
 # Manual access list (executives, directors outside the chain): CSV Ion uploads to the Lakehouse Files.
-ACCESS_LIST_PATH = "Files/security/pm_app_access_list.csv"
+ACCESS_LIST_PATH = "Files/Finance/pm_performance_hub/pm_app_access_list.csv"
 # Longest supervisor chain seen on 2026-11-16 was 5 levels above a PM; this only stops a broken chain.
 MAX_CHAIN_LEVELS = 15
 EMPTY_ACCESS = "user_upn string, project_key string, reason string"

@@ -1,0 +1,8 @@
+/// ADDED 2026-11-16 (Fabric app): PM app. Each user sees only the projects listed for their UPN in security_project_access_app (PM, supervisor chain, manual list; docs/04 #29, #30).
+role 'Project access_app'
+	modelPermission: read
+
+	tablePermission security_project_access_app = [user_upn] = LOWER ( USERPRINCIPALNAME () )
+
+	tablePermission dim_project = [project_key] IN CALCULATETABLE ( VALUES ( security_project_access_app[project_key] ), security_project_access_app[user_upn] = LOWER ( USERPRINCIPALNAME () ) )
+

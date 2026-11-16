@@ -27,3 +27,6 @@ ref table dim_hierarchy_master
 ref table dim_organization
 ref table security_project_access_app
 
+ref role 'All company_app'
+ref role 'Project access_app'
+

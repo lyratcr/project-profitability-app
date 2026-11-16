@@ -2,7 +2,7 @@
 
 The gold code lives in `pipeline/notebooks/NB_Corp_Finance_DataHub_ELT_Gold_Profitability.ipynb` (section "PROJECT MANAGER PER PROJECT AND PM APP ACCESS", run as step 4b). `gold_pm_access.py` is the same logic as a standalone file, for a read-only preview in any notebook (see its header).
 
-`pm_app_access_list.template.csv` is the empty template of the manual access list for the PM app (PM Performance Hub). Ion fills it in and uploads it to the Lakehouse as `Files/security/pm_app_access_list.csv`. The gold notebook reads that file on every run and turns it into rows of `gold.security_project_access`. Decided by Ion on 2026-11-16 (see `docs/04_decisions_and_open_items.md`).
+`pm_app_access_list.template.csv` is the empty template of the manual access list for the PM app (PM Performance Hub). Ion fills it in and uploads it to the Lakehouse as `Files/Finance/pm_performance_hub/pm_app_access_list.csv`. The gold notebook reads that file on every run and turns it into rows of `gold.security_project_access`. Decided by Ion on 2026-11-16 (see `docs/04_decisions_and_open_items.md`).
 
 Who sees what in the PM app (the rules add up):
 
