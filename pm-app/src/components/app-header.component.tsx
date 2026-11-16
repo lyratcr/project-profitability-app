@@ -10,7 +10,7 @@ import logoColor from "../../../design-system/assets/logos/auxis-logo-color.png"
 import logoReversed from "../../../design-system/assets/logos/auxis-logo-reversed.png";
 
 /** Name in the top bar of the PM app (Ion, 2026-11-16). */
-export const APP_NAME = "Project Progress";
+export const APP_NAME = "PM Performance Hub";
 
 interface AppHeaderProps {
     current: PageDef;

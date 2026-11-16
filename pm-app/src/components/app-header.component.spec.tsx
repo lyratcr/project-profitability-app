@@ -41,11 +41,11 @@ describe("AppHeader", () => {
 
     it("shows the PM app name and a tab per page, marking the current one", () => {
         renderHeader();
-        expect(screen.getByText("Project Progress")).toBeInTheDocument();
+        expect(screen.getByText("PM Performance Hub")).toBeInTheDocument();
         const tabs = screen.getAllByRole("tab");
-        expect(tabs.map((t) => t.textContent)).toEqual(["Projects", "Utilization"]);
-        expect(screen.getByRole("tab", { current: "page" })).toHaveTextContent("Projects");
-        expect(screen.getByRole("tab", { name: "Utilization" })).toHaveAttribute("href", "#/utilization");
+        expect(tabs.map((t) => t.textContent)).toEqual(["Project Health", "Resource Utilization"]);
+        expect(screen.getByRole("tab", { current: "page" })).toHaveTextContent("Project Health");
+        expect(screen.getByRole("tab", { name: "Resource Utilization" })).toHaveAttribute("href", "#/utilization");
     });
 
     it("shows a loading placeholder for the data dates", () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PAGE, PAGES, pageHref, parseHash } from "./routes";
 
-// PM app (Ion, 2026-11-16): Project Progress is the home page; Team Utilization is a placeholder tab.
+// PM app (Ion, 2026-11-16): Project Health (Project Progress page) is the home page; Resource Utilization is a placeholder tab.
 describe("routes", () => {
     it("has Project Progress as home page and a Utilization tab", () => {
         expect(PAGES.map((p) => p.path)).toEqual(["/projects", "/utilization"]);
