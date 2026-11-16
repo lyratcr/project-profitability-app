@@ -1,0 +1,4 @@
+/// ADDED 2026-11-16 (Fabric app): every row, no filter. Executives (Adan Rivera Hernandez, CFO) and the executive app's audience.
+role 'All company_app'
+	modelPermission: read
+

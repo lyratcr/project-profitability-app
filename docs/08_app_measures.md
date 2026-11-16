@@ -1058,3 +1058,30 @@ Approved by Ion on 2026-11-16 ("Sí, aplica el paso A"). Applied with the Power 
   ```
 - Prerequisite: the executive app's current viewers go into `All company_app` first.
 
+## 17. PM app security, step B: roles (#29, #30): APPLIED 2026-11-16
+
+Ion approved this on 2026-11-16 ("Sí, retómalos"). The roles exist but have **no members yet**; Ion adds them in Fabric (model → Security). Nobody outside the workspace Admins and Members uses the apps today, so creating the roles takes nobody's access away.
+
+- `All company_app` (Read): no filter. For executives: Adan Rivera Hernandez (CFO).
+- `Project access_app` (Read):
+  - on `dim_project`:
+    ```dax
+    [project_key] IN CALCULATETABLE ( VALUES ( security_project_access_app[project_key] ), security_project_access_app[user_upn] = LOWER ( USERPRINCIPALNAME () ) )
+    ```
+  - on `security_project_access_app`:
+    ```dax
+    [user_upn] = LOWER ( USERPRINCIPALNAME () )
+    ```
+  - The `dim_project` filter reaches both facts through the existing relationships.
+
+**Tested (2026-11-16, after the 16:24 gold run, which read the access list):**
+
+| Check | Result |
+|---|---|
+| Role `Project access_app` on the session's own identity (not in the access table) | 0 projects, blank hours and revenue: the filter applies |
+| Filter logic for iherrera@auxis.com | 27 projects, 43,350.80 h; sees GOT-401-05 and WTA-401-01 |
+| Filter logic for fcalderon2@auxis.com | 9 projects, 7,497.78 h; sees WTA-401-01, not GOT-401-05 |
+| Filter logic for adrivera@auxis.com (list, scope all) | 318 projects, 5,388,715.46 h (every hour) |
+
+Impersonating a named user (`EffectiveUserName`) fails until that user has Read on the model. Once Ion shares the model, repeat the test as Iliak and Franklin, or use "Test as role" with "Other user" in the service.
+
