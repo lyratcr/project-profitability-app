@@ -24,3 +24,7 @@ Thumbs.db
 **/.pbi/localSettings.json
 *.pbix
 !**/rayfin/.env.example
+
+# Python bytecode
+__pycache__/
+*.pyc
