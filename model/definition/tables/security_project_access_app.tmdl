@@ -1,0 +1,30 @@
+/// ADDED 2026-11-16 (Fabric app): who sees which project in the PM app, one row per user and project key (gold.security_project_access). reason = pm, manager (supervisor chain), list_all or list_area (manual list). Source for the Project access_app role; no relationships. See docs/04 #29, #30 and pipeline/security/README.md.
+table security_project_access_app
+	isHidden
+	lineageTag: 6e00527d-739b-4051-8075-b735d3e65f9e
+
+	column user_upn
+		dataType: string
+		isHidden
+		lineageTag: 04366f98-b283-4be6-906c-8b2f495966e1
+		sourceColumn: user_upn
+
+	column project_key
+		dataType: string
+		isHidden
+		lineageTag: 55ba4b71-a010-4244-a77b-0fc05ea45c74
+		sourceColumn: project_key
+
+	column reason
+		dataType: string
+		isHidden
+		lineageTag: 2c385fd5-2e1f-4afd-8d2d-2cda8d0fab7c
+		sourceColumn: reason
+
+	partition security_project_access_app = entity
+		mode: directLake
+		source
+			entityName: security_project_access
+			schemaName: gold
+			expressionSource: 'DirectLake - LH_Corp_DataHub'
+
