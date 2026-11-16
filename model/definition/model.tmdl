@@ -10,7 +10,7 @@ annotation PBI_QueryOrder = ["DirectLake - LH_Corp_DataHub"]
 
 annotation __PBI_TimeIntelligenceEnabled = 1
 
-annotation __LastRPTime = 134389495439759583
+annotation __LastRPTime = 134392906299925658
 
 annotation PBI_ProTooling = ["DirectLakeOnOneLakeInWeb","WebModelingEdit","MCP-PBIModeling"]
 
@@ -25,4 +25,5 @@ ref table fact_revenue_metrics
 ref table dim_project
 ref table dim_hierarchy_master
 ref table dim_organization
+ref table security_project_access_app
 

@@ -1028,3 +1028,33 @@ Query-scoped first, then against the model measures: identical.
 - Decomposition: people + unassigned + services (`not_a_person`, #27) = `Planned Hours_app`. UIP-101-01 (Oct 18–31): 908 h, all people. PAR-401-02 (October): 1,134 h, all at role level (2 roles).
 - Fixed Fee: the person's plan also lands in the week holding the 1st of the month (#26), so a weekly table shows the month's plan in one column on Fixed Fee projects.
 
+## 16. PM app security, step A: PM column and access table (#4, #29, #30): APPLIED 2026-11-16
+
+Approved by Ion on 2026-11-16 ("Sí, aplica el paso A"). Applied with the Power BI modeling MCP, then `dim_project` was refreshed through the API and the TMDL exported. The change only adds data: no measure or relationship changes, and no roles yet (step B).
+
+- **`dim_project[project_manager_name]`:** a column the gold notebook writes (`add_project_manager`). It holds the PM per project key, choosing the active Project Ops project first, then the most recently created (#30). It's blank for the 5 keys without a Project Ops project.
+- **`security_project_access_app`:** a new Direct Lake table on `gold.security_project_access`, hidden, with no relationships. Columns: `user_upn`, `project_key`, `reason` (`pm`, `manager`, `list_all`, `list_area`).
+
+**Validated on the published model (2026-11-16, after the 15:56 gold run):**
+
+| Check | Value |
+|---|---|
+| Access rows / users / keys | 1,439 / 49 / 313 (same as the gold log) |
+| `dim_project` keys with a PM | 313 of 318 |
+| iherrera@auxis.com | `pm` 18, `manager` 9 (Franklin Calderon's projects) |
+| fcalderon2@auxis.com | `pm` 9 |
+| PM of GOT-401-05 / WTA-401-01 / EVO-401-02 / PROMETHEUS | Iliak Herrera / Franklin Calderon / Marcelina Vanstrahlen / Adan Rivera Hernandez |
+| Synerion hours, all vs through `dim_project` | 5,388,715.46 = 5,388,715.46 |
+
+**Step B (roles), proposed and not applied:**
+- `All company_app`: no filter.
+- `Project access_app`, filter on `dim_project`:
+  ```dax
+  [project_key] IN CALCULATETABLE ( VALUES ( security_project_access_app[project_key] ), security_project_access_app[user_upn] = LOWER ( USERPRINCIPALNAME () ) )
+  ```
+- `Project access_app`, filter on `security_project_access_app`:
+  ```dax
+  [user_upn] = LOWER ( USERPRINCIPALNAME () )
+  ```
+- Prerequisite: the executive app's current viewers go into `All company_app` first.
+

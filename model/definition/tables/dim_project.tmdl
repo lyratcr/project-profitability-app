@@ -48,6 +48,13 @@ table dim_project
 
 		annotation SummarizationSetBy = Automatic
 
+	/// ADDED 2026-11-16 (Fabric app): project manager from Project Operations (msdyn_project), one per project key: active project first, then the most recently created (open items #4, #30). Blank for keys without a Project Ops project.
+	column project_manager_name
+		dataType: string
+		lineageTag: f0ec47ac-d200-439c-a56b-af9fa8597d75
+		summarizeBy: none
+		sourceColumn: project_manager_name
+
 	partition dim_project = entity
 		mode: directLake
 		source
