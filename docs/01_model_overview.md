@@ -63,7 +63,7 @@ Only measures written with the TREATAS pattern react to `dim_hierarchy_master`. 
 - Hours by flag: Direct 96% / Cross Charge 4%; Intercompany 93% / Local 7% (most people work for a US project from Costa Rica or Colombia).
 - Project Ops actual hours (`hours_quantity`, Actual) ≈ 25–33 k per month vs Synerion ≈ 220–270 k per month. Financial hours exist only for billable plan/actuals; Synerion has every hour, internal time included.
 - Backlog is **daily** (e.g. 9/1, 9/2, 9/7 …), so it can be summed by week.
-- **`dim_project` currently has a duplicate key (`PROMETHEUS`)**, so every query through `dim_project` fails until the gold notebook is fixed (issue #0).
+- `dim_project` had a duplicate key (`PROMETHEUS` / `Prometheus`, two Project Ops projects) until 2026-11-16; the gold notebook now keeps one row per case-insensitive key (issue #0, open item #1 in `04`).
 - 33,244 Synerion hours (0.6%) sit on `"Unmapped Project"`; 30 of 274 project keys in the time fact have no revenue rows; 2 project keys map to more than one project name.
 
 ## 6. Known issues
@@ -72,7 +72,7 @@ Tracked with owners in `04_decisions_and_open_items.md` (its numbering is the on
 
 | # | Issue | Impact | Proposed fix |
 |---|---|---|---|
-| 0 | **`dim_project[project_key]` has a duplicate (`PROMETHEUS`, two rows)** after the 2026-11-03 refresh. Most likely two keys that differ only in letter case in Spark and become equal in the model, which ignores case | **Any query that slices or filters by `dim_project` fails** ("contains a duplicate value … not allowed on the one side of a many-to-one relationship"). This breaks project visuals in the current report too | In the gold notebook `build_gold_dim_project`: normalize the key (`upper(trim(project_key))`) on both sides before the join and `dropDuplicates(["project_key"])` at the end. Use the same normalization for the fact keys |
+| 0 | **Fixed 2026-11-16.** `dim_project[project_key]` had a duplicate (`PROMETHEUS` / `Prometheus`): two Project Ops projects whose names differ only in letter case; Spark kept both keys and the model, which ignores case, saw one. `build_gold_dim_project` now dedupes case-insensitively (facts unchanged) | **Any query that slices or filters by `dim_project` fails** ("contains a duplicate value … not allowed on the one side of a many-to-one relationship"). This breaks project visuals in the current report too | In the gold notebook `build_gold_dim_project`: normalize the key (`upper(trim(project_key))`) on both sides before the join and `dropDuplicates(["project_key"])` at the end. Use the same normalization for the fact keys |
 | 1 | **Synerion data stops at 2026-10-17** although the pipeline ran 2026-11-03 | The PM Monday review can't work: last week's hours aren't there | Find why bronze `synerion.time_costing_detail` is ~2.5 weeks behind (extract schedule, approved-only filter?) and load daily, including unapproved time (`02_data_lineage.md` § 4) |
 | 2 | `[Total Revenue]` sums **Actual + Backlog** ($348 M) | `[Margin $]`, `[Margin %]` and any visual using it are wrong | `Actual Revenue_app` (scenario = Actual) |
 | 3 | `actual_cost_usd` is UKG hourly pay × hours in **local currency** (COP, CRC); only US rows are USD | Total Cost $636 B; margin unusable | Out of scope now. Later: FX conversion in silver, or Project Ops standard cost once roles/rates are updated |
