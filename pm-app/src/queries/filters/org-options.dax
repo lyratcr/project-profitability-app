@@ -1,4 +1,19 @@
-// Filter options: master hierarchy L1 > L2 > L3 combinations (41 rows on 2026-11-04).
+// Filter options: the master hierarchy L1 > L2 > L3 combinations of the projects the viewer can see (PM app, Ion,
+// 2026-11-17). Row-level security limits the hours fact to the viewer's projects, so each PM only gets the
+// organizations of their own projects (the hierarchy table itself isn't filtered by the role).
+// Project org only (hours fact project_L1..L3), Ion's choice: a project billed under another org (financial_L1..L3,
+// e.g. ATL-101-02, hours BPO / RCM, billed ITO / IAI) doesn't add that org to the list.
+DEFINE
+    VAR _projectOrgs =
+        SUMMARIZE (
+            fact_profitability_metrics,
+            fact_profitability_metrics[project_L1],
+            fact_profitability_metrics[project_L2],
+            fact_profitability_metrics[project_L3]
+        )
 EVALUATE
-SUMMARIZECOLUMNS ( dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] )
+FILTER (
+    SUMMARIZECOLUMNS ( dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ),
+    ( dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3] ) IN _projectOrgs
+)
 ORDER BY dim_hierarchy_master[L1], dim_hierarchy_master[L2], dim_hierarchy_master[L3]
