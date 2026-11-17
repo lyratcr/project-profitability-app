@@ -1546,6 +1546,77 @@ table _Measures
 		displayFolder: _app\Projects
 		lineageTag: 2f4fb9fd-6d53-4677-9b26-25e586038cc8
 
+	/// ADDED 2026-11-16 (Fabric app): whole-life plan hours (Backlog) of the project, ignoring the date filter. Blank for projects with a Fixed Fee plan, whose plan hours are not Synerion hours (#26/#27). P6 Pace to plan end.
+	measure 'Hours Budget_app' =
+			VAR _fixedFee = CALCULATE ( COUNTROWS ( fact_revenue_metrics ), REMOVEFILTERS ( dim_calendar ), fact_revenue_metrics[scenario] = "Backlog", fact_revenue_metrics[revenue_type] = "Fixed Fee" )
+			RETURN IF ( ISBLANK ( _fixedFee ), CALCULATE ( [Planned Hours_app], REMOVEFILTERS ( dim_calendar ) ) )
+		formatString: #,0
+		displayFolder: _app\Pace
+		lineageTag: 8d1377ff-7cce-4e06-8bc2-b7c2ba2902ab
+
+	/// ADDED 2026-11-16 (Fabric app): Synerion hours from the start of the project up to the last date in the date filter (the app sends the last complete weeks, so 'to date' is through last Saturday).
+	measure 'Hours To Date_app' =
+			VAR _asOf = MAX ( dim_calendar[date] )
+			RETURN CALCULATE ( [Synerion Hours_app], REMOVEFILTERS ( dim_calendar ), dim_calendar[date] <= _asOf )
+		formatString: #,0
+		displayFolder: _app\Pace
+		lineageTag: aa0afbb1-d6ad-44cb-9412-ce085be9d946
+
+	/// ADDED 2026-11-16 (Fabric app): hours budget minus hours to date; negative when the project is over its hours budget. Blank without an hours budget.
+	measure 'Hours Budget Left_app' = IF ( NOT ISBLANK ( [Hours Budget_app] ), [Hours Budget_app] - [Hours To Date_app] )
+		formatString: #,0;-#,0;0
+		displayFolder: _app\Pace
+		lineageTag: fa94c1e2-d633-4d16-b6bd-5d26d992382f
+
+	/// ADDED 2026-11-16 (Fabric app): hours to date as a share of the hours budget.
+	measure 'Hours Budget Used %_app' = DIVIDE ( [Hours To Date_app], [Hours Budget_app] )
+		formatString: 0%
+		displayFolder: _app\Pace
+		lineageTag: bdcdef14-bb48-43a2-94d7-7133ee16ae7c
+
+	/// ADDED 2026-11-16 (Fabric app): average Synerion hours per Sunday-Saturday week in the date filter (the app sends the last 4 complete weeks).
+	measure 'Weekly Pace_app' = DIVIDE ( [Synerion Hours_app], COUNTROWS ( VALUES ( dim_calendar[start_of_week_sun] ) ) )
+		formatString: #,0
+		displayFolder: _app\Pace
+		lineageTag: 1dea1fc1-458b-4c50-9c43-faf1abefeaa1
+
+	/// ADDED 2026-11-16 (Fabric app): weeks from the last date in the date filter to the plan end (Plan End Date_app); 0 when the plan has ended.
+	measure 'Weeks To Plan End_app' =
+			VAR _asOf = MAX ( dim_calendar[date] )
+			VAR _end = [Plan End Date_app]
+			RETURN IF ( NOT ISBLANK ( _end ), MAX ( 0, DATEDIFF ( _asOf, _end, DAY ) / 7 ) )
+		formatString: #,0
+		displayFolder: _app\Pace
+		lineageTag: 9baf3425-4a82-48bd-ae54-3898ba378e2b
+
+	/// ADDED 2026-11-16 (Fabric app): hours per week that use exactly the hours budget left by the plan end. Blank when the plan has ended or no budget is left.
+	measure 'Pace Needed_app' =
+			VAR _left = [Hours Budget Left_app]
+			VAR _weeks = [Weeks To Plan End_app]
+			RETURN IF ( _left > 0 && _weeks > 0, DIVIDE ( _left, _weeks ) )
+		formatString: #,0
+		displayFolder: _app\Pace
+		lineageTag: e6d9c799-b6e7-4e5f-84c2-907fe51939ab
+
+	/// ADDED 2026-11-16 (Fabric app): date the hours budget left runs out at the current weekly pace. Blank when the plan has ended, no budget is left or there is no pace.
+	measure 'Budget Runout Date_app' =
+			VAR _asOf = MAX ( dim_calendar[date] )
+			VAR _left = [Hours Budget Left_app]
+			VAR _pace = [Weekly Pace_app]
+			RETURN IF ( _left > 0 && _pace > 0 && [Weeks To Plan End_app] > 0, _asOf + INT ( _left / _pace * 7 ) )
+		formatString: yyyy-mm-dd
+		displayFolder: _app\Pace
+		lineageTag: 994951a3-4d9d-4439-a16d-76c229ef869c
+
+	/// ADDED 2026-11-16 (Fabric app): weeks between the budget runout date and the plan end; positive = the budget runs out before the plan end, negative = it lasts past it.
+	measure 'Weeks Before Plan End_app' =
+			VAR _runout = [Budget Runout Date_app]
+			VAR _end = [Plan End Date_app]
+			RETURN IF ( NOT ISBLANK ( _runout ) && NOT ISBLANK ( _end ), DATEDIFF ( _runout, _end, DAY ) / 7 )
+		formatString: #,0;-#,0;0
+		displayFolder: _app\Pace
+		lineageTag: 277d0e29-86ed-4f19-a9e4-12811855b586
+
 	column Column
 		isHidden
 		formatString: 0

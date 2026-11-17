@@ -1104,3 +1104,70 @@ Ion approved this on 2026-11-16 ("Sí, agrégala").
 - With the role on an identity that has no profile, no row is visible.
 - The first table refresh failed because the gold table didn't exist yet (the SQL endpoint hadn't been refreshed). After Ion refreshed it, the table refresh completed.
 
+
+## 19. Pace to plan end (P6 act 4, PM app): CREATED 2026-11-16
+
+Ion approved this on 2026-11-16 ("Sí, créalas"). Nine measures in `_Measures`, folder `_app\Pace`. They answer the PM's question "if we keep this pace, does the hours budget last until plan end?".
+
+**How the app calls them:** one query with the project and the last 4 complete Sunday–Saturday weeks, from the viewer's local date, as a `dim_calendar[date]` range. "To date" is the last date of that range (last Saturday). No `TODAY()`.
+
+| Measure | Format | Definition |
+|---|---|---|
+| `Hours Budget_app` | `#,0` | Whole-life plan hours (Backlog, `REMOVEFILTERS ( dim_calendar )`). **Blank if the project has any Fixed Fee Backlog row**: Fixed Fee plan hours are not Synerion hours (#26, #27; GOT-401-05 108 plan h vs 19,348 logged). Mixed T&M + Fixed Fee projects (3 on 2026-11-16) are blank too |
+| `Hours To Date_app` | `#,0` | `[Synerion Hours_app]` from the start up to `MAX ( dim_calendar[date] )` |
+| `Hours Budget Left_app` | `#,0;-#,0;0` | Budget − to date; negative when over budget |
+| `Hours Budget Used %_app` | `0%` | To date ÷ budget |
+| `Weekly Pace_app` | `#,0` | `[Synerion Hours_app]` ÷ number of `start_of_week_sun` weeks in the range |
+| `Weeks To Plan End_app` | `#,0` | Days from the range end to `[Plan End Date_app]` ÷ 7; 0 when the plan has ended |
+| `Pace Needed_app` | `#,0` | Budget left ÷ weeks to plan end; blank when the plan has ended or nothing is left |
+| `Budget Runout Date_app` | `yyyy-mm-dd` | Range end + budget left ÷ pace × 7 days; blank when the plan has ended, nothing is left or the pace is 0 |
+| `Weeks Before Plan End_app` | `#,0;-#,0;0` | Days from runout to plan end ÷ 7; positive = the budget runs out before plan end |
+
+```dax
+Hours Budget_app =
+VAR _fixedFee = CALCULATE ( COUNTROWS ( fact_revenue_metrics ), REMOVEFILTERS ( dim_calendar ),
+    fact_revenue_metrics[scenario] = "Backlog", fact_revenue_metrics[revenue_type] = "Fixed Fee" )
+RETURN IF ( ISBLANK ( _fixedFee ), CALCULATE ( [Planned Hours_app], REMOVEFILTERS ( dim_calendar ) ) )
+
+Hours To Date_app =
+VAR _asOf = MAX ( dim_calendar[date] )
+RETURN CALCULATE ( [Synerion Hours_app], REMOVEFILTERS ( dim_calendar ), dim_calendar[date] <= _asOf )
+
+Hours Budget Left_app = IF ( NOT ISBLANK ( [Hours Budget_app] ), [Hours Budget_app] - [Hours To Date_app] )
+
+Hours Budget Used %_app = DIVIDE ( [Hours To Date_app], [Hours Budget_app] )
+
+Weekly Pace_app = DIVIDE ( [Synerion Hours_app], COUNTROWS ( VALUES ( dim_calendar[start_of_week_sun] ) ) )
+
+Weeks To Plan End_app =
+VAR _asOf = MAX ( dim_calendar[date] )
+VAR _end = [Plan End Date_app]
+RETURN IF ( NOT ISBLANK ( _end ), MAX ( 0, DATEDIFF ( _asOf, _end, DAY ) / 7 ) )
+
+Pace Needed_app =
+VAR _left = [Hours Budget Left_app]
+VAR _weeks = [Weeks To Plan End_app]
+RETURN IF ( _left > 0 && _weeks > 0, DIVIDE ( _left, _weeks ) )
+
+Budget Runout Date_app =
+VAR _asOf = MAX ( dim_calendar[date] )
+VAR _left = [Hours Budget Left_app]
+VAR _pace = [Weekly Pace_app]
+RETURN IF ( _left > 0 && _pace > 0 && [Weeks To Plan End_app] > 0, _asOf + INT ( _left / _pace * 7 ) )
+
+Weeks Before Plan End_app =
+VAR _runout = [Budget Runout Date_app]
+VAR _end = [Plan End Date_app]
+RETURN IF ( NOT ISBLANK ( _runout ) && NOT ISBLANK ( _end ), DATEDIFF ( _runout, _end, DAY ) / 7 )
+```
+
+**Validated (2026-11-16, window 2026-10-18 to 2026-11-14, model measures; all 9 valid in `INFO.MEASURES()`):**
+
+| Project | Budget h | To date h | Left h | Used | Pace h/wk | Weeks to end | Needed h/wk | Runout | Weeks before end |
+|---|---|---|---|---|---|---|---|---|---|
+| ALK-401-01 (T&M) | 8,617 | 6,400 | 2,217 | 74% | 150 | 30 | 74 | 2027-02-25 | 11 |
+| WTA-401-01 (plan ended 2026-10-30) | 3,285 | 1,716 | 1,569 | 52% | 141 | 0 | blank | blank | blank |
+| UIP-101-01 (plan ended 2026-10-30) | 71,745 | 69,743 | 2,002 | 97% | 338 | 0 | blank | blank | blank |
+| GOT-401-05, EVO-401-02, PAR-401-05 (Fixed Fee) | blank | 19,348 / 13,409 / 1,313,731 | blank | blank | 173 / 176 / 13,326 | 2 / 76 / 81 | blank | blank | blank |
+
+Independent check: plain `SUM ( worked_hours )` to 2026-11-14, `SUM ( hours_quantity )` for Backlog and the 4-week sum ÷ 4 equal the measures (ALK-401-01: 6,400, 8,617, 150).
