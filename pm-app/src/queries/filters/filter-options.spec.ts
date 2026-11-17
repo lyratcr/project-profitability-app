@@ -19,6 +19,19 @@ describe("filter option query factories", () => {
         }
     });
 
+    it("list only the orgs of the viewer's projects, by project org (Ion, 2026-11-17)", () => {
+        const code = orgOptions()
+            .query.split("\n")
+            .filter((l) => !l.trim().startsWith("//"))
+            .join("\n");
+        // The hierarchy table has no row-level security: the options come from the hours fact, which the role filters.
+        expect(code).toContain("fact_profitability_metrics[project_L1]");
+        expect(code).toContain("fact_profitability_metrics[project_L3]");
+        expect(code).toMatch(/\)\s*IN\s*_projectOrgs/);
+        // Project org only: the billing org (revenue fact) doesn't add options.
+        expect(code).not.toContain("fact_revenue_metrics");
+    });
+
     it("key metadata by the raw output columns with bracket-free names", () => {
         const all = Object.assign({}, ...factories.map((f) => f.columnMetadata));
         for (const raw of Object.values(optionColumns)) {
