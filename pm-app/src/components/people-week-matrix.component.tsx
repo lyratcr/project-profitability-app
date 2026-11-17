@@ -29,6 +29,8 @@ interface PeopleWeekMatrixProps {
     onRowPick?: (key: string) => void;
     /** Last day billed in Project Ops: later weeks show Synerion hours and say so in the header (Ion, 2026-11-16). */
     billedThrough?: Date | null;
+    /** Budget matrix or the Project Ops vs Synerion reconciliation (same layout). */
+    mode?: MatrixMode;
 }
 
 const label = new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric" });
@@ -37,13 +39,17 @@ const yearLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numer
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 const hours = (v: number | null) => (v === null ? "—" : String(formatValue(v, "#,0")));
 
-function Pill({ diff }: { diff: number | null }): ReactElement | null {
+/** "budget": hours vs plan (red over, green under). "reconcile": Project Ops vs Synerion (any difference amber, Ion 2026-11-16). */
+export type MatrixMode = "budget" | "reconcile";
+
+function Pill({ diff, mode }: { diff: number | null; mode: MatrixMode }): ReactElement | null {
     const tone = diffTone(diff);
     if (tone === null || diff === null) return null;
-    return <span className={`ax-var-pill is-${tone}`}>{signedChange(Math.round(diff), "#,0")}</span>;
+    const kind = mode === "reconcile" ? (tone === "even" ? "even" : "diff") : tone;
+    return <span className={`ax-var-pill is-${kind}`}>{signedChange(Math.round(diff), "#,0")}</span>;
 }
 
-function Cell({ value, kind }: { value: MatrixCell | undefined; kind: MatrixRow["kind"] }): ReactElement {
+function Cell({ value, kind, mode }: { value: MatrixCell | undefined; kind: MatrixRow["kind"]; mode: MatrixMode }): ReactElement {
     if (!value || (value.hours === null && value.planned === null)) return <span className="text-[var(--ink-muted)]">—</span>;
     if (kind === "role" || kind === "services") {
         // Plan only: nobody logs hours against a role or a service line.
@@ -54,14 +60,15 @@ function Cell({ value, kind }: { value: MatrixCell | undefined; kind: MatrixRow[
             <span className="ax-matrix-hours">{hours(value.hours ?? 0)}</span>
             {/* No plan in that week reads "of 0", as the PMs asked (Ion, 2026-11-16: keep "0", not "no plan"). */}
             <span className="ax-matrix-plan">of {hours(value.planned ?? 0)}</span>
-            <Pill diff={value.diff} />
+            <Pill diff={value.diff} mode={mode} />
         </span>
     );
 }
 
-function VariancePill({ variance }: { variance: number | null }): ReactElement {
+function VariancePill({ variance, mode }: { variance: number | null; mode: MatrixMode }): ReactElement {
     if (variance === null) return <span className="text-[var(--ink-muted)]">—</span>;
-    const tone = Math.round(variance * 100) > 0 ? "over" : Math.round(variance * 100) < 0 ? "under" : "even";
+    const sign = Math.round(variance * 100);
+    const tone = sign === 0 ? "even" : mode === "reconcile" ? "diff" : sign > 0 ? "over" : "under";
     return <span className={`ax-var-pill is-${tone}`}>{signedChange(variance, "#,0%")}</span>;
 }
 
@@ -70,7 +77,7 @@ function VariancePill({ variance }: { variance: number | null }): ReactElement {
  * in each Sunday-Saturday week; plan not assigned to a person by role; catalog services; and the project row.
  * Green under budget, red over (Auxis status colours, with the sign).
  */
-export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, breakdownQuery, project, rowLabel = "Person", rowLimit, onRowPick, billedThrough = null }: PeopleWeekMatrixProps): ReactElement {
+export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, breakdownQuery, project, rowLabel = "Person", rowLimit, onRowPick, billedThrough = null, mode = "budget" }: PeopleWeekMatrixProps): ReactElement {
     const keys = weeks.map((w) => weekKey(w) ?? "");
     const tooltipId = useId();
     const [active, setActive] = useState<{ row: MatrixRow; week: string | null; rect: DOMRect } | null>(null);
@@ -112,8 +119,10 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
     const isActive = (row: MatrixRow, week: string | null) => active?.row.key === row.key && active.week === week;
     /** A person's cell with hours opens the tooltip on hover, keyboard focus or a tap. */
     const cellContent = (row: MatrixRow, week: string | null, value: MatrixCell | undefined) => {
-        const content = <Cell value={value} kind={row.kind} />;
-        if (row.kind !== "person" || !value || value.hours === null) return content;
+        const content = <Cell value={value} kind={row.kind} mode={mode} />;
+        // Reconciliation: a week with Synerion hours but nothing billed is worth explaining too.
+        const hasHours = value && (value.hours !== null || (mode === "reconcile" && value.planned !== null));
+        if (row.kind !== "person" || !value || !hasHours) return content;
         const open = (el: HTMLElement) => setActive({ row, week, rect: el.getBoundingClientRect() });
         const when = week ? `week of ${dayLabel.format(new Date(`${week}T00:00:00`))}` : "total";
         return (
@@ -135,8 +144,13 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
 
     const tooltip = () => {
         if (!active) return null;
-        const value = active.week ? active.row.weeks[active.week] : active.row.total;
-        if (!value) return null;
+        const cellValue = active.week ? active.row.weeks[active.week] : active.row.total;
+        if (!cellValue) return null;
+        // Reconciliation cells: hours = Project Ops, planned = Synerion; the tooltip shows both and the difference.
+        const value: MatrixCell =
+            mode === "reconcile"
+                ? { hours: cellValue.hours ?? 0, planned: null, diff: null, variance: null, synerion: cellValue.planned, billedVsSynerion: cellValue.diff, fromProjectOps: true }
+                : cellValue;
         const start = active.week ? new Date(`${active.week}T00:00:00`) : null;
         const first = weeks[0];
         const last = weeks[weeks.length - 1];
@@ -153,6 +167,7 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
                 value={value}
                 breakdown={breakdown?.get(breakdownKey(active.row.key, active.week))}
                 state={breakdownState}
+                showBudget={mode === "budget"}
             />
         );
     };
@@ -182,7 +197,7 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
             <td className="ax-matrix-cell ax-matrix-sum ax-matrix-pin-total">
                 {cellContent(row, null, row.total)}
             </td>
-            <td className="ax-matrix-cell ax-matrix-pin-var">{row.kind === "role" || row.kind === "services" ? null : <VariancePill variance={row.total.variance} />}</td>
+            <td className="ax-matrix-cell ax-matrix-pin-var">{row.kind === "role" || row.kind === "services" ? null : <VariancePill variance={row.total.variance} mode={mode} />}</td>
         </tr>
     );
 
@@ -200,7 +215,9 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
                             <th key={keys[i]} scope="col" className={cn("ax-matrix-cell", keys[i] === selected && "ax-matrix-selected")}>
                                 {i === 0 || (w.getMonth() === 0 && w.getDate() <= 7) ? yearLabel.format(w) : label.format(w)}
                                 {keys[i] === current && <span className="block font-normal normal-case tracking-normal">to date</span>}
-                                {billedThrough !== null && w > billedThrough && <span className="ax-matrix-source">Synerion</span>}
+                                {billedThrough !== null && w > billedThrough && (
+                                    <span className="ax-matrix-source">{mode === "reconcile" ? "Not in Project Ops" : "Synerion"}</span>
+                                )}
                             </th>
                         ))}
                         <th scope="col" className="ax-matrix-cell ax-matrix-sum ax-matrix-pin-total">

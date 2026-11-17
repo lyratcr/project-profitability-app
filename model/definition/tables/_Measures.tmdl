@@ -1651,6 +1651,37 @@ table _Measures
 		displayFolder: _app\Projects
 		lineageTag: 00fbabdd-ed4d-4013-b5ee-92127a548754
 
+	/// ADDED 2026-11-16 (Fabric app): T&M hours billed in Project Ops (Actual scenario), per person through the Auxis ID (inactive employee_number relationship). P6 reconciliation matrix.
+	measure 'Billed Hours by Person_app' = CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Actual", fact_revenue_metrics[revenue_type] = "T&M", USERELATIONSHIP ( fact_revenue_metrics[employee_number], dim_employee[employee_number] ) )
+		formatString: #,0
+		displayFolder: _app\Projects
+		lineageTag: 39df9c3f-cd51-4ff8-a0d5-3ceb9e492ab4
+
+	/// ADDED 2026-11-16 (Fabric app): Synerion hours only in the Sunday-Saturday weeks the Project Ops integration has posted (week Sunday on or before Last Revenue Date_app). P6 reconciliation matrix.
+	measure 'Synerion Hours Integrated_app' =
+			VAR _cutoff = [Last Revenue Date_app]
+			RETURN SUMX ( VALUES ( dim_calendar[start_of_week_sun] ), IF ( dim_calendar[start_of_week_sun] <= _cutoff, CALCULATE ( [Synerion Hours_app] ) ) )
+		formatString: #,0
+		displayFolder: _app\Projects
+		lineageTag: 15fc6571-7798-40e5-974b-7e8c7f6b8def
+
+	/// ADDED 2026-11-16 (Fabric app): Project Ops billed T&M hours minus Synerion hours in integrated weeks; a missing side counts as 0.
+	measure 'Billed vs Synerion Hours_app' =
+			VAR _billed = [Billed Hours by Person_app]
+			VAR _syn = [Synerion Hours Integrated_app]
+			RETURN IF ( NOT ISBLANK ( _billed ) || NOT ISBLANK ( _syn ), COALESCE ( _billed, 0 ) - COALESCE ( _syn, 0 ) )
+		formatString: #,0;-#,0;0
+		displayFolder: _app\Projects
+		lineageTag: 859b98e2-3e87-4053-bc3c-3eed5ec0f10f
+
+	/// ADDED 2026-11-16 (Fabric app): Billed vs Synerion Hours_app / Synerion Hours Integrated_app; +100% with billed hours but no Synerion hours.
+	measure 'Billed vs Synerion %_app' =
+			VAR _syn = [Synerion Hours Integrated_app]
+			RETURN IF ( NOT ISBLANK ( _syn ) && _syn <> 0, DIVIDE ( [Billed vs Synerion Hours_app], _syn ), IF ( [Billed Hours by Person_app] > 0, 1 ) )
+		formatString: +0%;-0%;0%
+		displayFolder: _app\Projects
+		lineageTag: 1da1ced6-2199-458a-9871-997bfa0bf5e7
+
 	column Column
 		isHidden
 		formatString: 0

@@ -1,0 +1,22 @@
+// P6 reconciliation matrix (Ion, 2026-11-16): per person and Sunday-Saturday week, the T&M hours billed in Project Ops
+// vs the Synerion hours, in the weeks the integration has posted (docs/08_app_measures.md § 21), plus each person's
+// total over the window (IsWeekTotal = 1). Same column names as the budget matrix, so the app lays it out the same
+// way: Hours = Project Ops, PlannedHours = Synerion, Diff = Project Ops - Synerion, Variance = Diff / Synerion.
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        dim_employee[employee_number],
+        dim_employee[employee_full_name],
+        ROLLUPADDISSUBTOTAL ( dim_calendar[start_of_week_sun], "IsWeekTotal" ),
+        /* @filters */
+        // Fixed Fee projects have no hours of work in Project Ops (08 § 20): left out, or every hour would read as missing.
+        KEEPFILTERS ( EXCEPT ( ALL ( fact_profitability_metrics[project_key] ), CALCULATETABLE ( VALUES ( fact_revenue_metrics[project_key] ), REMOVEFILTERS ( dim_calendar ), fact_revenue_metrics[scenario] = "Backlog", fact_revenue_metrics[revenue_type] = "Fixed Fee" ) ) ),
+        KEEPFILTERS ( EXCEPT ( ALL ( fact_revenue_metrics[project_key] ), CALCULATETABLE ( VALUES ( fact_revenue_metrics[project_key] ), REMOVEFILTERS ( dim_calendar ), fact_revenue_metrics[scenario] = "Backlog", fact_revenue_metrics[revenue_type] = "Fixed Fee" ) ) ),
+        "Hours", [Billed Hours by Person_app],
+        "PlannedHours", [Synerion Hours Integrated_app],
+        "Diff", [Billed vs Synerion Hours_app],
+        "Variance", [Billed vs Synerion %_app]
+    ),
+    NOT ISBLANK ( dim_employee[employee_number] )
+)
+ORDER BY dim_employee[employee_full_name], dim_employee[employee_number], [IsWeekTotal], dim_calendar[start_of_week_sun]

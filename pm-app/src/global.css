@@ -675,3 +675,10 @@ body {
   letter-spacing: 0.04em;
   color: var(--yellow-700, var(--warning));
 }
+
+/* Project Ops vs Synerion matrix (Ion, 2026-11-16): any difference is amber (worth checking), a match is neutral. */
+.ax-var-pill.is-diff {
+  color: var(--accent-ink, #7a5b00);
+  background: rgba(250, 180, 52, 0.22);
+  border-color: rgba(250, 180, 52, 0.45);
+}

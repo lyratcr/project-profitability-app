@@ -20,6 +20,8 @@ export interface CellTooltipProps {
     value: MatrixCell;
     breakdown: CellBreakdown | undefined;
     state: BreakdownState;
+    /** False in the reconciliation matrix, where the cell has no budget. */
+    showBudget?: boolean;
 }
 
 const WIDTH = 300;
@@ -41,7 +43,7 @@ function categoryRows(parts: BreakdownPart[]): { label: string; hours: number | 
  * model; the bar widths only draw each category's share of the cell's hours. Rendered in a portal with fixed
  * position, so the table's scroll box and the glass cards (backdrop-filter) don't clip or move it.
  */
-export function CellTooltip({ id, anchor, name, period, weekStart, value, breakdown, state }: CellTooltipProps): ReactElement {
+export function CellTooltip({ id, anchor, name, period, weekStart, value, breakdown, state, showBudget = true }: CellTooltipProps): ReactElement {
     const ref = useRef<HTMLDivElement>(null);
     const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
@@ -95,10 +97,10 @@ export function CellTooltip({ id, anchor, name, period, weekStart, value, breakd
                     </div>
                 </>
             )}
-            <div className="flex items-center justify-between gap-3">
+            {showBudget && <div className="flex items-center justify-between gap-3">
                 <span className="ax-cell-tooltip-muted">{value.planned === null ? "No budget for this person" : `Budget ${hours(value.planned)} h`}</span>
                 {tone !== null && value.diff !== null && <span className={`ax-var-pill is-${tone}`}>{signedChange(Math.round(value.diff), "#,0")}</span>}
-            </div>
+            </div>}
 
             {state === "loading" && <p className="ax-cell-tooltip-muted m-0 mt-3">Loading the breakdown…</p>}
             {state === "error" && <p className="m-0 mt-3 text-[var(--negative-ink)]">Couldn&apos;t load the breakdown. Reload the page to try again.</p>}

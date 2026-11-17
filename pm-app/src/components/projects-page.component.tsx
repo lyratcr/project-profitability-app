@@ -33,6 +33,9 @@ import {
     projectsPeopleWeeks,
     projectsProjectWeeks,
     projectsProjectsWeeks,
+    projectsReconcilePeopleWeeks,
+    projectsReconcileProjectWeeks,
+    projectsReconcileProjectsWeeks,
     projectsRoleWeeks,
     projectsRevenueByMonth,
     projectsRevenueColumns,
@@ -159,6 +162,9 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
             roleWeeks: projectsRoleWeeks({ filters: matrixArgs }),
             projectWeeks: projectsProjectWeeks({ filters: matrixArgs }),
             projectsWeeks: projectsProjectsWeeks({ filters: matrixArgs }),
+            reconcilePeople: projectsReconcilePeopleWeeks({ filters: matrixArgs }),
+            reconcileTotal: projectsReconcileProjectWeeks({ filters: matrixArgs }),
+            reconcileProjects: projectsReconcileProjectsWeeks({ filters: matrixArgs }),
             revenue: projectsRevenueByMonth({ filters: [dateRangeArg(months.start, months.end), ...project] }),
             paceAsOf: paceWindow.end,
             pace: projectsPace({ filters: [dateRangeArg(paceWindow.start, paceWindow.end), ...project] }),
@@ -179,6 +185,9 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
     const peopleWeeksResult = useSemanticModelQuery(runIf(single, model.peopleWeeks));
     const roleWeeksResult = useSemanticModelQuery(runIf(single, model.roleWeeks));
     const projectsWeeksResult = useSemanticModelQuery(runIf(!single, model.projectsWeeks));
+    const reconcilePeopleResult = useSemanticModelQuery(runIf(single, model.reconcilePeople));
+    const reconcileTotalResult = useSemanticModelQuery(run(model.reconcileTotal));
+    const reconcileProjectsResult = useSemanticModelQuery(runIf(!single, model.reconcileProjects));
     const projectWeeksResult = useSemanticModelQuery(run(model.projectWeeks));
     const revenueResult = useSemanticModelQuery(run(model.revenue));
     const paceResult = useSemanticModelQuery(runIf(single, model.pace));
@@ -346,6 +355,63 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                             </AxCard>
                         </div>
 
+                        {/* Project Ops vs Synerion (Ion, 2026-11-16, 6.10): the same matrix, comparing what was billed with what was logged,
+                            to find adjustments and integration problems. */}
+                        <AxCard
+                            title={single ? "Project Ops vs Synerion hours by person" : "Project Ops vs Synerion hours by project"}
+                            subtitle={`Weeks already in Project Ops${billedThrough ? ` (through ${dateFormat.format(billedThrough)})` : ""} · T&M projects · scroll sideways for earlier weeks`}
+                            aside={<ReconcileLegend />}
+                        >
+                            {single ? (
+                                <QueryStates
+                                    result={reconcilePeopleResult}
+                                    shape="table"
+                                    title="Project Ops vs Synerion hours by person"
+                                    emptyMessage="No T&M hours to compare: Fixed Fee projects have no hours of work in Project Ops, and this project has none billed yet."
+                                >
+                                    {(people) => (
+                                        <QueryStates result={reconcileTotalResult} shape="table" title="Project total" allowEmpty>
+                                            {(project) => (
+                                                <MatrixView
+                                                    matrix={buildPeopleMatrix(people, EMPTY_TABLE, project)}
+                                                    current={model.current.start}
+                                                    selected={model.last.start}
+                                                    breakdownFor={model.breakdownFor}
+                                                    project={filters.project ?? ""}
+                                                    rowLabel="Person"
+                                                    billedThrough={billedThrough}
+                                                    mode="reconcile"
+                                                />
+                                            )}
+                                        </QueryStates>
+                                    )}
+                                </QueryStates>
+                            ) : (
+                                <QueryStates result={reconcileProjectsResult} shape="table" title="Project Ops vs Synerion hours by project" emptyMessage="No T&M hours to compare on these projects.">
+                                    {(projects) => (
+                                        <QueryStates result={reconcileTotalResult} shape="table" title="Total" allowEmpty>
+                                            {(total) => (
+                                                <MatrixView
+                                                    matrix={buildProjectMatrix(projects, total)}
+                                                    current={model.current.start}
+                                                    selected={model.last.start}
+                                                    project={projectsLabel}
+                                                    rowLabel="Project"
+                                                    billedThrough={billedThrough}
+                                                    rowLimit={AGGREGATE_ROWS}
+                                                    onRowPick={(key) => onFiltersChange?.({ ...filters, project: key })}
+                                                    mode="reconcile"
+                                                />
+                                            )}
+                                        </QueryStates>
+                                    )}
+                                </QueryStates>
+                            )}
+                            <p className="caption m-0 mt-3 text-muted-foreground">
+                                Each cell: T&amp;M hours billed in Project Ops · of hours logged in Synerion · the difference. A difference is an adjustment made in
+                                Project Ops (for example, a holiday not billed) or an integration problem. Fixed Fee projects are left out: Project Ops has no hours of work for them.
+                            </p>
+                        </AxCard>
                     </StoryAct>
 
                     <StoryAct step={3} title="In money" question="What it means month by month">
@@ -383,6 +449,27 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
     );
 }
 
+const EMPTY_TABLE: QueryTable = { columns: [], rows: [] } as unknown as QueryTable;
+
+/** Legend for the Project Ops vs Synerion matrix: what a cell shows; any difference is amber, a match is neutral. */
+function ReconcileLegend(): ReactElement {
+    return (
+        <div className="flex shrink-0 flex-col items-start gap-1 text-200 text-muted-foreground sm:items-end">
+            <span>
+                Each cell: <strong className="font-semibold text-[var(--ink)]">Project Ops</strong> · of Synerion · difference
+            </span>
+            <ul className="m-0 flex list-none flex-wrap items-center gap-x-3 gap-y-1 p-0" aria-label="Legend">
+                <li className="flex items-center gap-1.5">
+                    <span className="ax-var-pill is-diff">±</span> differs, check it
+                </li>
+                <li className="flex items-center gap-1.5">
+                    <span className="ax-var-pill is-even">0</span> match
+                </li>
+            </ul>
+        </div>
+    );
+}
+
 /** Lays the matrix over the weeks that hold data (first week to this week). */
 function MatrixView({
     matrix,
@@ -394,6 +481,7 @@ function MatrixView({
     rowLimit,
     onRowPick,
     billedThrough,
+    mode,
 }: {
     matrix: PeopleMatrix;
     current: Date;
@@ -404,6 +492,7 @@ function MatrixView({
     rowLimit?: number;
     onRowPick?: (key: string) => void;
     billedThrough: Date | null;
+    mode?: "budget" | "reconcile";
 }): ReactElement {
     return (
         <PeopleWeekMatrix
@@ -417,6 +506,7 @@ function MatrixView({
             rowLimit={rowLimit}
             onRowPick={onRowPick}
             billedThrough={billedThrough}
+            mode={mode}
         />
     );
 }
