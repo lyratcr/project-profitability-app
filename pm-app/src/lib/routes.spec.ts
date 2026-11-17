@@ -34,8 +34,8 @@ describe("routes", () => {
         expect(pageHref(DEFAULT_PAGE, new URLSearchParams({ project: "GOT-401-05" }))).toBe("#/projects?project=GOT-401-05");
     });
 
-    it("gives Projects a week selector and the project filter, no organization", () => {
-        expect(DEFAULT_PAGE.filters).toEqual(["week", "project"]);
+    it("gives Project Health the org, customer, project manager and project filters, no week (Ion, 2026-11-16)", () => {
+        expect(DEFAULT_PAGE.filters).toEqual(["org", "customer", "pm", "project"]);
         expect(DEFAULT_PAGE.periodKinds).toEqual([]);
     });
 });

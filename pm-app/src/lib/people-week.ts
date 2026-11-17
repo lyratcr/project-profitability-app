@@ -1,5 +1,5 @@
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
-import { peopleBreakdownColumns as b, peopleWeekColumns as c } from "@/queries/projects/projects-queries";
+import { peopleBreakdownColumns as b, peopleWeekColumns as c, projectWeekColumns } from "@/queries/projects/projects-queries";
 import { cell, numberCell } from "./query-table";
 
 /**
@@ -16,7 +16,8 @@ export interface MatrixCell {
 export interface MatrixRow {
     key: string;
     label: string;
-    kind: "person" | "role" | "services" | "project";
+    /** `item`: one project of the aggregated project x week matrix (Ion, 2026-11-16). */
+    kind: "person" | "role" | "services" | "project" | "item";
     /** Keyed by the week's Sunday, yyyy-mm-dd. */
     weeks: Record<string, MatrixCell>;
     total: MatrixCell;
@@ -95,6 +96,37 @@ export function buildPeopleMatrix(people: QueryTable, roles: QueryTable, project
     const [servicesRow] = groupRows(project, () => "services", () => "Services (not people)", "services", (i) => ({ ...EMPTY, planned: numberCell(project, c.servicesPlannedHours, i) }));
     const hasServices = servicesRow && (servicesRow.total.planned ?? 0) !== 0;
     return { people: peopleRows, roles: roleRows, services: hasServices ? servicesRow : null, project: projectRow ?? null };
+}
+
+/**
+ * The aggregated project x week matrix (Ion, 2026-11-16): one row per project from projects-projects-weeks.dax and the
+ * total row from projects-project-weeks.dax, laid out like the people x week matrix.
+ */
+export function buildProjectMatrix(projects: QueryTable, total: QueryTable): PeopleMatrix {
+    const rows = groupRows(
+        projects,
+        (i) => {
+            const key = cell(projects, projectWeekColumns.projectKey, i);
+            return typeof key === "string" && key !== "" ? key : null;
+        },
+        (i) => String(cell(projects, projectWeekColumns.projectName, i) ?? cell(projects, projectWeekColumns.projectKey, i) ?? ""),
+        "item",
+        (i) => readCell(projects, i),
+    );
+    const [totalRow] = groupRows(total, () => "project", () => "Total", "project", (i) => readCell(total, i));
+    return { people: rows, roles: [], services: null, project: totalRow ?? null };
+}
+
+/**
+ * The Sundays from the first week that holds data in the matrix rows to `current` (Ion, 2026-11-16: from the first
+ * week of the project to the week in progress). Falls back to `current` alone when no row has a week.
+ */
+export function matrixWeeks(matrix: PeopleMatrix, current: Date): Date[] {
+    const keys = [...matrix.people, ...matrix.roles, ...(matrix.project ? [matrix.project] : [])].flatMap((r) => Object.keys(r.weeks)).sort();
+    const first = keys[0] ? new Date(`${keys[0]}T00:00:00`) : current;
+    const out: Date[] = [];
+    for (let d = first; d <= current; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7)) out.push(d);
+    return out.length > 0 ? out : [current];
 }
 
 /** Over budget (more hours than planned) is red, under is green, on budget neutral (Ion, 2026-11-07). */

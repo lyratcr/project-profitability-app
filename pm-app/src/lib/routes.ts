@@ -25,7 +25,7 @@ export interface PageDef {
 export type PageId = "projects" | "utilization";
 
 export const PAGES: readonly PageDef[] = [
-    { id: "projects", path: "/projects", label: "Project Health", title: "Project Progress", purpose: "Progress of my projects against plan, and the Monday timesheet review.", task: "4.1", filters: ["week", "project"], periodKinds: [] },
+    { id: "projects", path: "/projects", label: "Project Health", title: "Project Progress", purpose: "Progress of my projects against plan, and the Monday timesheet review.", task: "4.1", filters: ["org", "customer", "pm", "project"], periodKinds: [] },
     { id: "utilization", path: "/utilization", label: "Resource Utilization", title: "Resource Utilization", purpose: "How the team members' time is used.", task: "6.8", filters: [], periodKinds: [] },
 ];
 

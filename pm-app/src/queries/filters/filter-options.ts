@@ -16,6 +16,7 @@ export const optionColumns = {
     customer: "fact_profitability_metrics[project_customer]",
     projectKey: "fact_profitability_metrics[project_key]",
     projectName: "[Project Name]",
+    projectManager: "[Project Manager]",
 } as const;
 
 const meta = (raw: string, name: string, displayName: string): ColumnMetadataMap => ({ [raw]: { name, displayName } });
@@ -52,6 +53,7 @@ export function projectOptions(org: OrgSelection = {}, customer?: string) {
         columnMetadata: {
             ...meta(optionColumns.projectKey, "ProjectKey", "Project key"),
             ...meta(optionColumns.projectName, "ProjectName", "Project"),
+            ...meta(optionColumns.projectManager, "ProjectManager", "Project manager"),
         },
     } as const;
 }

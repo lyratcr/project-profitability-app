@@ -1,0 +1,25 @@
+// P6 aggregated view, act 4 "Projects by pace" (Ion, 2026-11-16): the pace measures (docs/08_app_measures.md § 19) per
+// project in scope, with its PM. The app sends the projects and the last 4 complete Sunday-Saturday weeks. Projects
+// whose budget runs out earliest before plan end come first; projects without a runout (plan ended, over budget,
+// Fixed Fee) follow.
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        dim_project[project_key],
+        dim_project[project_name],
+        dim_project[project_manager_name],
+        /* @filters */
+        "Budget", [Hours Budget_app],
+        "ToDate", [Hours To Date_app],
+        "Left", [Hours Budget Left_app],
+        "Used", [Hours Budget Used %_app],
+        "Pace", [Weekly Pace_app],
+        "WeeksToEnd", [Weeks To Plan End_app],
+        "Needed", [Pace Needed_app],
+        "Runout", [Budget Runout Date_app],
+        "WeeksBefore", [Weeks Before Plan End_app],
+        "PlanEnd", [Plan End Date_app]
+    ),
+    NOT ISBLANK ( dim_project[project_key] )
+)
+ORDER BY [WeeksBefore] DESC, [Left], dim_project[project_key]

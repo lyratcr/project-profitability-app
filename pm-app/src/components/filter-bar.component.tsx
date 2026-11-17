@@ -10,6 +10,7 @@ import {
     type FilterOptions,
     type FilterState,
     type PeriodKind,
+    projectsOf,
 } from "@/lib/filters";
 import type { PageDef } from "@/lib/routes";
 import { describeWeek, weekChoices } from "@/lib/weeks";
@@ -263,6 +264,25 @@ export function FilterBar({
                 </Field>
             )}
 
+            {shows("pm") && (
+                <Field label="Project manager" id={`${id}-pm`}>
+                    <select
+                        id={`${id}-pm`}
+                        className={controlClass}
+                        disabled={listsDisabled || projectsLoading}
+                        value={state.pm ?? ALL}
+                        onChange={(e) => set({ pm: e.target.value === ALL ? undefined : e.target.value, project: undefined })}
+                    >
+                        <option value={ALL}>All</option>
+                        {options?.pms.map((pm) => (
+                            <option key={pm} value={pm}>
+                                {pm}
+                            </option>
+                        ))}
+                    </select>
+                </Field>
+            )}
+
             {shows("project") && (
                 <Field label="Project" id={`${id}-project`}>
                     <select
@@ -272,8 +292,8 @@ export function FilterBar({
                         value={state.project ?? ALL}
                         onChange={(e) => set({ project: e.target.value === ALL ? undefined : e.target.value })}
                     >
-                        <option value={ALL}>All</option>
-                        {options?.projects.map((p) => (
+                        <option value={ALL}>{shows("pm") && options ? `All projects (${projectsOf(options, state.pm).length})` : "All"}</option>
+                        {(options ? projectsOf(options, shows("pm") ? state.pm : undefined) : []).map((p) => (
                             <option key={p.key} value={p.key}>
                                 {p.name ?? p.key}
                             </option>

@@ -12,10 +12,10 @@ describe("filter option query factories", () => {
         }
     });
 
-    it("avoid dim_project until open item #1 is fixed", () => {
+    it("read dim_project only for the project's PM (open item #1 is closed)", () => {
         for (const f of factories) {
             const code = f.query.split("\n").filter((l) => !l.trim().startsWith("//")).join("\n");
-            expect(code).not.toMatch(/dim_project/);
+            for (const use of code.match(/dim_project\[[a-z_]+\]/g) ?? []) expect(["dim_project[project_manager_name]", "dim_project[project_key]"]).toContain(use);
         }
     });
 

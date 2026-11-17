@@ -26,19 +26,42 @@ vi.mock("./trend-chart.component", () => ({ TrendChart: () => <div data-testid="
 vi.mock("./report-table.component", () => ({ ReportTable: () => <div data-testid="table" /> }));
 
 const page = PAGES.find((p) => p.id === "projects")!;
-const options: FilterOptions = { org: [], countries: [], customers: [], projects: [{ key: "UIP-101-01", name: "UIP-101-01_Managed Team RPA" }] };
+const options: FilterOptions = { org: [], countries: [], customers: [], projects: [{ key: "UIP-101-01", name: "UIP-101-01_Managed Team RPA", pm: null }], pms: [] };
 
 function state(now: Date, project?: string): FilterState {
     return { period: monthPeriod(2026, 10), week: defaultWeek(now), org: {}, project };
 }
 
 describe("ProjectsPage", () => {
-    it("asks for a project and runs no query until one is picked", () => {
+    it("runs no query until the project list has loaded", () => {
         hook.calls = [];
         const now = new Date(2026, 10, 4, 10); // Wednesday
-        render(<ProjectsPage page={page} filters={state(now)} options={options} params={new URLSearchParams()} now={now} />);
-        expect(screen.getByText(/Pick a project in the Project filter/)).toBeTruthy();
+        render(<ProjectsPage page={page} filters={state(now)} options={null} params={new URLSearchParams()} now={now} />);
         expect(hook.calls.every((q) => q === "")).toBe(true);
+    });
+
+    it("with no project picked, covers every visible project: no project filter, the project matrix and projects by pace (Ion, 2026-11-16)", () => {
+        hook.calls = [];
+        const now = new Date(2026, 10, 4, 10);
+        render(<ProjectsPage page={page} filters={state(now)} options={options} params={new URLSearchParams()} now={now} />);
+        const run = hook.calls.filter((q) => q !== "");
+        expect(run.length).toBeGreaterThan(0);
+        expect(run.some((q) => /TREATAS \( \{[^}]*\}, fact_\w+\[project_key\] \)/.test(q))).toBe(false);
+        expect(run.some((q) => q.includes("SUMMARIZECOLUMNS (\n        dim_project[project_key],\n        dim_project[project_name],\n        ROLLUPADDISSUBTOTAL"))).toBe(true);
+        expect(run.some((q) => q.includes("dim_project[project_manager_name],"))).toBe(true);
+        expect(run.some((q) => q.includes("dim_employee[employee_full_name]"))).toBe(false);
+        expect(screen.getByText("Hours vs budget by project")).toBeTruthy();
+        expect(screen.getByText("How is the project right now?")).toBeTruthy();
+    });
+
+    it("narrows to the PM's projects when a PM is picked", () => {
+        hook.calls = [];
+        const now = new Date(2026, 10, 4, 10);
+        const withPm = { ...options, projects: [{ key: "UIP-101-01", name: "UIP", pm: "Ana" }, { key: "ALK-401-01", name: "ALK", pm: "Bessy" }], pms: ["Ana", "Bessy"] };
+        render(<ProjectsPage page={page} filters={{ ...state(now), pm: "Bessy" }} options={withPm} params={new URLSearchParams()} now={now} />);
+        const run = hook.calls.filter((q) => q !== "");
+        expect(run.every((q) => !q.includes('"UIP-101-01"'))).toBe(true);
+        expect(run.some((q) => q.includes('TREATAS ( { "ALK-401-01" }, fact_profitability_metrics[project_key] )'))).toBe(true);
     });
 
     it("shows the Monday review banner on Monday and until the Tuesday integration, not later", () => {
@@ -46,7 +69,7 @@ describe("ProjectsPage", () => {
         const { unmount } = render(<ProjectsPage page={page} filters={state(monday, "UIP-101-01")} options={options} params={new URLSearchParams()} now={monday} />);
         const banner = screen.getByRole("status");
         expect(banner.textContent).toMatch(/Review last week's hours \(Sun, Oct 25 – Sat, Oct 31\)/);
-        expect(within(banner).getByRole("link").getAttribute("href")).toContain("week=w%3A2026-10-25");
+        expect(within(banner).getByRole("link").getAttribute("href")).toContain("#/projects");
         unmount();
 
         const tuesdayLate = new Date(2026, 10, 3, 9);

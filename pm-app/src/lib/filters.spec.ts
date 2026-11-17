@@ -38,9 +38,10 @@ const options: FilterOptions = {
     countries: ["Colombia", "Costa Rica", "United States"],
     customers: ["\nNY Municipal Credit", "Access Corporation  "],
     projects: [
-        { key: "PAR-401-01", name: "PAR-401-01 Project" },
-        { key: "ZZZ-101-01", name: null },
+        { key: "PAR-401-01", name: "PAR-401-01 Project", pm: null },
+        { key: "ZZZ-101-01", name: null, pm: null },
     ],
+    pms: [],
 };
 
 describe("parsePeriod", () => {

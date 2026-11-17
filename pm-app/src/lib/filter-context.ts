@@ -13,6 +13,7 @@ export function describeFilterContext(page: PageDef, filters: FilterState, optio
     }
     if (page.filters.includes("country")) parts.push(filters.country ?? "All countries");
     if (page.filters.includes("customer")) parts.push(filters.customer?.trim() ?? "All customers");
+    if (page.filters.includes("pm")) parts.push(filters.pm ? `PM ${filters.pm}` : "All project managers");
     if (page.filters.includes("project")) {
         const name = options?.projects.find((p) => p.key === filters.project)?.name;
         parts.push(filters.project ? (name ?? filters.project) : "All projects");

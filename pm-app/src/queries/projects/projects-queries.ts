@@ -6,7 +6,9 @@ import peopleBreakdownQuery from "./projects-people-breakdown.dax?raw";
 import paceQuery from "./projects-pace.dax?raw";
 import paceWeeksQuery from "./projects-pace-weeks.dax?raw";
 import peopleWeeksQuery from "./projects-people-weeks.dax?raw";
+import paceByProjectQuery from "./projects-pace-by-project.dax?raw";
 import projectWeeksQuery from "./projects-project-weeks.dax?raw";
+import projectsWeeksQuery from "./projects-projects-weeks.dax?raw";
 import revenueByMonthQuery from "./projects-revenue-by-month.dax?raw";
 import roleWeeksQuery from "./projects-role-weeks.dax?raw";
 import trendMonthsQuery from "./projects-trend-months.dax?raw";
@@ -232,4 +234,33 @@ export const projectsPaceWeeksColumns = {
 /** Hours to date at the end of each week; `filters` carry the project and the last PACE_HISTORY_WEEKS complete weeks. */
 export function projectsPaceWeeks({ filters = [] }: ProjectsParams = {}) {
     return { connection: CONNECTION, query: applyFilters(paceWeeksQuery, filters) } as const;
+}
+
+// ---------------------------------------------------------------- aggregated view (Ion, 2026-11-16)
+
+/** Weeks in the aggregated project x week matrix (several projects); one project shows every week from its first. */
+export const AGGREGATE_MATRIX_WEEKS = 52;
+/** Rows the aggregated matrix and the projects-by-pace table show before "Show all". */
+export const AGGREGATE_ROWS = 25;
+
+export const projectWeekColumns = {
+    projectKey: "dim_project[project_key]",
+    projectName: "dim_project[project_name]",
+} as const;
+
+/** One row per project in scope and week (plus each project's window total), same columns as the people x week query. */
+export function projectsProjectsWeeks({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(projectsWeeksQuery, filters) } as const;
+}
+
+export const projectsPaceByProjectColumns = {
+    projectKey: "dim_project[project_key]",
+    projectName: "dim_project[project_name]",
+    pm: "dim_project[project_manager_name]",
+    ...projectsPaceColumns,
+} as const;
+
+/** The pace measures per project in scope; `filters` carry the projects and the last PACE_WEEKS complete weeks. */
+export function projectsPaceByProject({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(paceByProjectQuery, filters) } as const;
 }

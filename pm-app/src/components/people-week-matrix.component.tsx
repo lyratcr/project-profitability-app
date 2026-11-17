@@ -1,7 +1,8 @@
-import { useEffect, useId, useState, type ReactElement } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactElement } from "react";
 import { formatValue } from "@microsoft/fabric-visuals-core";
 import { signedChange } from "@/lib/change";
-import { breakdownKey, diffTone, weekKey, type CellBreakdown, type MatrixCell, type MatrixRow, type PeopleMatrix } from "@/lib/people-week";
+import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
+import { breakdownKey, buildBreakdown, diffTone, weekKey, type MatrixCell, type MatrixRow, type PeopleMatrix } from "@/lib/people-week";
 import { CellTooltip, type BreakdownState } from "./people-week-tooltip.component";
 import { cn } from "@/lib/utils";
 
@@ -11,13 +12,21 @@ interface PeopleWeekMatrixProps {
     weeks: readonly Date[];
     /** Sunday of the current week (its column is to date). */
     currentWeek: Date;
-    /** Sunday of the week picked in the Week filter, highlighted. */
+    /** Sunday of the highlighted week (last week, the Monday review week). */
     selectedWeek: Date;
-    /** Cell tooltips (Ion, 2026-11-16): what each person's hours are made of, by person and week. */
-    breakdown: Map<string, CellBreakdown> | null;
-    breakdownState: BreakdownState;
+    /**
+     * Cell tooltips (Ion, 2026-11-16): the breakdown query for one person and one week (null = the whole window).
+     * Run only for the cell being hovered, so long windows never load every day of every person up front.
+     */
+    breakdownQuery?: (employeeNumber: string, week: Date | null) => { connection: string; query: string };
     /** The project, for the tooltip's period line. */
     project: string;
+    /** First column heading: "Person" or "Project". */
+    rowLabel?: string;
+    /** Show only this many rows until "Show all" (aggregated view). */
+    rowLimit?: number;
+    /** Aggregated view: clicking a project's name opens it. */
+    onRowPick?: (key: string) => void;
 }
 
 const label = new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric" });
@@ -59,10 +68,27 @@ function VariancePill({ variance }: { variance: number | null }): ReactElement {
  * in each Sunday-Saturday week; plan not assigned to a person by role; catalog services; and the project row.
  * Green under budget, red over (Auxis status colours, with the sign).
  */
-export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, breakdown, breakdownState, project }: PeopleWeekMatrixProps): ReactElement {
+export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, breakdownQuery, project, rowLabel = "Person", rowLimit, onRowPick }: PeopleWeekMatrixProps): ReactElement {
     const keys = weeks.map((w) => weekKey(w) ?? "");
     const tooltipId = useId();
     const [active, setActive] = useState<{ row: MatrixRow; week: string | null; rect: DOMRect } | null>(null);
+    const [showAll, setShowAll] = useState(false);
+    const scroller = useRef<HTMLDivElement | null>(null);
+    // Weeks scroll sideways from the first week to this week (Ion, 2026-11-16); open at this week.
+    const lastKey = keys[keys.length - 1];
+    useEffect(() => {
+        const el = scroller.current;
+        if (el) el.scrollLeft = el.scrollWidth;
+    }, [lastKey, keys.length]);
+
+    // Lazy tooltip breakdown: one query for the hovered person and week (cached, so a second hover is instant).
+    const breakdownConfig =
+        active && active.row.kind === "person" && breakdownQuery
+            ? breakdownQuery(active.row.key, active.week ? new Date(`${active.week}T00:00:00`) : null)
+            : null;
+    const breakdownData = useSemanticModelQuery({ connection: breakdownConfig?.connection ?? "profitmodel", query: breakdownConfig?.query ?? "" }).data;
+    const breakdown = useMemo(() => (breakdownData?.status === "success" ? buildBreakdown(breakdownData.table) : null), [breakdownData]);
+    const breakdownState: BreakdownState = breakdownData?.status === "success" ? "ready" : breakdownData?.status === "error" ? "error" : "loading";
 
     // The tooltip sits at fixed coordinates: close it when the page or the table scrolls, or on Escape.
     useEffect(() => {
@@ -114,7 +140,7 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
         const last = weeks[weeks.length - 1];
         const period = start
             ? `Week ${dayLabel.format(start)} – ${yearLabel.format(addDays(start, 6))}${active.week === current ? ", to date" : ""} · ${project}`
-            : `Last ${weeks.length} weeks · ${dayLabel.format(first)} – ${yearLabel.format(addDays(last, 6))} · ${project}`;
+            : `${weeks.length} weeks · ${dayLabel.format(first)} – ${yearLabel.format(addDays(last, 6))} · ${project}`;
         return (
             <CellTooltip
                 id={tooltipId}
@@ -130,12 +156,20 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
     };
     const current = weekKey(currentWeek);
     const selected = weekKey(selectedWeek);
-    const rows: MatrixRow[] = [...matrix.people, ...matrix.roles, ...(matrix.services ? [matrix.services] : [])];
+    const allRows: MatrixRow[] = [...matrix.people, ...matrix.roles, ...(matrix.services ? [matrix.services] : [])];
+    const limited = rowLimit !== undefined && !showAll && allRows.length > rowLimit;
+    const rows = limited ? allRows.slice(0, rowLimit) : allRows;
 
     const renderRow = (row: MatrixRow) => (
-        <tr key={row.key} className={cn(row.kind === "project" && "ax-matrix-total", row.kind !== "person" && row.kind !== "project" && "ax-matrix-muted")}>
-            <th scope="row" className="ax-matrix-name">
-                {row.label}
+        <tr key={row.key} className={cn(row.kind === "project" && "ax-matrix-total", (row.kind === "role" || row.kind === "services") && "ax-matrix-muted")}>
+            <th scope="row" className="ax-matrix-name" title={row.label}>
+                {row.kind === "item" && onRowPick ? (
+                    <button type="button" className="ax-link-button" onClick={() => onRowPick(row.key)}>
+                        {row.label}
+                    </button>
+                ) : (
+                    row.label
+                )}
                 {row.kind === "role" && <span className="ml-1 text-[var(--ink-muted)]">· role, unassigned</span>}
             </th>
             {keys.map((k) => (
@@ -143,32 +177,33 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
                     {cellContent(row, k, row.weeks[k])}
                 </td>
             ))}
-            <td className="ax-matrix-cell ax-matrix-sum">
+            <td className="ax-matrix-cell ax-matrix-sum ax-matrix-pin-total">
                 {cellContent(row, null, row.total)}
             </td>
-            <td className="ax-matrix-cell">{row.kind === "person" || row.kind === "project" ? <VariancePill variance={row.total.variance} /> : null}</td>
+            <td className="ax-matrix-cell ax-matrix-pin-var">{row.kind === "role" || row.kind === "services" ? null : <VariancePill variance={row.total.variance} />}</td>
         </tr>
     );
 
     return (
-        <div className="overflow-x-auto">
+        <div>
+        <div ref={scroller} className="ax-matrix-scroll overflow-x-auto" tabIndex={0} aria-label={`Weeks ${dayLabel.format(weeks[0])} to ${yearLabel.format(weeks[weeks.length - 1])}, scroll sideways`}>
             <table className="ax-table ax-matrix w-full min-w-[760px]">
-                <caption className="sr-only">Hours vs budget by person and week</caption>
+                <caption className="sr-only">Hours vs budget by {rowLabel.toLowerCase()} and week</caption>
                 <thead>
                     <tr>
                         <th scope="col" className="ax-matrix-name">
-                            Person
+                            {rowLabel}
                         </th>
                         {weeks.map((w, i) => (
                             <th key={keys[i]} scope="col" className={cn("ax-matrix-cell", keys[i] === selected && "ax-matrix-selected")}>
-                                {label.format(w)}
+                                {i === 0 || (w.getMonth() === 0 && w.getDate() <= 7) ? yearLabel.format(w) : label.format(w)}
                                 {keys[i] === current && <span className="block font-normal normal-case tracking-normal">to date</span>}
                             </th>
                         ))}
-                        <th scope="col" className="ax-matrix-cell ax-matrix-sum">
+                        <th scope="col" className="ax-matrix-cell ax-matrix-sum ax-matrix-pin-total">
                             Total
                         </th>
-                        <th scope="col" className="ax-matrix-cell">
+                        <th scope="col" className="ax-matrix-cell ax-matrix-pin-var">
                             Var.
                         </th>
                     </tr>
@@ -179,6 +214,12 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
                 </tbody>
             </table>
             {tooltip()}
+        </div>
+            {limited && (
+                <button type="button" className="ax-show-all mt-3" onClick={() => setShowAll(true)}>
+                    Show all {allRows.length} {rowLabel.toLowerCase()}s
+                </button>
+            )}
         </div>
     );
 }
