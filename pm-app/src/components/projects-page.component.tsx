@@ -652,15 +652,19 @@ function TrendLegend(): ReactElement {
                 Synerion hours
             </li>
             <li className="flex items-center gap-2">
-                <span aria-hidden="true" className="relative inline-block w-5 border-t-[2.5px] border-dashed border-[var(--ink)] [filter:drop-shadow(0_2px_2px_var(--glass-line-shadow))]">
-                    <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-[60%] rounded-full bg-[var(--ink)] ring-2 ring-[var(--surface)]" />
-                </span>
+                {/* Dashed: the budget is a plan (Ion, 2026-11-16). Drawn as SVG so the dashes show around the point. */}
+                <svg aria-hidden="true" width="30" height="10" viewBox="0 0 30 10" className="shrink-0 overflow-visible">
+                    <line x1="0" y1="5" x2="30" y2="5" stroke="var(--ink)" strokeWidth="2.5" strokeDasharray="4 3" />
+                    <circle cx="15" cy="5" r="3.5" fill="var(--ink)" stroke="var(--surface)" strokeWidth="2" />
+                </svg>
                 Budget hours (Backlog)
             </li>
             <li className="flex items-center gap-2">
-                <span aria-hidden="true" className="relative inline-block w-5 border-t-[2.5px] border-[var(--blue-300)]">
-                    <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-[60%] rotate-45 bg-[var(--blue-300)] ring-2 ring-[var(--surface)]" />
-                </span>
+                {/* Solid: Project Ops is what already happened. */}
+                <svg aria-hidden="true" width="30" height="10" viewBox="0 0 30 10" className="shrink-0 overflow-visible">
+                    <line x1="0" y1="5" x2="30" y2="5" stroke="var(--blue-300)" strokeWidth="2.5" />
+                    <rect x="11.5" y="1.5" width="7" height="7" transform="rotate(45 15 5)" fill="var(--blue-300)" stroke="var(--surface)" strokeWidth="1.5" />
+                </svg>
                 Billed in Project Ops
             </li>
             <li className="flex items-center gap-2">
