@@ -127,7 +127,7 @@ body.push(table(["Item", "Value"], [
     ["Semantic model", "`SM_Corp_Project_Real_Profitability`"],
     ["Lakehouse", "`LH_Corp_DataHub`"],
     ["Owner", "Ion (DCOE)"],
-    ["Version", "1.0, 2026-11-16"],
+    ["Version", "1.1, 2026-11-17"],
 ], [2600, CONTENT_W - 2600]));
 body.push(gap());
 body.push(new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-1" }));
@@ -156,6 +156,9 @@ body.push(...steps([
     "Permission to open and run the app item `pm-project-progress`.",
 ]));
 body.push(callout("Never give app users the **Admin**, **Member** or **Contributor** role on the workspace. Those roles bypass row-level security, so the person would see every project. App users get only the permissions in this SOP."));
+body.push(H2("C. How the model reads the data (one-time setup, done 2026-11-17)"));
+body.push(P("The model is Direct Lake on OneLake. Its OneLake data source is bound to the cloud connection **OneLake LH_Corp_DataHub - SM_Corp_Project_Real_Profitability (fixed identity)**: OAuth 2.0 as `powerbi@auxis.com`, with **Use Entra ID SSO for DirectQuery and Direct Lake** turned off. So app users need no access to Lakehouse `LH_Corp_DataHub`, and the model's row-level security still applies to each viewer."));
+body.push(P("To check it: on **SM_Corp_Project_Real_Profitability**, select **⋯**, **Settings**, then **Gateway and cloud connections**. The OneLake source must say **Maps to: OneLake LH_Corp_DataHub - SM_Corp_Project_Real_Profitability (fixed identity)**. Never switch it back to **Default: Single Sign-On**. With SSO the model reads the Lakehouse as the viewer, and anyone without a workspace role gets no data (section 9)."));
 
 // 3
 body.push(H1("3. One-time setup with a security group (recommended)"));
@@ -245,6 +248,7 @@ body.push(bullet("**Gold log:** each run prints `PM app access: <rows> rows, <us
 body.push(H1("9. Troubleshooting"));
 body.push(table(["Symptom", "Likely cause", "Fix"], [
     ["The app shows Sign in or an access error", "No permission to run the app, or no Read / Build on the model", "Sections 4.2 and 4.3"],
+    ["The app opens but shows no data: Data dates unavailable (query) at the top and Filter values unavailable in the filters", "The model reads the Lakehouse as the viewer (Single Sign-On), and the viewer has no access to it. Only workspace members see data", "Section 2C: map the OneLake source to the fixed-identity connection. If it already is, edit the connection's OAuth credentials as powerbi@auxis.com in Manage connections and gateways"],
     ["The app opens but the Project list is empty", "Not in a role; or not a PM, supervisor or list member", "Section 4.1; check Project Operations and UKG; or add to the manual list"],
     ["A PM is missing one project", "Another person is the PM of that project in Project Operations; or the project key holds several Project Ops projects and the active one wins", "The PMO fixes the PM in Project Operations"],
     ["A PM sees nothing although they are the PM", "Their account has no UPN in HR; the gold log counts these (project keys whose PM has no UPN)", "HR / IT fixes the account; their supervisors still see the projects"],
@@ -257,6 +261,7 @@ body.push(callout("The app needs Build on the model to run its queries. Build al
 body.push(H1("10. References"));
 body.push(bullet("Rules and decisions: `docs/04_decisions_and_open_items.md` (open items #29, #30) and `pipeline/security/README.md` in the app repository."));
 body.push(bullet("Roles and tests: `docs/08_app_measures.md`, sections 16 and 17."));
+body.push(bullet("Model connection (fixed identity) and its owner: `docs/04_decisions_and_open_items.md`, log 2026-11-17 and open item #32."));
 body.push(bullet("Gold code: `pipeline/notebooks/NB_Corp_Finance_DataHub_ELT_Gold_Profitability.ipynb` (step 4b)."));
 body.push(bullet("Source of this document: `docs/09_pm_app_access_sop.md` (Markdown version kept in the repository)."));
 

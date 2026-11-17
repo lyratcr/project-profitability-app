@@ -6,7 +6,7 @@
 | **App URL** | https://magic-maple-28bbbd8e63-eastus2.webapp.fabricapps.net |
 | **Semantic model** | `SM_Corp_Project_Real_Profitability` |
 | **Owner** | Ion (DCOE) |
-| **Version** | 1.0, 2026-11-16 |
+| **Version** | 1.1, 2026-11-17 |
 | **Word version** | `docs/09_pm_app_access_sop.docx`, built from this file by `docs/tools/make_sop_docx.js` (Node, `docx` package). Change this Markdown first, then regenerate the Word file. |
 
 ## 1. Purpose and scope
@@ -34,6 +34,10 @@ When a project changes PM in Project Operations, or a person changes supervisor 
 3. Permission to run the app item `pm-project-progress`.
 
 > **Important:** never give app users the **Admin**, **Member** or **Contributor** role on the workspace. Those roles bypass row-level security, so the person would see every project. App users get only the permissions in this SOP.
+
+**C. How the model reads the data (one-time setup, done 2026-11-17).** The model is Direct Lake on OneLake. Its OneLake data source is bound to the cloud connection **`OneLake LH_Corp_DataHub - SM_Corp_Project_Real_Profitability (fixed identity)`**: OAuth 2.0 as `powerbi@auxis.com`, with **Use Entra ID SSO for DirectQuery and Direct Lake** turned off. So app users need no access to Lakehouse `LH_Corp_DataHub`, and the model's row-level security still applies to each viewer (`USERPRINCIPALNAME()` is still the person using the app).
+
+To check it: on **SM_Corp_Project_Real_Profitability**, select **⋯**, **Settings**, then **Gateway and cloud connections**. The OneLake source must say **Maps to: OneLake LH_Corp_DataHub - SM_Corp_Project_Real_Profitability (fixed identity)**. Never switch it back to **Default: Single Sign-On**. With SSO the model reads the Lakehouse as the viewer, and anyone without a workspace role gets no data (section 9).
 
 ## 3. One-time setup with a security group (recommended)
 
@@ -127,6 +131,7 @@ Supervisors don't need their own step for data: they get their PMs' projects aut
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | The app shows "Sign in" or an access error | No permission to run the app or no Read/Build on the model | Section 4.2 and 4.3 |
+| The app opens but shows no data: "Data dates unavailable (query)" at the top and "Filter values unavailable" in the filters. The red text's tooltip says a measure or column "cannot be determined" | The model reads the Lakehouse as the viewer (Single Sign-On), and the viewer has no access to it. Only workspace members see data | Section 2C: map the OneLake source to the fixed-identity connection. If it already is, its OAuth credentials may have expired: in **Manage connections and gateways**, edit the connection's credentials as `powerbi@auxis.com` |
 | The app opens but the Project list is empty | Not in a role, or not a PM / supervisor / list member | Section 4.1; check Project Operations and UKG; or add to the manual list |
 | A PM is missing one project | That project's PM in Project Operations is someone else; or the project key holds several Project Ops projects (#30 rule picks the active one) | PMO fixes the PM in Project Operations |
 | A PM sees nothing although they're the PM | Their account has no UPN in HR (`hr.vw_dim_employee_details`); the gold log counts these ("project keys whose PM has no UPN") | HR / IT fixes the account; their supervisors still see the projects |
@@ -138,4 +143,5 @@ Supervisors don't need their own step for data: they get their PMs' projects aut
 
 - Rules and decisions: `docs/04_decisions_and_open_items.md` (open items #29, #30) and `pipeline/security/README.md`.
 - Roles and tests: `docs/08_app_measures.md` §§ 16–17.
+- Model connection (fixed identity) and its owner: `docs/04_decisions_and_open_items.md`, log 2026-11-17 and open item #32.
 - Gold code: `pipeline/notebooks/NB_Corp_Finance_DataHub_ELT_Gold_Profitability.ipynb` (step 4b).
