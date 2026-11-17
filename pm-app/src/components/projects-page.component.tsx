@@ -67,7 +67,7 @@ interface ProjectsPageProps {
 }
 
 const PEOPLE_TABLE_ID = "who-logged-time";
-const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink", "ink-muted", "surface", "positive", "negative"] as const;
+const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink", "ink-muted", "surface", "positive", "negative", "blue-300"] as const;
 // The weekly trend's spec carries a tooltip with both series (VegaVisual's line crosshair would show only the plan),
 // and its one plan label is wider than a week's column (VegaVisual would cut it to "Pla…").
 const TREND_CAPABILITIES = { disableLineChartCrosshairTooltip: true, disableTextTruncation: true } as const;
@@ -110,7 +110,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
     // Ink and surface switch with the theme; the hook reads them again when it changes.
     const tokens = useDesignTokens(GLASS_TOKENS);
     const glass = useMemo(() => (tokens
-            ? { light: tokens[0], base: tokens[1], deep: tokens[2], plan: tokens[3], muted: tokens[4], ring: tokens[5], below: tokens[6], above: tokens[7] }
+            ? { light: tokens[0], base: tokens[1], deep: tokens[2], plan: tokens[3], muted: tokens[4], ring: tokens[5], below: tokens[6], above: tokens[7], billed: tokens[8] }
             : undefined), [tokens]);
 
     const model = useMemo(() => {
@@ -288,7 +288,9 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                 {(table) => <TrendTotals table={table} />}
                             </QueryStates>
                             <p className="caption m-0 mt-3 text-muted-foreground">
-                                Budget = plan hours (Backlog scenario). On Fixed Fee projects the weekly budget is tiny, so the variance is very large (open item #26).
+                                Three scenarios (Ion, 2026-11-16): Synerion hours logged (bars), budget = plan hours (Backlog) and T&amp;M hours billed in Project Ops
+                                (blue, solid: it already happened; only weeks the integration has posted; none for Fixed Fee projects). The budget line is dashed: it's a plan. The variance compares Synerion with the budget. On
+                                Fixed Fee projects the weekly budget is tiny, so the variance is very large (open item #26).
                             </p>
                         </AxCard>
 
@@ -603,10 +605,16 @@ function TrendLegend(): ReactElement {
                 Synerion hours
             </li>
             <li className="flex items-center gap-2">
-                <span aria-hidden="true" className="relative inline-block w-5 border-t-[2.5px] border-[var(--ink)] [filter:drop-shadow(0_2px_2px_var(--glass-line-shadow))]">
+                <span aria-hidden="true" className="relative inline-block w-5 border-t-[2.5px] border-dashed border-[var(--ink)] [filter:drop-shadow(0_2px_2px_var(--glass-line-shadow))]">
                     <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-[60%] rounded-full bg-[var(--ink)] ring-2 ring-[var(--surface)]" />
                 </span>
-                Budget hours
+                Budget hours (Backlog)
+            </li>
+            <li className="flex items-center gap-2">
+                <span aria-hidden="true" className="relative inline-block w-5 border-t-[2.5px] border-[var(--blue-300)]">
+                    <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-[60%] rotate-45 bg-[var(--blue-300)] ring-2 ring-[var(--surface)]" />
+                </span>
+                Billed in Project Ops
             </li>
             <li className="flex items-center gap-2">
                 <span aria-hidden="true" className="inline-block size-2 rounded-full bg-[var(--positive)]" />
