@@ -41,6 +41,39 @@ function monthStarts(from: Date, to: Date): Date[] {
     return out;
 }
 
+/**
+ * Smooth SVG path through points (monotone cubic, Fritsch–Carlson): the curve passes through every point and never
+ * overshoots, so a cumulative line never dips. Display geometry only.
+ */
+function smoothPath(pts: ReadonlyArray<{ px: number; py: number }>): string {
+    if (pts.length === 0) return "";
+    if (pts.length === 1) return `M${pts[0].px},${pts[0].py}`;
+    const n = pts.length;
+    const dx = pts.slice(1).map((p, i) => p.px - pts[i].px);
+    const slope = pts.slice(1).map((p, i) => (p.py - pts[i].py) / (dx[i] || 1));
+    const t = pts.map((_, i) => (i === 0 ? slope[0] : i === n - 1 ? slope[n - 2] : slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2));
+    for (let i = 0; i < n - 1; i++) {
+        if (slope[i] === 0) {
+            t[i] = 0;
+            t[i + 1] = 0;
+            continue;
+        }
+        const a = t[i] / slope[i];
+        const b = t[i + 1] / slope[i];
+        const h = Math.hypot(a, b);
+        if (h > 3) {
+            t[i] = (3 / h) * a * slope[i];
+            t[i + 1] = (3 / h) * b * slope[i];
+        }
+    }
+    let d = `M${pts[0].px.toFixed(1)},${pts[0].py.toFixed(1)}`;
+    for (let i = 0; i < n - 1; i++) {
+        const h = dx[i] / 3;
+        d += ` C${(pts[i].px + h).toFixed(1)},${(pts[i].py + t[i] * h).toFixed(1)} ${(pts[i + 1].px - h).toFixed(1)},${(pts[i + 1].py - t[i + 1] * h).toFixed(1)} ${pts[i + 1].px.toFixed(1)},${pts[i + 1].py.toFixed(1)}`;
+    }
+    return d;
+}
+
 interface BurnUpProps {
     values: PaceValues;
     story: PaceStory;
@@ -51,7 +84,8 @@ interface BurnUpProps {
 
 /**
  * Pace to plan end burn-up, in the app's chart style (Ion, 2026-11-16: "que se vea tal cual el resto del app"):
- * - gold glass area and line: hours to date at the end of each of the last PACE_HISTORY_WEEKS weeks (model);
+ * - a smooth gold line with a glow and a short fade below it (Ion, 2026-11-16): hours to date at the end of each of
+ *   the last PACE_HISTORY_WEEKS weeks (model);
  * - the hours budget as the ink line with the glass shadow, like the budget line of the weekly chart;
  * - gridlines, an hours axis and month ticks;
  * - two straight lines from "to date": to the budget at the runout date (current pace) and at the plan end (pace
@@ -84,8 +118,9 @@ export function PaceBurnUp({ values, story, weeksTable, asOf }: BurnUpProps): Re
     const maxY = ticks.at(-1) ?? 1;
     const x = (d: Date | number) => m.l + ((+d - first.getTime()) / Math.max(DAY, lastX - first.getTime())) * plotW;
     const y = (v: number) => m.t + (1 - v / maxY) * (height - m.t - m.b);
-    const line = points.map((p) => `${x(p.x).toFixed(1)},${y(p.y).toFixed(1)}`);
-    const area = points.length > 0 ? `M${x(points[0].x).toFixed(1)},${y(0)} L${line.join(" L")} L${x(points[points.length - 1].x).toFixed(1)},${y(0)} Z` : "";
+    const curve = smoothPath(points.map((p) => ({ px: x(p.x), py: y(p.y) })));
+    // Region under the curve: the colour below the line is clipped to it, so it never spills above the line.
+    const under = points.length > 0 ? `${curve} L${x(points[points.length - 1].x).toFixed(1)},${y(0)} L${x(points[0].x).toFixed(1)},${y(0)} Z` : "";
     const months = monthStarts(first, new Date(lastX));
     const everyMonth = plotW / Math.max(1, months.length) > 46;
     const shownMonths = months.filter((_, i) => everyMonth || i % 2 === 0);
@@ -107,10 +142,21 @@ export function PaceBurnUp({ values, story, weeksTable, asOf }: BurnUpProps): Re
         <div ref={ref} className="relative w-full">
             <svg width={width} height={height} role="img" aria-label="Burn-up: hours to date, the hours budget and the pace to plan end" className="block overflow-visible">
                 <defs>
-                    <linearGradient id={`${ids}-area`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--yellow-300)" stopOpacity={0.5} />
-                        <stop offset="100%" stopColor="var(--yellow-500)" stopOpacity={0.03} />
-                    </linearGradient>
+                    {/* Colour that drips a little below the line and fades (Ion, 2026-11-16): the line blurred downward only. */}
+                    <filter id={`${ids}-drip`} x="-5%" y="-10%" width="110%" height="300%">
+                        <feGaussianBlur stdDeviation="0 16" />
+                        <feOffset dy="18" />
+                    </filter>
+                    <filter id={`${ids}-glow`} x="-5%" y="-50%" width="110%" height="200%">
+                        <feGaussianBlur stdDeviation="3.5" result="blur" />
+                        <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+                    <clipPath id={`${ids}-under`}>
+                        <path d={under} />
+                    </clipPath>
                     <linearGradient id={`${ids}-line`} x1="0" y1="0" x2="1" y2="0">
                         <stop offset="0%" stopColor="var(--yellow-500)" />
                         <stop offset="100%" stopColor="var(--yellow-300)" />
@@ -142,22 +188,16 @@ export function PaceBurnUp({ values, story, weeksTable, asOf }: BurnUpProps): Re
                 {showFuture && <rect x={x(asOf)} y={m.t} width={Math.max(0, width - m.r - x(asOf))} height={y(0) - m.t} fill="var(--glass-sunken)" opacity={0.7} />}
 
                 <g clipPath={`url(#${ids}-clip)`}>
-                    <path d={area} fill={`url(#${ids}-area)`} />
+                    <g clipPath={`url(#${ids}-under)`}>
+                        <path d={curve} fill="none" stroke="var(--yellow-300)" strokeWidth={14} strokeOpacity={0.55} filter={`url(#${ids}-drip)`} />
+                    </g>
                     {showFuture && values.planEnd && values.needed !== null && (
                         <line x1={x(asOf)} y1={y(toDate)} x2={x(values.planEnd)} y2={y(budget)} stroke="var(--positive)" strokeWidth={3} strokeDasharray="0.5 7" strokeLinecap="round" />
                     )}
                     {showFuture && values.runout && (
                         <line x1={x(asOf)} y1={y(toDate)} x2={x(values.runout)} y2={y(budget)} stroke="var(--negative)" strokeWidth={2.5} strokeDasharray="8 5" strokeLinecap="round" />
                     )}
-                    <polyline
-                        points={line.join(" ")}
-                        fill="none"
-                        stroke={`url(#${ids}-line)`}
-                        strokeWidth={3.5}
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        className="[filter:drop-shadow(0_3px_4px_var(--glass-line-shadow))]"
-                    />
+                    <path d={curve} fill="none" stroke={`url(#${ids}-line)`} strokeWidth={3.5} strokeLinejoin="round" strokeLinecap="round" filter={`url(#${ids}-glow)`} />
                     {hovered && <circle cx={x(hovered.x)} cy={y(hovered.y)} r={5.5} fill="var(--yellow-300)" stroke="var(--surface)" strokeWidth={2.5} />}
                     <circle cx={x(asOf)} cy={y(toDate)} r={5} fill="var(--yellow-300)" stroke="var(--surface)" strokeWidth={2} />
                 </g>
@@ -207,7 +247,7 @@ export function PaceBurnUp({ values, story, weeksTable, asOf }: BurnUpProps): Re
             )}
             <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-200 text-muted-foreground" aria-label="Legend">
                 <li className="flex items-center gap-2">
-                    <span aria-hidden="true" className="inline-block h-3 w-4 rounded-sm bg-[image:var(--gradient-gold)] opacity-80" />
+                    <span aria-hidden="true" className="inline-block h-[3px] w-5 rounded-full bg-[var(--yellow-300)] shadow-[0_0_6px_var(--yellow-300)]" />
                     Hours to date
                 </li>
                 <li className="flex items-center gap-2">
