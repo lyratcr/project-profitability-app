@@ -1,10 +1,14 @@
 // P6 people x week, plan not assigned to a person (planned at role level or without resource), by role and
-// Sunday-Saturday week, plus each role's total over the window (IsWeekTotal = 1). Plan only: roles log no hours.
+// Sunday-Saturday week, plus each role's total over the window (IsWeekTotal = 1).
+// Read like the executives' Backlog vs Actuals report (Ion, 2026-11-17): nobody logs hours against a role, so a role's
+// hours are 0 and its difference is minus its plan (the report's ∆ Qty), -100% of it. No Hours column: 0 is shown.
 EVALUATE
 SUMMARIZECOLUMNS (
     fact_revenue_metrics[resource_role],
     ROLLUPADDISSUBTOTAL ( dim_calendar[start_of_week_sun], "IsWeekTotal" ),
     /* @filters */
-    "PlannedHours", [Planned Hours Unassigned_app]
+    "PlannedHours", [Planned Hours Unassigned_app],
+    "Diff", - [Planned Hours Unassigned_app],
+    "Variance", DIVIDE ( - [Planned Hours Unassigned_app], [Planned Hours Unassigned_app] )
 )
 ORDER BY fact_revenue_metrics[resource_role], [IsWeekTotal], dim_calendar[start_of_week_sun]

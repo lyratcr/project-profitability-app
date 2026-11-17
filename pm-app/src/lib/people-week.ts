@@ -101,7 +101,8 @@ export function buildPeopleMatrix(people: QueryTable, roles: QueryTable, project
             return typeof role === "string" && role.trim() !== "" ? role.trim() : "No role";
         },
         "role",
-        (i) => ({ ...EMPTY, planned: numberCell(roles, c.plannedHours, i) }),
+        // Plan, difference and variance from the model; no hours (Ion, 2026-11-17: read like the executives' report).
+        (i) => ({ ...EMPTY, planned: numberCell(roles, c.plannedHours, i), diff: numberCell(roles, c.diff, i), variance: numberCell(roles, c.variance, i) }),
     );
     const [projectRow] = groupRows(project, () => "project", () => "Project", "project", (i) => readCell(project, i));
     const [servicesRow] = groupRows(project, () => "services", () => "Services (not people)", "services", (i) => ({ ...EMPTY, planned: numberCell(project, c.servicesPlannedHours, i) }));

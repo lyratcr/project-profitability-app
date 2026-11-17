@@ -88,6 +88,8 @@
 
 **Matrix hours** (Ion, 2026-11-16): weeks already integrated into Project Operations show the T&M hours billed there (`Matrix Hours_app`, `08` § 20); later weeks, the current one always, show Synerion, marked "Synerion" in the header. Fixed Fee projects always show Synerion. The tooltip of an integrated week shows the billed hours, the Synerion hours and the adjustment, then the Synerion detail.
 
+**Role rows** (Ion, 2026-11-17): plan that Project Operations assigns to a role instead of a person ("IT Manager · role, unassigned") reads like a person with no hours, as in the executives' Backlog vs Actuals report from `fact_financials_unified`: "0 of 21", a −21 pill and −100% (`projects-role-weeks.dax`: Diff = minus `Planned Hours Unassigned_app`, Variance = −100%). A role week whose plan nets to 0 reads "—". Catalog services keep "plan N" (#27).
+
 **Project Ops vs Synerion matrix** (Ion, 2026-11-16, 6.10): in act 2, under the budget matrix, the same layout comparing T&M hours billed in Project Ops with Synerion hours in integrated weeks (`08` § 21). Amber pill = a difference to check, neutral = match; weeks not integrated read "Not in Project Ops"; Fixed Fee projects are left out.
 
 **Monday review banner** (Mondays, and any day until the integration runs):

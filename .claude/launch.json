@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "app", "run", "dev"],
       "port": 5173
+    },
+    {
+      "name": "pm-app-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "pm-app", "run", "dev"],
+      "port": 5174
     }
   ]
 }

@@ -24,10 +24,17 @@ const people = {
 } as unknown as QueryTable;
 
 const roles = {
-    columns: [{ name: "fact_revenue_metrics[resource_role]" }, { name: "dim_calendar[start_of_week_sun]" }, { name: "[IsWeekTotal]" }, { name: "[PlannedHours]" }],
+    columns: [
+        { name: "fact_revenue_metrics[resource_role]" },
+        { name: "dim_calendar[start_of_week_sun]" },
+        { name: "[IsWeekTotal]" },
+        { name: "[PlannedHours]" },
+        { name: "[Diff]" },
+        { name: "[Variance]" },
+    ],
     rows: [
-        ["Senior Developer", "2026-10-11T00:00:00.000", false, 110.34],
-        ["Senior Developer", null, true, 860.65],
+        ["Senior Developer", "2026-10-11T00:00:00.000", false, 110.34, -110.34, -1],
+        ["Senior Developer", null, true, 860.65, -860.65, -1],
     ],
 } as unknown as QueryTable;
 
@@ -58,11 +65,11 @@ describe("buildPeopleMatrix", () => {
         expect(a.total).toEqual({ hours: 232, planned: 214.08, diff: 17.92, variance: 0.0837 });
     });
 
-    it("keeps roles as plan-only rows and the project row with its totals", () => {
+    it("reads roles like a person with no hours, and the project row with its totals", () => {
         const m = buildPeopleMatrix(people, roles, project);
         expect(m.roles[0]).toMatchObject({ label: "Senior Developer", kind: "role" });
-        expect(m.roles[0].weeks["2026-10-11"]).toEqual({ hours: null, planned: 110.34, diff: null, variance: null });
-        expect(m.roles[0].total.planned).toBe(860.65);
+        expect(m.roles[0].weeks["2026-10-11"]).toEqual({ hours: null, planned: 110.34, diff: -110.34, variance: -1 });
+        expect(m.roles[0].total).toEqual({ hours: null, planned: 860.65, diff: -860.65, variance: -1 });
         expect(m.project?.total).toEqual({ hours: 2606, planned: 2861.64, diff: -255.64, variance: -0.0893 });
         // No catalog-service plan on this project: no services row.
         expect(m.services).toBeNull();
