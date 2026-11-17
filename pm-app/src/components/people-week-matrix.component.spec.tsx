@@ -47,6 +47,44 @@ describe("PeopleWeekMatrix", () => {
         expect(screen.getByText("Not in Project Ops")).toBeTruthy();
     });
 
+    it("reads a role like a person with no hours, as the executives' report does (Ion, 2026-11-17)", () => {
+        // MOS-401-09, November 2026 (published model = executives' report): IT Manager planned 21 h, nobody assigned.
+        const withRole: PeopleMatrix = {
+            ...matrix,
+            roles: [
+                {
+                    key: "role:IT Manager",
+                    label: "IT Manager",
+                    kind: "role",
+                    weeks: {
+                        "2026-10-04": { hours: null, planned: 15, diff: -15, variance: -1 },
+                        "2026-10-11": { hours: null, planned: 0, diff: 0, variance: null },
+                    },
+                    total: { hours: null, planned: 21, diff: -21, variance: -1 },
+                },
+            ],
+        };
+        render(
+            <PeopleWeekMatrix
+                matrix={withRole}
+                weeks={weeks}
+                currentWeek={new Date(2026, 10, 15)}
+                selectedWeek={new Date(2026, 10, 8)}
+                project="MOS-401-09"
+                billedThrough={new Date(2026, 10, 6)}
+            />,
+        );
+        const row = screen.getByRole("row", { name: /IT Manager/ });
+        expect(within(row).getByText("of 15")).toBeTruthy();
+        expect(within(row).getByText("−15").className).toContain("is-under");
+        expect(within(row).getByText("of 21")).toBeTruthy();
+        expect(within(row).getByText("−21")).toBeTruthy();
+        expect(within(row).getByText("−100%")).toBeTruthy();
+        expect(within(row).queryByText(/^plan /)).toBeNull();
+        // The week whose plan nets to 0 reads as empty.
+        expect(within(row).getAllByText("—").length).toBeGreaterThan(0);
+    });
+
     it("in budget mode keeps red over / green under and says Synerion for weeks not integrated", () => {
         render(
             <PeopleWeekMatrix

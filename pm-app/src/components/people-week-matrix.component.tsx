@@ -51,10 +51,13 @@ function Pill({ diff, mode }: { diff: number | null; mode: MatrixMode }): ReactE
 
 function Cell({ value, kind, mode }: { value: MatrixCell | undefined; kind: MatrixRow["kind"]; mode: MatrixMode }): ReactElement {
     if (!value || (value.hours === null && value.planned === null)) return <span className="text-[var(--ink-muted)]">—</span>;
-    if (kind === "role" || kind === "services") {
-        // Plan only: nobody logs hours against a role or a service line.
+    if (kind === "services") {
+        // Plan only: catalog-service units aren't hours (open item #27).
         return <span className="ax-matrix-plan">plan {hours(value.planned)}</span>;
     }
+    // Roles read like a person with no hours: "0 of 21" and -21 (Ion, 2026-11-17, as in the executives' report).
+    // A role week whose plan nets to 0 reads like an empty person week.
+    if (kind === "role" && !value.planned) return <span className="text-[var(--ink-muted)]">—</span>;
     return (
         <span className="flex flex-col items-center gap-0.5">
             <span className="ax-matrix-hours">{hours(value.hours ?? 0)}</span>
@@ -197,7 +200,7 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
             <td className="ax-matrix-cell ax-matrix-sum ax-matrix-pin-total">
                 {cellContent(row, null, row.total)}
             </td>
-            <td className="ax-matrix-cell ax-matrix-pin-var">{row.kind === "role" || row.kind === "services" ? null : <VariancePill variance={row.total.variance} mode={mode} />}</td>
+            <td className="ax-matrix-cell ax-matrix-pin-var">{row.kind === "services" ? null : <VariancePill variance={row.total.variance} mode={mode} />}</td>
         </tr>
     );
 

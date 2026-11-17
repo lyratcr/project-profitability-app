@@ -344,7 +344,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                 )}
                                 <p className="caption m-0 mt-3 text-muted-foreground">
                                     {single
-                                        ? "Budget = the person's plan hours (Backlog) matched by Auxis ID. Hours logged without a budget count as over (+); budget without hours as under (−). Plan not assigned to a person is shown by role; catalog services are not people (open item #27). On Fixed Fee projects the month's plan lands in the week that holds the 1st (#26)."
+                                        ? "Budget = the person's plan hours (Backlog) matched by Auxis ID. Hours logged without a budget count as over (+); budget without hours as under (−). Plan not assigned to a person in Project Operations is shown by role, with 0 hours (nobody logs time against a role), as in the Backlog vs Actuals report; catalog services are not people (open item #27). On Fixed Fee projects the month's plan lands in the week that holds the 1st (#26)."
                                         : "Budget = the project's plan hours (Backlog). Total = the weeks shown. On Fixed Fee projects the month's plan lands in the week that holds the 1st (#26)."}
                                 </p>
                             </AxCard>
