@@ -88,6 +88,8 @@
 
 **Matrix hours** (Ion, 2026-11-16): weeks already integrated into Project Operations show the T&M hours billed there (`Matrix Hours_app`, `08` § 20); later weeks, the current one always, show Synerion, marked "Synerion" in the header. Fixed Fee projects always show Synerion. The tooltip of an integrated week shows the billed hours, the Synerion hours and the adjustment, then the Synerion detail.
 
+**Project Ops vs Synerion matrix** (Ion, 2026-11-16, 6.10): in act 2, under the budget matrix, the same layout comparing T&M hours billed in Project Ops with Synerion hours in integrated weeks (`08` § 21). Amber pill = a difference to check, neutral = match; weeks not integrated read "Not in Project Ops"; Fixed Fee projects are left out.
+
 **Monday review banner** (Mondays, and any day until the integration runs):
 "Review last week's hours (Sun dd – Sat dd). Synerion approval closes **today at end of day**; the integration to Project Operations runs **Tuesday early morning**." It links to the week table below, filtered to last week.
 

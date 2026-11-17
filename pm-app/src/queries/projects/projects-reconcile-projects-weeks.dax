@@ -1,0 +1,20 @@
+// P6 reconciliation matrix, aggregated view: one row per project in scope and week (plus each project's window total),
+// Project Ops billed T&M hours vs Synerion hours in integrated weeks. Same columns as the project x week matrix.
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        dim_project[project_key],
+        dim_project[project_name],
+        ROLLUPADDISSUBTOTAL ( dim_calendar[start_of_week_sun], "IsWeekTotal" ),
+        /* @filters */
+        // Fixed Fee projects have no hours of work in Project Ops (08 § 20): left out, or every hour would read as missing.
+        KEEPFILTERS ( EXCEPT ( ALL ( fact_profitability_metrics[project_key] ), CALCULATETABLE ( VALUES ( fact_revenue_metrics[project_key] ), REMOVEFILTERS ( dim_calendar ), fact_revenue_metrics[scenario] = "Backlog", fact_revenue_metrics[revenue_type] = "Fixed Fee" ) ) ),
+        KEEPFILTERS ( EXCEPT ( ALL ( fact_revenue_metrics[project_key] ), CALCULATETABLE ( VALUES ( fact_revenue_metrics[project_key] ), REMOVEFILTERS ( dim_calendar ), fact_revenue_metrics[scenario] = "Backlog", fact_revenue_metrics[revenue_type] = "Fixed Fee" ) ) ),
+        "Hours", [Billed Hours by Person_app],
+        "PlannedHours", [Synerion Hours Integrated_app],
+        "Diff", [Billed vs Synerion Hours_app],
+        "Variance", [Billed vs Synerion %_app]
+    ),
+    NOT ISBLANK ( dim_project[project_key] )
+)
+ORDER BY dim_project[project_key], [IsWeekTotal], dim_calendar[start_of_week_sun]

@@ -9,6 +9,9 @@ import peopleWeeksQuery from "./projects-people-weeks.dax?raw";
 import billedThroughQuery from "./projects-billed-through.dax?raw";
 import paceByProjectQuery from "./projects-pace-by-project.dax?raw";
 import projectWeeksQuery from "./projects-project-weeks.dax?raw";
+import reconcilePeopleWeeksQuery from "./projects-reconcile-people-weeks.dax?raw";
+import reconcileProjectWeeksQuery from "./projects-reconcile-project-weeks.dax?raw";
+import reconcileProjectsWeeksQuery from "./projects-reconcile-projects-weeks.dax?raw";
 import projectsWeeksQuery from "./projects-projects-weeks.dax?raw";
 import revenueByMonthQuery from "./projects-revenue-by-month.dax?raw";
 import roleWeeksQuery from "./projects-role-weeks.dax?raw";
@@ -274,4 +277,23 @@ export const BILLED_THROUGH_COLUMN = "[BilledThrough]";
 
 export function projectsBilledThrough() {
     return { connection: CONNECTION, query: billedThroughQuery } as const;
+}
+
+// ---------------------------------------------------------------- Project Ops vs Synerion (Ion, 2026-11-16, 6.10)
+
+/**
+ * Reconciliation matrix: the same columns as the budget matrix (Hours = billed in Project Ops, PlannedHours = Synerion
+ * in integrated weeks, Diff = Project Ops - Synerion, Variance = Diff / Synerion), so it is laid out the same way.
+ * Fixed Fee projects are left out in the queries. `filters` = projects + the matrix window.
+ */
+export function projectsReconcilePeopleWeeks({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(reconcilePeopleWeeksQuery, filters) } as const;
+}
+
+export function projectsReconcileProjectWeeks({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(reconcileProjectWeeksQuery, filters) } as const;
+}
+
+export function projectsReconcileProjectsWeeks({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(reconcileProjectsWeeksQuery, filters) } as const;
 }

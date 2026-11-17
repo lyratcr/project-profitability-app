@@ -1229,3 +1229,33 @@ By person, APA-401-04, week of Oct 11: Alejandro Nino 48 Synerion → 40 billed 
 
 **App queries:** `projects-people-weeks.dax`, `projects-project-weeks.dax` and `projects-projects-weeks.dax` return `[Matrix Hours_app]` as Hours (with the Matrix diff and variance), plus `SynerionHours` and `BilledVsSynerion` (matrix minus Synerion, computed in the query) for the tooltip; the people query also returns `FromProjectOps` (1 when the cell is an integrated week of a non-Fixed Fee project). `projects-billed-through.dax` returns `[Last Revenue Date_app]` for the header and legend.
 
+## 21. Project Ops vs Synerion hours (P6 reconciliation matrix, 6.10): CREATED 2026-11-16
+
+Ion approved this on 2026-11-16 ("Sí, créala"). A second matrix in act 2, identical in layout to the budget matrix, compares the T&M hours billed in Project Ops with the hours logged in Synerion, only in weeks the integration has posted, to find adjustments and integration problems. Four measures in `_Measures`, folder `_app\Projects`.
+
+```dax
+Billed Hours by Person_app =                       -- #,0
+CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ),
+    fact_revenue_metrics[scenario] = "Actual", fact_revenue_metrics[revenue_type] = "T&M",
+    USERELATIONSHIP ( fact_revenue_metrics[employee_number], dim_employee[employee_number] ) )
+
+Synerion Hours Integrated_app =                    -- #,0
+VAR _cutoff = [Last Revenue Date_app]
+RETURN SUMX ( VALUES ( dim_calendar[start_of_week_sun] ),
+    IF ( dim_calendar[start_of_week_sun] <= _cutoff, CALCULATE ( [Synerion Hours_app] ) ) )
+
+Billed vs Synerion Hours_app =                     -- #,0;-#,0;0
+VAR _billed = [Billed Hours by Person_app]
+VAR _syn = [Synerion Hours Integrated_app]
+RETURN IF ( NOT ISBLANK ( _billed ) || NOT ISBLANK ( _syn ), COALESCE ( _billed, 0 ) - COALESCE ( _syn, 0 ) )
+
+Billed vs Synerion %_app =                         -- +0%;-0%;0%
+VAR _syn = [Synerion Hours Integrated_app]
+RETURN IF ( NOT ISBLANK ( _syn ) && _syn <> 0, DIVIDE ( [Billed vs Synerion Hours_app], _syn ),
+    IF ( [Billed Hours by Person_app] > 0, 1 ) )
+```
+
+**App queries** (`pm-app/src/queries/projects/projects-reconcile-*.dax`): people x week, the total row and project x week (aggregated view), with the budget matrix's column names (Hours = Project Ops, PlannedHours = Synerion, Diff, Variance). They leave Fixed Fee projects out with a filter argument (`EXCEPT` of the projects with Backlog Fixed Fee rows), because Project Ops has no hours of work for them (`08` § 20).
+
+**Validated (2026-11-16, model measures; all 4 valid in `INFO.MEASURES()`):** APA-401-04, weeks of Oct 4 – Nov 1: project 552 billed vs 592 Synerion (−40; Oct 11 −16, Nov 1 −24); Alejandro Nino 200 vs 216 (8 h Holidays on Oct 12 and in the week of Nov 1 not billed); week of Nov 8 blank (not integrated). Whole history: Alejandro Nino has 80 h billed in the weeks of Aug 30 and Sep 6 with no Synerion hours on this project: the kind of integration difference the matrix is for. GOT-401-05 (Fixed Fee) is left out.
+
