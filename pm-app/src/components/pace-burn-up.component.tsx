@@ -1,78 +1,19 @@
-import { useEffect, useId, useRef, useState, type MouseEvent, type ReactElement, type RefObject } from "react";
+import { useId, useState, type MouseEvent, type ReactElement } from "react";
 import { formatValue } from "@microsoft/fabric-visuals-core";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import type { PaceStory, PaceValues } from "@/lib/pace";
+import { useElementWidth } from "@/hooks/use-element-width";
+import { monthStarts, niceTicks, smoothPath } from "@/lib/chart-geometry";
 import { parseModelDate } from "@/lib/plan-end";
 import { cell, numberCell } from "@/lib/query-table";
 import { PACE_HISTORY_WEEKS, PROJECTS_FORMATS, projectsPaceWeeksColumns } from "@/queries/projects";
+import { MarkerPill } from "./chart-marker-pill.component";
 
 const DAY = 86_400_000;
 const dateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 const monthTick = new Intl.DateTimeFormat("en-US", { month: "short" });
 const yearTick = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" });
 const hours = (v: number) => String(formatValue(v, PROJECTS_FORMATS.hours));
-
-/** Width of an element, for an SVG drawn in pixels (legible text at any width). */
-function useWidth(): [RefObject<HTMLDivElement | null>, number] {
-    const ref = useRef<HTMLDivElement | null>(null);
-    const [width, setWidth] = useState(640);
-    useEffect(() => {
-        const el = ref.current;
-        if (!el || typeof ResizeObserver === "undefined") return;
-        const observer = new ResizeObserver(([entry]) => setWidth(Math.max(280, Math.round(entry.contentRect.width))));
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, []);
-    return [ref, width];
-}
-
-/** Round axis steps (1, 2, 2.5, 5 × 10^n) for about `count` gridlines. Display scaling only. */
-function niceTicks(max: number, count = 5): number[] {
-    const raw = Math.max(max, 1) / count;
-    const power = 10 ** Math.floor(Math.log10(raw));
-    const step = ([1, 2, 2.5, 5, 10].find((f) => f * power >= raw) ?? 10) * power;
-    return Array.from({ length: Math.ceil(max / step) + 1 }, (_, i) => i * step);
-}
-
-/** First day of each month after `from` up to `to`, for the x axis. */
-function monthStarts(from: Date, to: Date): Date[] {
-    const out: Date[] = [];
-    for (let d = new Date(from.getFullYear(), from.getMonth() + 1, 1); d <= to; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) out.push(d);
-    return out;
-}
-
-/**
- * Smooth SVG path through points (monotone cubic, Fritsch–Carlson): the curve passes through every point and never
- * overshoots, so a cumulative line never dips. Display geometry only.
- */
-function smoothPath(pts: ReadonlyArray<{ px: number; py: number }>): string {
-    if (pts.length === 0) return "";
-    if (pts.length === 1) return `M${pts[0].px},${pts[0].py}`;
-    const n = pts.length;
-    const dx = pts.slice(1).map((p, i) => p.px - pts[i].px);
-    const slope = pts.slice(1).map((p, i) => (p.py - pts[i].py) / (dx[i] || 1));
-    const t = pts.map((_, i) => (i === 0 ? slope[0] : i === n - 1 ? slope[n - 2] : slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2));
-    for (let i = 0; i < n - 1; i++) {
-        if (slope[i] === 0) {
-            t[i] = 0;
-            t[i + 1] = 0;
-            continue;
-        }
-        const a = t[i] / slope[i];
-        const b = t[i + 1] / slope[i];
-        const h = Math.hypot(a, b);
-        if (h > 3) {
-            t[i] = (3 / h) * a * slope[i];
-            t[i + 1] = (3 / h) * b * slope[i];
-        }
-    }
-    let d = `M${pts[0].px.toFixed(1)},${pts[0].py.toFixed(1)}`;
-    for (let i = 0; i < n - 1; i++) {
-        const h = dx[i] / 3;
-        d += ` C${(pts[i].px + h).toFixed(1)},${(pts[i].py + t[i] * h).toFixed(1)} ${(pts[i + 1].px - h).toFixed(1)},${(pts[i + 1].py - t[i + 1] * h).toFixed(1)} ${pts[i + 1].px.toFixed(1)},${pts[i + 1].py.toFixed(1)}`;
-    }
-    return d;
-}
 
 interface BurnUpProps {
     values: PaceValues;
@@ -93,7 +34,7 @@ interface BurnUpProps {
  * Hovering a week shows its hours to date.
  */
 export function PaceBurnUp({ values, story, weeksTable, asOf }: BurnUpProps): ReactElement {
-    const [ref, width] = useWidth();
+    const [ref, width] = useElementWidth();
     const [hover, setHover] = useState<number | null>(null);
     const ids = useId().replace(/:/g, "");
     const c = projectsPaceWeeksColumns;
@@ -268,19 +209,5 @@ export function PaceBurnUp({ values, story, weeksTable, asOf }: BurnUpProps): Re
                 )}
             </ul>
         </div>
-    );
-}
-
-/** A small rounded label on the chart (to date, plan end, runout), kept inside the plot. */
-function MarkerPill({ x, y, text, tone, maxX }: { x: number; y: number; text: string; tone?: "negative"; maxX: number }): ReactElement {
-    const w = text.length * 6.9 + 20;
-    const left = Math.min(Math.max(x - w / 2, 0), maxX - w);
-    return (
-        <g transform={`translate(${left} ${y - 10})`}>
-            <rect width={w} height={20} rx={10} fill="var(--surface-raised)" stroke={tone === "negative" ? "var(--negative)" : "var(--line-strong)"} />
-            <text x={w / 2} y={14} textAnchor="middle" className={`text-[11px] font-semibold tabular-nums ${tone === "negative" ? "fill-[var(--negative-ink)]" : "fill-[var(--ink)]"}`}>
-                {text}
-            </text>
-        </g>
     );
 }

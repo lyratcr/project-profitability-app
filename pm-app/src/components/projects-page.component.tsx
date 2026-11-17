@@ -29,6 +29,8 @@ import {
     projectsPace,
     projectsPaceByProject,
     projectsPaceWeeks,
+    projectsRevenueProjection,
+    projectsRevenueProjectionWeeks,
     projectsPeopleBreakdown,
     projectsPeopleWeeks,
     projectsProjectWeeks,
@@ -50,6 +52,7 @@ import { AxCard } from "./ax/ax-card.component";
 import { AxPageHeader } from "./ax/ax-page-header.component";
 import { PaceToPlanEnd } from "./pace-to-plan-end.component";
 import { ProjectsByPace } from "./projects-by-pace.component";
+import { RevenueProjection } from "./revenue-projection.component";
 import { QueryStates, type QueryResult } from "./query-states.component";
 import { PeopleWeekMatrix } from "./people-week-matrix.component";
 import { ReportTable } from "./report-table.component";
@@ -168,6 +171,9 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
             pace: projectsPace({ filters: [dateRangeArg(paceWindow.start, paceWindow.end), ...project] }),
             paceByProject: projectsPaceByProject({ filters: [dateRangeArg(paceWindow.start, paceWindow.end), ...project] }),
             paceWeeks: projectsPaceWeeks({ filters: [dateRangeArg(historyWindow.start, historyWindow.end), ...project] }),
+            // Act 4, revenue to plan end (Guille, 2026-11-17): the project scope only; the model splits billed and Backlog weeks.
+            revenueProjection: projectsRevenueProjection({ filters: project }),
+            revenueProjectionWeeks: projectsRevenueProjectionWeeks({ filters: project }),
         };
     }, [scope, single, nowKey, glass]);
 
@@ -190,6 +196,8 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
     const paceResult = useSemanticModelQuery(runIf(single, model.pace));
     const paceWeeksResult = useSemanticModelQuery(runIf(single, model.paceWeeks));
     const paceByProjectResult = useSemanticModelQuery(runIf(!single, model.paceByProject));
+    const revenueProjectionResult = useSemanticModelQuery(run(model.revenueProjection));
+    const revenueProjectionWeeksResult = useSemanticModelQuery(run(model.revenueProjectionWeeks));
     // Matrix source (Ion, 2026-11-16): weeks up to the last day billed in Project Ops show Project Ops hours.
     const billedThroughData = useSemanticModelQuery(run(projectsBilledThrough())).data;
     const billedThrough = billedThroughData?.status === "success" ? parseModelDate(cell(billedThroughData.table, BILLED_THROUGH_COLUMN)) : null;
@@ -439,6 +447,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                         ) : (
                             <ProjectsByPace result={paceByProjectResult} onPick={(key) => onFiltersChange?.({ ...filters, project: key })} />
                         )}
+                        <RevenueProjection summary={revenueProjectionResult} weeks={revenueProjectionWeeksResult} single={single} />
                     </StoryAct>
                 </>
             )}
