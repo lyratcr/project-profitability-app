@@ -1,0 +1,19 @@
+// P6 act 4, Revenue to plan end chart (Guille, 2026-11-17; docs/08_app_measures.md § 22): one row per
+// Sunday-Saturday week that holds revenue, T&M projects only. Cumulative = billed through the integration cutoff, then
+// the Backlog of each later week; PlanCum = the plan (Backlog) to that week; Integrated = 1 for weeks already in
+// Project Ops (the solid part of the line). The app sends the project scope only.
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        dim_calendar[start_of_week_sun],
+        /* @filters */
+        "Week", [Revenue Actual then Backlog_app],
+        "PlanWeek", [Planned Revenue for Projection_app],
+        "Cumulative", [Revenue Actual then Backlog Cumulative_app],
+        "PlanCum", [Planned Revenue Cumulative_app],
+        "Integrated", IF ( MAX ( dim_calendar[start_of_week_sun] ) <= [Last Revenue Date_app], 1, 0 )
+    ),
+    // Weeks with revenue or plan (the first weeks can hold plan before anything is billed).
+    NOT ISBLANK ( [Week] ) || NOT ISBLANK ( [PlanWeek] )
+)
+ORDER BY dim_calendar[start_of_week_sun]

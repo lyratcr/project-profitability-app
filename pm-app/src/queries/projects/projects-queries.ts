@@ -14,6 +14,8 @@ import reconcileProjectWeeksQuery from "./projects-reconcile-project-weeks.dax?r
 import reconcileProjectsWeeksQuery from "./projects-reconcile-projects-weeks.dax?raw";
 import projectsWeeksQuery from "./projects-projects-weeks.dax?raw";
 import revenueByMonthQuery from "./projects-revenue-by-month.dax?raw";
+import revenueProjectionQuery from "./projects-revenue-projection.dax?raw";
+import revenueProjectionWeeksQuery from "./projects-revenue-projection-weeks.dax?raw";
 import roleWeeksQuery from "./projects-role-weeks.dax?raw";
 import trendMonthsQuery from "./projects-trend-months.dax?raw";
 import trendSummaryQuery from "./projects-trend-summary.dax?raw";
@@ -243,6 +245,37 @@ export const projectsPaceWeeksColumns = {
 /** Hours to date at the end of each week; `filters` carry the project and the last PACE_HISTORY_WEEKS complete weeks. */
 export function projectsPaceWeeks({ filters = [] }: ProjectsParams = {}) {
     return { connection: CONNECTION, query: applyFilters(paceWeeksQuery, filters) } as const;
+}
+
+// ---------------------------------------------------------------- revenue to plan end (act 4, Guille 2026-11-17)
+
+export const projectsRevenueProjectionColumns = {
+    sow: "[SOW]",
+    billed: "[Billed]",
+    ahead: "[Ahead]",
+    projected: "[Projected]",
+    vsSow: "[VsSOW]",
+    vsSowPct: "[VsSOWPct]",
+    allSow: "[AllSOW]",
+    cutoff: "[Cutoff]",
+    planEnd: "[PlanEnd]",
+} as const;
+
+/** One row, T&M projects only (docs/08_app_measures.md § 22); `filters` carry the project scope only. */
+export function projectsRevenueProjection({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(revenueProjectionQuery, filters) } as const;
+}
+
+export const projectsRevenueProjectionWeeksColumns = {
+    week: "dim_calendar[start_of_week_sun]",
+    cumulative: "[Cumulative]",
+    planCumulative: "[PlanCum]",
+    integrated: "[Integrated]",
+} as const;
+
+/** One row per week with revenue or plan: cumulative billed-then-Backlog and plan; `filters` carry the project scope. */
+export function projectsRevenueProjectionWeeks({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(revenueProjectionWeeksQuery, filters) } as const;
 }
 
 // ---------------------------------------------------------------- aggregated view (Ion, 2026-11-16)

@@ -1,0 +1,17 @@
+// P6 act 4, Revenue to plan end (Guille, 2026-11-17; docs/08_app_measures.md § 22): T&M projects only. What was billed
+// in Project Ops through the integration cutoff, the Backlog of the weeks after, the projected revenue at plan end and
+// how far it lands from the SOW. AllSOW is the whole SOW in scope (Fixed Fee included) to say what the projection
+// leaves out. The app sends the project scope only. One row.
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "SOW", [Revenue SOW for Projection_app],
+    "Billed", [Revenue Billed to Cutoff_app],
+    "Ahead", [Revenue Backlog Ahead_app],
+    "Projected", [Revenue Projected at End_app],
+    "VsSOW", [Revenue Projected vs SOW_app],
+    "VsSOWPct", [Revenue Projected vs SOW %_app],
+    "AllSOW", [Total Planned Revenue_app],
+    "Cutoff", [Last Revenue Date_app],
+    "PlanEnd", [Plan End Date_app]
+)
