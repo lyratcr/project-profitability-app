@@ -1682,6 +1682,101 @@ table _Measures
 		displayFolder: _app\Projects
 		lineageTag: 1da1ced6-2199-458a-9871-997bfa0bf5e7
 
+	/// ADDED 2026-11-17 (Fabric app): Revenue by week: Actual for weeks already integrated into Project Operations (week's Sunday <= [Last Revenue Date_app]), Backlog after. T&M projects only: projects with Fixed Fee Backlog lines are left out (#17, #26). Guille's revenue projection (What comes next).
+	measure 'Revenue Actual then Backlog_app' =
+			VAR _cutoff = [Last Revenue Date_app]
+			VAR _fixedFee =
+			    CALCULATETABLE (
+			        VALUES ( fact_revenue_metrics[project_key] ),
+			        REMOVEFILTERS ( dim_calendar ),
+			        fact_revenue_metrics[scenario] = "Backlog",
+			        fact_revenue_metrics[revenue_type] = "Fixed Fee"
+			    )
+			RETURN
+			    CALCULATE (
+			        SUMX (
+			            VALUES ( dim_calendar[start_of_week_sun] ),
+			            IF ( dim_calendar[start_of_week_sun] <= _cutoff, [Actual Revenue_app], [Planned Revenue_app] )
+			        ),
+			        KEEPFILTERS ( NOT fact_revenue_metrics[project_key] IN _fixedFee )
+			    )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue Projection
+		lineageTag: 32307b06-2713-4f32-b021-677c09f5d0c3
+
+	/// ADDED 2026-11-17 (Fabric app): Plan (Backlog) revenue in the period, T&M projects only (no Fixed Fee Backlog lines), the plan the revenue projection is compared with.
+	measure 'Planned Revenue for Projection_app' =
+			VAR _fixedFee =
+			    CALCULATETABLE (
+			        VALUES ( fact_revenue_metrics[project_key] ),
+			        REMOVEFILTERS ( dim_calendar ),
+			        fact_revenue_metrics[scenario] = "Backlog",
+			        fact_revenue_metrics[revenue_type] = "Fixed Fee"
+			    )
+			RETURN CALCULATE ( [Planned Revenue_app], KEEPFILTERS ( NOT fact_revenue_metrics[project_key] IN _fixedFee ) )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue Projection
+		lineageTag: 7c7a2e62-9bde-4e9a-bbed-08007fa277e2
+
+	/// ADDED 2026-11-17 (Fabric app): SOW (whole Backlog, all dates) of the T&M projects in the projection.
+	measure 'Revenue SOW for Projection_app' = CALCULATE ( [Planned Revenue for Projection_app], REMOVEFILTERS ( dim_calendar ) )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue Projection
+		lineageTag: a8bea2c8-1d13-4e99-84fd-b2a164e2de04
+
+	/// ADDED 2026-11-17 (Fabric app): Revenue at plan end: billed (Actual) through the integration cutoff plus the Backlog of the weeks after. T&M projects only.
+	measure 'Revenue Projected at End_app' = CALCULATE ( [Revenue Actual then Backlog_app], REMOVEFILTERS ( dim_calendar ) )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue Projection
+		lineageTag: 5beb3ed0-47ec-4a32-834b-72da81b15c31
+
+	/// ADDED 2026-11-17 (Fabric app): Actual revenue of the weeks integrated into Project Operations (through [Last Revenue Date_app]). T&M projects only.
+	measure 'Revenue Billed to Cutoff_app' =
+			VAR _cutoff = [Last Revenue Date_app]
+			RETURN CALCULATE ( [Revenue Actual then Backlog_app], REMOVEFILTERS ( dim_calendar ), dim_calendar[start_of_week_sun] <= _cutoff )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue Projection
+		lineageTag: 2661567c-7b21-4d3a-9427-7e2eb9779baa
+
+	/// ADDED 2026-11-17 (Fabric app): Backlog revenue of the weeks after the integration cutoff. T&M projects only.
+	measure 'Revenue Backlog Ahead_app' =
+			VAR _cutoff = [Last Revenue Date_app]
+			RETURN CALCULATE ( [Revenue Actual then Backlog_app], REMOVEFILTERS ( dim_calendar ), dim_calendar[start_of_week_sun] > _cutoff )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue Projection
+		lineageTag: eb66a579-fdc0-4965-8ccd-d923f7757fa8
+
+	/// ADDED 2026-11-17 (Fabric app): Projected revenue at plan end minus the SOW: positive = over the SOW, negative = short. T&M projects only.
+	measure 'Revenue Projected vs SOW_app' =
+			VAR _p = [Revenue Projected at End_app]
+			VAR _s = [Revenue SOW for Projection_app]
+			RETURN IF ( NOT ISBLANK ( _p ) || NOT ISBLANK ( _s ), COALESCE ( _p, 0 ) - COALESCE ( _s, 0 ) )
+		formatString: \$#,0;-\$#,0;\$0
+		displayFolder: _app\Revenue Projection
+		lineageTag: 5dc6ffd4-58d8-4977-9a9a-7e054a911cb1
+
+	/// ADDED 2026-11-17 (Fabric app): Projected vs SOW as a share of the SOW. T&M projects only.
+	measure 'Revenue Projected vs SOW %_app' = DIVIDE ( [Revenue Projected vs SOW_app], [Revenue SOW for Projection_app] )
+		formatString: +0%;-0%;0%
+		displayFolder: _app\Revenue Projection
+		lineageTag: d4b6e9f2-9b93-4f9c-b5c2-75ce5ebd8678
+
+	/// ADDED 2026-11-17 (Fabric app): Cumulative [Revenue Actual then Backlog_app] up to the week in context (chart line: billed, then projection). T&M projects only.
+	measure 'Revenue Actual then Backlog Cumulative_app' =
+			VAR _week = MAX ( dim_calendar[start_of_week_sun] )
+			RETURN CALCULATE ( [Revenue Actual then Backlog_app], REMOVEFILTERS ( dim_calendar ), dim_calendar[start_of_week_sun] <= _week )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue Projection
+		lineageTag: 25bf46b4-ab89-4df4-880d-a45f0ac88074
+
+	/// ADDED 2026-11-17 (Fabric app): Cumulative plan (Backlog) up to the week in context, T&M projects only (chart: plan line).
+	measure 'Planned Revenue Cumulative_app' =
+			VAR _week = MAX ( dim_calendar[start_of_week_sun] )
+			RETURN CALCULATE ( [Planned Revenue for Projection_app], REMOVEFILTERS ( dim_calendar ), dim_calendar[start_of_week_sun] <= _week )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Revenue Projection
+		lineageTag: 50f4454f-4cd1-4083-9af6-c2d69ef24e64
+
 	column Column
 		isHidden
 		formatString: 0
