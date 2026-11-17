@@ -1617,6 +1617,40 @@ table _Measures
 		displayFolder: _app\Pace
 		lineageTag: 277d0e29-86ed-4f19-a9e4-12811855b586
 
+	/// ADDED 2026-11-16 (Fabric app): P6 matrix hours. Per Sunday-Saturday week: weeks starting on or before the last T&M actual date (the Project Ops integration) use the T&M hours billed in Project Ops (per person through the Auxis ID), except Fixed Fee projects (any Backlog Fixed Fee row), which keep Synerion hours; later weeks, the current week included, use Synerion hours.
+	measure 'Matrix Hours_app' =
+			VAR _cutoff = [Last Revenue Date_app]
+			VAR _fixedFee = CALCULATETABLE ( VALUES ( fact_revenue_metrics[project_key] ), REMOVEFILTERS ( dim_calendar ), fact_revenue_metrics[scenario] = "Backlog", fact_revenue_metrics[revenue_type] = "Fixed Fee" )
+			RETURN
+			    SUMX (
+			        VALUES ( dim_calendar[start_of_week_sun] ),
+			        VAR _week = dim_calendar[start_of_week_sun]
+			        VAR _ff = CALCULATE ( [Synerion Hours_app], KEEPFILTERS ( TREATAS ( _fixedFee, fact_profitability_metrics[project_key] ) ) )
+			        VAR _billed = CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ), fact_revenue_metrics[scenario] = "Actual", fact_revenue_metrics[revenue_type] = "T&M", USERELATIONSHIP ( fact_revenue_metrics[employee_number], dim_employee[employee_number] ), KEEPFILTERS ( NOT fact_revenue_metrics[project_key] IN _fixedFee ) )
+			        RETURN IF ( _week <= _cutoff, IF ( NOT ISBLANK ( _ff ) || NOT ISBLANK ( _billed ), COALESCE ( _ff, 0 ) + COALESCE ( _billed, 0 ) ), CALCULATE ( [Synerion Hours_app] ) )
+			    )
+		formatString: #,0
+		displayFolder: _app\Projects
+		lineageTag: a5a7da28-28b6-4766-af2f-1ba0f4378087
+
+	/// ADDED 2026-11-16 (Fabric app): Matrix Hours_app minus planned hours of the person; a missing side counts as 0.
+	measure 'Matrix Hours vs Plan by Person_app' =
+			VAR _hours = [Matrix Hours_app]
+			VAR _plan = [Planned Hours by Person_app]
+			RETURN IF ( NOT ISBLANK ( _hours ) || NOT ISBLANK ( _plan ), COALESCE ( _hours, 0 ) - COALESCE ( _plan, 0 ) )
+		formatString: #,0;-#,0;0
+		displayFolder: _app\Projects
+		lineageTag: b8ff2b08-8b6f-47ff-8e24-25cdf2e355b2
+
+	/// ADDED 2026-11-16 (Fabric app): (Matrix Hours_app - plan) / plan for the person; +100% with hours but no plan; blank with neither.
+	measure 'Matrix Hours vs Plan Variance % by Person_app' =
+			VAR _hours = [Matrix Hours_app]
+			VAR _plan = [Planned Hours by Person_app]
+			RETURN IF ( NOT ISBLANK ( _plan ) && _plan <> 0, DIVIDE ( _hours - _plan, _plan ), IF ( _hours > 0, 1 ) )
+		formatString: +0%;-0%;0%
+		displayFolder: _app\Projects
+		lineageTag: 00fbabdd-ed4d-4013-b5ee-92127a548754
+
 	column Column
 		isHidden
 		formatString: 0

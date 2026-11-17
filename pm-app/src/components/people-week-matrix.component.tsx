@@ -27,6 +27,8 @@ interface PeopleWeekMatrixProps {
     rowLimit?: number;
     /** Aggregated view: clicking a project's name opens it. */
     onRowPick?: (key: string) => void;
+    /** Last day billed in Project Ops: later weeks show Synerion hours and say so in the header (Ion, 2026-11-16). */
+    billedThrough?: Date | null;
 }
 
 const label = new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric" });
@@ -68,7 +70,7 @@ function VariancePill({ variance }: { variance: number | null }): ReactElement {
  * in each Sunday-Saturday week; plan not assigned to a person by role; catalog services; and the project row.
  * Green under budget, red over (Auxis status colours, with the sign).
  */
-export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, breakdownQuery, project, rowLabel = "Person", rowLimit, onRowPick }: PeopleWeekMatrixProps): ReactElement {
+export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, breakdownQuery, project, rowLabel = "Person", rowLimit, onRowPick, billedThrough = null }: PeopleWeekMatrixProps): ReactElement {
     const keys = weeks.map((w) => weekKey(w) ?? "");
     const tooltipId = useId();
     const [active, setActive] = useState<{ row: MatrixRow; week: string | null; rect: DOMRect } | null>(null);
@@ -198,6 +200,7 @@ export function PeopleWeekMatrix({ matrix, weeks, currentWeek, selectedWeek, bre
                             <th key={keys[i]} scope="col" className={cn("ax-matrix-cell", keys[i] === selected && "ax-matrix-selected")}>
                                 {i === 0 || (w.getMonth() === 0 && w.getDate() <= 7) ? yearLabel.format(w) : label.format(w)}
                                 {keys[i] === current && <span className="block font-normal normal-case tracking-normal">to date</span>}
+                                {billedThrough !== null && w > billedThrough && <span className="ax-matrix-source">Synerion</span>}
                             </th>
                         ))}
                         <th scope="col" className="ax-matrix-cell ax-matrix-sum ax-matrix-pin-total">

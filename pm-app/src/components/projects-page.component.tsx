@@ -24,6 +24,8 @@ import {
     PROJECTS_FORMATS,
     projectsKpiColumns,
     projectsKpis,
+    projectsBilledThrough,
+    BILLED_THROUGH_COLUMN,
     projectsPace,
     projectsPaceByProject,
     projectsPaceWeeks,
@@ -182,6 +184,9 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
     const paceResult = useSemanticModelQuery(runIf(single, model.pace));
     const paceWeeksResult = useSemanticModelQuery(runIf(single, model.paceWeeks));
     const paceByProjectResult = useSemanticModelQuery(runIf(!single, model.paceByProject));
+    // Matrix source (Ion, 2026-11-16): weeks up to the last day billed in Project Ops show Project Ops hours.
+    const billedThroughData = useSemanticModelQuery(run(projectsBilledThrough())).data;
+    const billedThrough = billedThroughData?.status === "success" ? parseModelDate(cell(billedThroughData.table, BILLED_THROUGH_COLUMN)) : null;
 
     const context = describeFilterContext(page, filters, options, model.at);
     const reviewHref = pageHref(page, params);
@@ -288,7 +293,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                         ? "Every week from the project's first, Sunday to Saturday · scroll sideways for earlier weeks · the highlighted column is last week"
                                         : `Last ${AGGREGATE_MATRIX_WEEKS} weeks, Sunday to Saturday · scroll sideways for earlier weeks · pick a project to see it by person`
                                 }
-                                aside={<MatrixLegend />}
+                                aside={<MatrixLegend billedThrough={billedThrough} />}
                             >
                                 {single ? (
                                     /* One model query per block: people, plan by role, and the project row; the matrix only places them. */
@@ -305,6 +310,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                                                 breakdownFor={model.breakdownFor}
                                                                 project={filters.project ?? ""}
                                                                 rowLabel="Person"
+                                                                billedThrough={billedThrough}
                                                             />
                                                         )}
                                                     </QueryStates>
@@ -323,6 +329,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                                         selected={model.last.start}
                                                         project={projectsLabel}
                                                         rowLabel="Project"
+                                                        billedThrough={billedThrough}
                                                         rowLimit={AGGREGATE_ROWS}
                                                         onRowPick={(key) => onFiltersChange?.({ ...filters, project: key })}
                                                     />
@@ -386,6 +393,7 @@ function MatrixView({
     rowLabel,
     rowLimit,
     onRowPick,
+    billedThrough,
 }: {
     matrix: PeopleMatrix;
     current: Date;
@@ -395,6 +403,7 @@ function MatrixView({
     rowLabel: string;
     rowLimit?: number;
     onRowPick?: (key: string) => void;
+    billedThrough: Date | null;
 }): ReactElement {
     return (
         <PeopleWeekMatrix
@@ -407,6 +416,7 @@ function MatrixView({
             rowLabel={rowLabel}
             rowLimit={rowLimit}
             onRowPick={onRowPick}
+            billedThrough={billedThrough}
         />
     );
 }
@@ -720,9 +730,14 @@ function ProjectBudget({ table, planEnd, status, projects }: { table: QueryTable
  * Legend for the people x week matrix: what a cell shows and what each pill colour means. No sample numbers (Ion,
  * 2026-11-13: the old "−5 / +10 / 0" examples read as data). Status colours always carry the sign too.
  */
-function MatrixLegend(): ReactElement {
+function MatrixLegend({ billedThrough }: { billedThrough: Date | null }): ReactElement {
     return (
         <div className="flex shrink-0 flex-col items-start gap-1 text-200 text-muted-foreground sm:items-end">
+            {billedThrough && (
+                <span>
+                    Through {dateFormat.format(billedThrough)}: hours <strong className="font-semibold text-[var(--ink)]">billed in Project Ops</strong> · later weeks: Synerion
+                </span>
+            )}
             <span>
                 Each cell: <strong className="font-semibold text-[var(--ink)]">hours</strong> · of budget · difference in hours
             </span>

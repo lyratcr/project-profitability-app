@@ -6,6 +6,7 @@ import peopleBreakdownQuery from "./projects-people-breakdown.dax?raw";
 import paceQuery from "./projects-pace.dax?raw";
 import paceWeeksQuery from "./projects-pace-weeks.dax?raw";
 import peopleWeeksQuery from "./projects-people-weeks.dax?raw";
+import billedThroughQuery from "./projects-billed-through.dax?raw";
 import paceByProjectQuery from "./projects-pace-by-project.dax?raw";
 import projectWeeksQuery from "./projects-project-weeks.dax?raw";
 import projectsWeeksQuery from "./projects-projects-weeks.dax?raw";
@@ -166,6 +167,9 @@ export const peopleWeekColumns = {
     diff: "[Diff]",
     variance: "[Variance]",
     servicesPlannedHours: "[ServicesPlannedHours]",
+    synerionHours: "[SynerionHours]",
+    billedVsSynerion: "[BilledVsSynerion]",
+    fromProjectOps: "[FromProjectOps]",
 } as const;
 
 /** `filters` = project + the matrix window. One row per person and week, plus each person's window total. */
@@ -263,4 +267,11 @@ export const projectsPaceByProjectColumns = {
 /** The pace measures per project in scope; `filters` carry the projects and the last PACE_WEEKS complete weeks. */
 export function projectsPaceByProject({ filters = [] }: ProjectsParams = {}) {
     return { connection: CONNECTION, query: applyFilters(paceByProjectQuery, filters) } as const;
+}
+
+/** Last day of T&M hours billed in Project Ops (the integration): matrix weeks up to it use Project Ops hours. */
+export const BILLED_THROUGH_COLUMN = "[BilledThrough]";
+
+export function projectsBilledThrough() {
+    return { connection: CONNECTION, query: billedThroughQuery } as const;
 }

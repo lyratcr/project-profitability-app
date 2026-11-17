@@ -1,0 +1,4 @@
+// P6 matrix (Ion, 2026-11-16): the last day of T&M hours billed in Project Ops, which follows the weekly integration.
+// Matrix weeks that start on or before it show Project Ops hours; later weeks show Synerion. One row.
+EVALUATE
+ROW ( "BilledThrough", [Last Revenue Date_app] )
