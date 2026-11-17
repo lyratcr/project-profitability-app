@@ -8,3 +8,8 @@ role 'Project access_app'
 
 	tablePermission app_user_profile_app = [user_upn] = LOWER ( USERPRINCIPALNAME () )
 
+	member 'kcano@Auxis.com'
+	member 'galvarado@auxis.com'
+	member 'iherrera@auxis.com'
+	member 'fcalderon2@auxis.com'
+	member 'isanlee@auxis.com'

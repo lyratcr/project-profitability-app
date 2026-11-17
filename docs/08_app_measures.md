@@ -1259,3 +1259,55 @@ RETURN IF ( NOT ISBLANK ( _syn ) && _syn <> 0, DIVIDE ( [Billed vs Synerion Hour
 
 **Validated (2026-11-16, model measures; all 4 valid in `INFO.MEASURES()`):** APA-401-04, weeks of Oct 4 – Nov 1: project 552 billed vs 592 Synerion (−40; Oct 11 −16, Nov 1 −24); Alejandro Nino 200 vs 216 (8 h Holidays on Oct 12 and in the week of Nov 1 not billed); week of Nov 8 blank (not integrated). Whole history: Alejandro Nino has 80 h billed in the weeks of Aug 30 and Sep 6 with no Synerion hours on this project: the kind of integration difference the matrix is for. GOT-401-05 (Fixed Fee) is left out.
 
+## 22. Revenue projection to plan end (P6 act 4, Guille's idea): CREATED 2026-11-17
+
+Guille (PM and PM supervisor) asked for a chart in "What comes next" showing how the project is doing so far plus the Backlog of the weeks ahead, in dollars, to see whether the project will go over the SOW or fall short. Same rule as the matrix hours (`08` § 20): weeks already integrated into Project Operations use Actual revenue, later weeks use the Backlog. T&M projects only: Fixed Fee revenue is posted by month and with future dates (#17, #26), so the weekly rule doesn't hold for it (same choice as the hours pace, § 19). Ion approved the DAX on 2026-11-17 ("Sí, créalas"). Ten measures in `_Measures`, folder `_app\Revenue Projection`.
+
+```dax
+Revenue Actual then Backlog_app =                  -- $#,0
+VAR _cutoff = [Last Revenue Date_app]
+VAR _fixedFee = CALCULATETABLE ( VALUES ( fact_revenue_metrics[project_key] ), REMOVEFILTERS ( dim_calendar ),
+    fact_revenue_metrics[scenario] = "Backlog", fact_revenue_metrics[revenue_type] = "Fixed Fee" )
+RETURN CALCULATE (
+    SUMX ( VALUES ( dim_calendar[start_of_week_sun] ),
+        IF ( dim_calendar[start_of_week_sun] <= _cutoff, [Actual Revenue_app], [Planned Revenue_app] ) ),
+    KEEPFILTERS ( NOT fact_revenue_metrics[project_key] IN _fixedFee ) )
+
+Planned Revenue for Projection_app =               -- $#,0; same _fixedFee
+CALCULATE ( [Planned Revenue_app], KEEPFILTERS ( NOT fact_revenue_metrics[project_key] IN _fixedFee ) )
+
+Revenue SOW for Projection_app   = CALCULATE ( [Planned Revenue for Projection_app], REMOVEFILTERS ( dim_calendar ) )
+Revenue Projected at End_app     = CALCULATE ( [Revenue Actual then Backlog_app], REMOVEFILTERS ( dim_calendar ) )
+Revenue Billed to Cutoff_app     = VAR _cutoff = [Last Revenue Date_app] RETURN CALCULATE ( [Revenue Actual then Backlog_app],
+    REMOVEFILTERS ( dim_calendar ), dim_calendar[start_of_week_sun] <= _cutoff )
+Revenue Backlog Ahead_app        = VAR _cutoff = [Last Revenue Date_app] RETURN CALCULATE ( [Revenue Actual then Backlog_app],
+    REMOVEFILTERS ( dim_calendar ), dim_calendar[start_of_week_sun] > _cutoff )
+
+Revenue Projected vs SOW_app =                     -- $#,0;-$#,0;$0 (positive = over the SOW)
+VAR _p = [Revenue Projected at End_app]
+VAR _s = [Revenue SOW for Projection_app]
+RETURN IF ( NOT ISBLANK ( _p ) || NOT ISBLANK ( _s ), COALESCE ( _p, 0 ) - COALESCE ( _s, 0 ) )
+Revenue Projected vs SOW %_app = DIVIDE ( [Revenue Projected vs SOW_app], [Revenue SOW for Projection_app] )  -- +0%;-0%;0%
+
+Revenue Actual then Backlog Cumulative_app =       -- chart: billed, then projection
+VAR _week = MAX ( dim_calendar[start_of_week_sun] )
+RETURN CALCULATE ( [Revenue Actual then Backlog_app], REMOVEFILTERS ( dim_calendar ), dim_calendar[start_of_week_sun] <= _week )
+Planned Revenue Cumulative_app =                   -- chart: plan line
+VAR _week = MAX ( dim_calendar[start_of_week_sun] )
+RETURN CALCULATE ( [Planned Revenue for Projection_app], REMOVEFILTERS ( dim_calendar ), dim_calendar[start_of_week_sun] <= _week )
+```
+
+**Validated (2026-11-17, cutoff Nov 6, model measures; all 10 valid in `INFO.MEASURES()`):**
+
+| Project | SOW | Billed to cutoff | Backlog ahead | Projected at end | vs SOW |
+|---|---:|---:|---:|---:|---:|
+| MOS-401-09 | 276,367 | 261,362 | 40,167 | 301,529 | +25,162 (+9.1%) |
+| ALK-401-01 | 190,180 | 138,837 | 56,608 | 195,446 | +5,266 (+2.8%) |
+| APA-401-04 | 142,976 | 10,711 | 107,234 | 117,946 | −25,031 (−17.5%) |
+| GOT-401-05 (Fixed Fee) | blank | blank | blank | blank | blank |
+| All T&M projects | 28,407,940 | 24,471,638 | 4,886,136 | 29,357,774 | +949,835 (+3.3%) |
+
+Independent check: plain sums over `fact_revenue_metrics` for the T&M projects give the same 24,471,638 (Actual dated through Nov 7, the cutoff week's Saturday), 4,886,136 (Backlog after) and 28,407,940 (all Backlog); no T&M Actual is dated after the cutoff week, so the weekly rule drops nothing. For T&M projects Billed = `Revenue Billed to Date_app` and SOW = `Total Planned Revenue_app`. MOS-401-09 cumulative series: week of Nov 1 = 261,362 (= billed), then 272,002, 275,682, 279,247 with the Backlog.
+
+**Caveats:** T&M projects are $28.4 M of the $228.5 M SOW (most revenue is Fixed Fee). The cutoff is `Last Revenue Date_app`, which runs under row-level security (#33): fixing that measure fixes these ten.
+
