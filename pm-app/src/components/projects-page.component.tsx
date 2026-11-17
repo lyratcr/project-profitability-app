@@ -12,6 +12,7 @@ import { pageHref, type PageDef } from "@/lib/routes";
 
 import { buildPeopleMatrix, buildProjectMatrix, matrixWeeks, type PeopleMatrix } from "@/lib/people-week";
 import { toDataTable } from "@/lib/to-data-table";
+import { cn } from "@/lib/utils";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { defaultWeek, lastWeek, reviewWindow, thisWeek, trendWindow, weekSpan, weekStartOf, type Week } from "@/lib/weeks";
 import {
@@ -652,17 +653,36 @@ function ProjectBudget({ table, planEnd, status, projects }: { table: QueryTable
         { label: "% Actual", note: "Actual ÷ SOW", value: percent(c.progress) },
         { label: "% Variance", note: "Variance ÷ SOW", value: percent(c.leftToBillPct) },
     ];
-    const width = progress === null ? 0 : Math.min(1, Math.max(0, progress)) * 100;
+    // Billed over the SOW (Ion, 2026-11-16): the bar's scale stretches to the model's % Actual, a mark shows 100% of the
+    // SOW, gold runs to it and the excess is a red striped segment. Widths only scale the model's value for display.
+    const billed = progress === null ? 0 : Math.max(0, progress);
+    const scale = Math.max(1, billed);
+    const goldWidth = (Math.min(billed, 1) / scale) * 100;
+    const overWidth = billed > 1 ? ((billed - 1) / scale) * 100 : 0;
+    const markAt = (1 / scale) * 100;
+    const leftPct = numberCell(table, c.leftToBillPct);
+    const overSow = leftPct !== null && leftPct < 0;
     return (
         <section className="ax-card ax-spotlight ax-kpi-hero flex h-full flex-col" aria-label="Project budget">
             <div className="ax-kpi-label">{projects === null ? "Project budget · whole project life" : `Budget of ${projects} project${projects === 1 ? "" : "s"} · whole project life`}</div>
-            <div className="mt-3">
+            <div className="mt-3 pt-4">
                 <div className="ax-budget-track" aria-hidden="true">
-                    <span className="ax-budget-fill" style={{ width: `${width}%` }} />
+                    <span className={cn("ax-budget-fill", overWidth > 0 && "is-capped")} style={{ width: `${goldWidth}%` }} />
+                    {overWidth > 0 && <span className="ax-budget-over" style={{ left: `${goldWidth}%`, width: `${overWidth}%` }} />}
+                    <span className="ax-budget-mark" style={{ left: `${markAt}%` }}>
+                        <span className="ax-budget-mark-label">100% SOW</span>
+                    </span>
                 </div>
                 <div className="mt-1 flex justify-between text-200 text-[var(--ink-muted)]">
                     <span>Billed {percent(c.progress)}</span>
-                    <span>Left {percent(c.leftToBillPct)}</span>
+                    {overSow ? (
+                        <span className="flex items-center gap-1.5 font-semibold text-[var(--negative-ink)]">
+                            <span className="ax-dot ax-dot-negative" aria-hidden="true" />
+                            Over SOW by {String(formatValue(-(leftPct as number), PROJECTS_FORMATS.percent))}
+                        </span>
+                    ) : (
+                        <span>Left {percent(c.leftToBillPct)}</span>
+                    )}
                 </div>
             </div>
             {/* The PMs' order: amounts, then the shares under Variance; the rows spread to the height of the week table beside it. */}
