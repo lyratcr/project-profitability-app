@@ -268,10 +268,10 @@ body {
 
 /* P6 project budget card: billed share as a gold bar on a glass track, inside the spotlight card. */
 .ax-budget-track {
+  position: relative;
   height: 10px;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.12);
-  overflow: hidden;
 }
 .ax-budget-fill {
   display: block;
@@ -279,6 +279,34 @@ body {
   border-radius: inherit;
   background: var(--gradient-gold);
   box-shadow: 0 0 12px var(--glow-gold);
+}
+/* Billed over the SOW (Ion, 2026-11-16): the 100% mark, and the excess as a red striped segment after it. */
+.ax-budget-fill { position: absolute; left: 0; top: 0; }
+.ax-budget-over {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: repeating-linear-gradient(135deg, var(--red-300, #e08a8a) 0 5px, var(--negative) 5px 10px);
+  box-shadow: 0 0 10px var(--negative-soft);
+}
+.ax-budget-mark {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--ink);
+  border-radius: 1px;
+}
+.ax-budget-mark-label {
+  position: absolute;
+  bottom: calc(100% + 2px);
+  right: 0;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
 }
 /* Plan end date strip at the foot of the budget card (Ion, 2026-11-13), on the same glass as the track. */
 .ax-budget-end {
@@ -636,3 +664,4 @@ body {
   background: var(--surface-raised);
   box-shadow: inset 0 0 0 9999px var(--glass-sunken);
 }
+.ax-budget-fill.is-capped { border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
