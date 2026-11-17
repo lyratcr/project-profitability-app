@@ -1165,9 +1165,13 @@ RETURN IF ( NOT ISBLANK ( _runout ) && NOT ISBLANK ( _end ), DATEDIFF ( _runout,
 
 | Project | Budget h | To date h | Left h | Used | Pace h/wk | Weeks to end | Needed h/wk | Runout | Weeks before end |
 |---|---|---|---|---|---|---|---|---|---|
-| ALK-401-01 (T&M) | 8,617 | 6,400 | 2,217 | 74% | 150 | 30 | 74 | 2027-02-25 | 11 |
+| ALK-401-01 (T&M) | 8,617 | 6,400 | 2,217 | 74% | 150 | 30 | 74 | 2027-02-25 | 15 |
 | WTA-401-01 (plan ended 2026-10-30) | 3,285 | 1,716 | 1,569 | 52% | 141 | 0 | blank | blank | blank |
 | UIP-101-01 (plan ended 2026-10-30) | 71,745 | 69,743 | 2,002 | 97% | 338 | 0 | blank | blank | blank |
 | GOT-401-05, EVO-401-02, PAR-401-05 (Fixed Fee) | blank | 19,348 / 13,409 / 1,313,731 | blank | blank | 173 / 176 / 13,326 | 2 / 76 / 81 | blank | blank | blank |
 
 Independent check: plain `SUM ( worked_hours )` to 2026-11-14, `SUM ( hours_quantity )` for Backlog and the 4-week sum ÷ 4 equal the measures (ALK-401-01: 6,400, 8,617, 150).
+
+**Correction (2026-11-16):** the first validation reported 11 weeks before plan end for ALK-401-01. The right value is **15** (2027-02-25 to 2027-06-11 = 106 days). The 11 came only from the one combined validation query (`ADDCOLUMNS` over six projects plus the check columns); the same measure gives 15 in every other shape, including the app's query, and the same validation without the check columns. If it ever reappears, compare against `DATEDIFF` run on its own.
+
+**App queries** (`pm-app/src/queries/projects/`): `projects-pace.dax` (one row: the nine measures and `[Plan End Date_app]`, with the project and the last 4 complete weeks) and `projects-pace-weeks.dax` (`[Hours To Date_app]` per `dim_calendar[start_of_week_sun]` over the last 26 complete weeks, for the burn-up). Both run on the published model on 2026-11-16: ALK-401-01 one row (8,617 / 6,400 / 150 / 74 / 2027-02-25 / 15) and 26 weeks (2,568 on the week of 2026-05-17 up to 6,400 on the week of 2026-11-08); GOT-401-05 budget blank.

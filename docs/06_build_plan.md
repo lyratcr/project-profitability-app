@@ -117,7 +117,7 @@ After the PMs and Adan validated P6 (2026-11-16), Ion asked for a PM-only app, t
 - [ ] 6.2 Ion's new changes to P6, on the PM app (mockup first)
   - Storyline in four acts (Ion, 2026-11-16; `04` log): today; how we got here (weekly chart above the matrix); in money (hours by month next to revenue by month); what comes next (Pace to plan end, with a "?" button explaining it).
   - [x] Pace measures created and validated (`08` § 19).
-  - [ ] Build the four-act layout and the Pace to plan end card (query, burn-up, "?" explanation, Fixed Fee / plan ended / over budget states); mockup of the card's "?" text first.
+  - [x] Four-act layout and the Pace to plan end card (queries, burn-up in the app's chart style, "?" explanation, centred tiles, Fixed Fee / plan ended / over budget / no pace states); hours by month over the same 12 months as revenue (2026-11-16, not released yet).
 - [ ] 6.3 Data discovery, read-only (Ion with Alejandro): PM per project (`msdyn_project.msdyn_projectmanager` + email), UKG supervisor chain and UPN, `audit.rls_mapping_table`, area → director, executives list, projects without PM
 - [ ] 6.4 Gold: PM name and email on `dim_project` (#4); `gold.security_project_access` (user UPN, project key, reason pm / manager / director), flattened
   - 2026-11-16: sources found (log, #29): PM from `msdyn_project`; PM → Auxis ID via `bookableresource_clean`; UPN and supervisor from `hr.vw_dim_employee_details`. One PM per key: active project first, then the most recently created (#30, to review with Caro). Access rules decided (log 2026-11-16): PM, supervisor chain, and a manual list (`pipeline/security/`, `all` or `area` = `L1` / `L1-L2` / `L1-L2-L3`) for executives and directors outside the chain.

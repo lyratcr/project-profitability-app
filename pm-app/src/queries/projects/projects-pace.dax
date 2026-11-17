@@ -1,0 +1,19 @@
+// P6 act 4, Pace to plan end (Ion, 2026-11-16; docs/08_app_measures.md § 19): whole-life hours budget (blank for
+// projects with a Fixed Fee plan), hours to date, what's left, the weekly pace over the last 4 complete
+// Sunday-Saturday weeks, weeks to plan end, the pace needed and the date the budget runs out at the current pace.
+// The app sends the project and the last 4 complete weeks (from the viewer's local date); "to date" is the last
+// day of that range. One row.
+EVALUATE
+SUMMARIZECOLUMNS (
+    /* @filters */
+    "Budget", [Hours Budget_app],
+    "ToDate", [Hours To Date_app],
+    "Left", [Hours Budget Left_app],
+    "Used", [Hours Budget Used %_app],
+    "Pace", [Weekly Pace_app],
+    "WeeksToEnd", [Weeks To Plan End_app],
+    "Needed", [Pace Needed_app],
+    "Runout", [Budget Runout Date_app],
+    "WeeksBefore", [Weeks Before Plan End_app],
+    "PlanEnd", [Plan End Date_app]
+)

@@ -3,6 +3,8 @@ import type { ColumnMetadataMap } from "@/lib/to-data-table";
 import kpisQuery from "./projects-kpis.dax?raw";
 import peopleQuery from "./projects-people.dax?raw";
 import peopleBreakdownQuery from "./projects-people-breakdown.dax?raw";
+import paceQuery from "./projects-pace.dax?raw";
+import paceWeeksQuery from "./projects-pace-weeks.dax?raw";
 import peopleWeeksQuery from "./projects-people-weeks.dax?raw";
 import projectWeeksQuery from "./projects-project-weeks.dax?raw";
 import revenueByMonthQuery from "./projects-revenue-by-month.dax?raw";
@@ -195,4 +197,39 @@ export const peopleBreakdownColumns = {
  */
 export function projectsPeopleBreakdown({ filters = [] }: ProjectsParams = {}) {
     return { connection: CONNECTION, query: applyFilters(peopleBreakdownQuery, filters) } as const;
+}
+
+// ---------------------------------------------------------------- pace to plan end (act 4, Ion 2026-11-16)
+
+/** Complete Sunday-Saturday weeks behind the current pace. */
+export const PACE_WEEKS = 4;
+/** Complete weeks of hours to date drawn in the burn-up. */
+export const PACE_HISTORY_WEEKS = 26;
+
+export const projectsPaceColumns = {
+    budget: "[Budget]",
+    toDate: "[ToDate]",
+    left: "[Left]",
+    used: "[Used]",
+    pace: "[Pace]",
+    weeksToEnd: "[WeeksToEnd]",
+    needed: "[Needed]",
+    runout: "[Runout]",
+    weeksBefore: "[WeeksBefore]",
+    planEnd: "[PlanEnd]",
+} as const;
+
+/** One row; `filters` carry the project and the last PACE_WEEKS complete weeks ("to date" = their last day). */
+export function projectsPace({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(paceQuery, filters) } as const;
+}
+
+export const projectsPaceWeeksColumns = {
+    week: "dim_calendar[start_of_week_sun]",
+    hoursToDate: "[HoursToDate]",
+} as const;
+
+/** Hours to date at the end of each week; `filters` carry the project and the last PACE_HISTORY_WEEKS complete weeks. */
+export function projectsPaceWeeks({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(paceWeeksQuery, filters) } as const;
 }
