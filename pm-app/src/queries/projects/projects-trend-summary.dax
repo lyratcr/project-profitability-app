@@ -6,5 +6,9 @@ SUMMARIZECOLUMNS (
     "Hours", [Synerion Hours_app],
     "PlannedHours", [Planned Hours_app],
     "HoursVsPlan", [Hours vs Plan_app],
-    "Variance", [Hours vs Plan Variance %_app]
+    "Variance", [Hours vs Plan Variance %_app],
+    // Three scenarios (Ion, 2026-11-16): T&M hours billed in Project Ops, and billed minus Synerion in the weeks the
+    // integration has posted (docs/08_app_measures.md § 21).
+    "Billed", [Billed Hours by Person_app],
+    "BilledVsSynerion", [Billed vs Synerion Hours_app]
 )

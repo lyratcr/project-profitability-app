@@ -103,7 +103,7 @@
 - `[Planned Revenue_app]`.
 - People who logged time.
 
-**Weekly trend (last 12 weeks):** Synerion hours (bars) vs planned hours (Backlog, line) and T&M hours billed in Project Ops (second line, Ion 2026-11-16) per week, with the current week marked as partial.
+**Weekly trend (last 12 weeks):** Synerion hours (bars) vs planned hours (Backlog, line) and T&M hours billed in Project Ops (second line, Ion 2026-11-16) per week, with the current week marked as partial. No cards under it: the KPIs sit in two groups on top of the matrices, Project Ops vs budget (Backlog) and Project Ops vs Synerion, each showing its matrix's total row (Ion, 2026-11-16).
 
 **Who logged time on this project (selected week):** person, `task_name`, `pay_category_description`, hours on the project, their total hours that week, `[Time Allocation %_app]`, and a flag column:
 - **"No hours this week"**: logged on this project in the previous 4 weeks but nothing in the selected week. Needs a model measure; proposed: `Hours Previous 4 Weeks_app` + `Missing This Week_app`.

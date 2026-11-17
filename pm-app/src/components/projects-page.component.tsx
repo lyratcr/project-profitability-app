@@ -10,7 +10,7 @@ import { describeDaysLeft, parseModelDate, planEndStatus, type PlanEndStatus } f
 import { cell, numberCell } from "@/lib/query-table";
 import { pageHref, type PageDef } from "@/lib/routes";
 
-import { buildPeopleMatrix, buildProjectMatrix, matrixWeeks, type PeopleMatrix } from "@/lib/people-week";
+import { buildPeopleMatrix, buildProjectMatrix, matrixWeeks, type MatrixCell, type PeopleMatrix } from "@/lib/people-week";
 import { toDataTable } from "@/lib/to-data-table";
 import { cn } from "@/lib/utils";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
@@ -42,7 +42,6 @@ import {
     projectsWeek,
     projectsWeekColumns,
     projectsTrendMonths,
-    projectsTrendSummary,
     projectsTrendSummaryColumns,
     projectsWeeklyTrend,
     projectsWeeklyVariance,
@@ -145,7 +144,6 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
             thisWeekQuery: projectsWeek({ filters: weekArgs(current) }),
             weekly: projectsWeeklyTrend({ filters: trendArgs, glass }),
             variance: glass ? projectsWeeklyVariance({ filters: trendArgs, glass }) : null,
-            trendSummary: projectsTrendSummary({ filters: trendArgs }),
             // Act 3: hours by month over the same months as revenue by month, so both tables read side by side (Ion, 2026-11-16).
             trendMonths: projectsTrendMonths({ filters: [dateRangeArg(months.start, months.end), ...project] }),
             matrixWindow,
@@ -180,7 +178,6 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
     const lastWeekResult = useSemanticModelQuery(run(model.lastWeekQuery));
     const thisWeekResult = useSemanticModelQuery(run(model.thisWeekQuery));
     const trendResult = useSemanticModelQuery(run(model.weekly));
-    const trendSummaryResult = useSemanticModelQuery(run(model.trendSummary));
     const trendMonthsResult = useSemanticModelQuery(run(model.trendMonths));
     const peopleWeeksResult = useSemanticModelQuery(runIf(single, model.peopleWeeks));
     const roleWeeksResult = useSemanticModelQuery(runIf(single, model.roleWeeks));
@@ -281,14 +278,8 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                     );
                                 }}
                             </QueryStates>
-                            <div className="mt-5 rounded-md bg-[var(--glass-sunken)] px-3 py-1.5 text-center text-200 font-semibold text-[var(--ink)]">
-                                Last {PROJECT_TREND_WEEKS} weeks · {weekSpan({ ...model.current, start: model.trend.start })}
-                            </div>
-                            <QueryStates result={trendSummaryResult} shape="kpi" title="Hours vs budget summary" className="mt-3">
-                                {(table) => <TrendTotals table={table} />}
-                            </QueryStates>
                             <p className="caption m-0 mt-3 text-muted-foreground">
-                                Three scenarios (Ion, 2026-11-16): Synerion hours logged (bars), budget = plan hours (Backlog) and T&amp;M hours billed in Project Ops
+                                Three scenarios: Synerion hours logged (bars), budget = plan hours (Backlog) and T&amp;M hours billed in Project Ops
                                 (blue, solid: it already happened; only weeks the integration has posted; none for Fixed Fee projects). The budget line is dashed: it's a plan. The variance compares Synerion with the budget. On
                                 Fixed Fee projects the weekly budget is tiny, so the variance is very large (open item #26).
                             </p>
@@ -298,7 +289,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                         {/* The people (one project) or project (several) x week matrix, right under the weekly chart it explains (Ion, 2026-11-16). */}
                         <div id={PEOPLE_TABLE_ID} className="scroll-mt-4">
                             <AxCard
-                                title={single ? "Hours vs budget by person" : "Hours vs budget by project"}
+                                title={single ? "Project Ops vs budget (Backlog) by person" : "Project Ops vs budget (Backlog) by project"}
                                 subtitle={
                                     single
                                         ? "Every week from the project's first, Sunday to Saturday · scroll sideways for earlier weeks · the highlighted column is last week"
@@ -322,6 +313,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                                                 project={filters.project ?? ""}
                                                                 rowLabel="Person"
                                                                 billedThrough={billedThrough}
+                                                                kpis={{ period: "Project to date" }}
                                                             />
                                                         )}
                                                     </QueryStates>
@@ -343,6 +335,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                                         billedThrough={billedThrough}
                                                         rowLimit={AGGREGATE_ROWS}
                                                         onRowPick={(key) => onFiltersChange?.({ ...filters, project: key })}
+                                                        kpis={{ period: `Last ${AGGREGATE_MATRIX_WEEKS} weeks` }}
                                                     />
                                                 )}
                                             </QueryStates>
@@ -383,6 +376,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                                     rowLabel="Person"
                                                     billedThrough={billedThrough}
                                                     mode="reconcile"
+                                                    kpis={{ period: "Project to date" }}
                                                 />
                                             )}
                                         </QueryStates>
@@ -403,6 +397,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                                     rowLimit={AGGREGATE_ROWS}
                                                     onRowPick={(key) => onFiltersChange?.({ ...filters, project: key })}
                                                     mode="reconcile"
+                                                    kpis={{ period: `Last ${AGGREGATE_MATRIX_WEEKS} weeks` }}
                                                 />
                                             )}
                                         </QueryStates>
@@ -484,6 +479,7 @@ function MatrixView({
     onRowPick,
     billedThrough,
     mode,
+    kpis,
 }: {
     matrix: PeopleMatrix;
     current: Date;
@@ -495,8 +491,12 @@ function MatrixView({
     onRowPick?: (key: string) => void;
     billedThrough: Date | null;
     mode?: "budget" | "reconcile";
+    /** KPI group on top: the matrix's total row (Ion, 2026-11-16), so the cards and the weekly detail always agree. */
+    kpis?: { period: string };
 }): ReactElement {
     return (
+        <>
+        {kpis && matrix.project && <ComparisonKpis total={matrix.project.total} mode={mode ?? "budget"} period={kpis.period} billedThrough={billedThrough} />}
         <PeopleWeekMatrix
             matrix={matrix}
             weeks={matrixWeeks(matrix, current)}
@@ -510,6 +510,53 @@ function MatrixView({
             billedThrough={billedThrough}
             mode={mode}
         />
+        </>
+    );
+}
+
+/**
+ * KPI group heading a matrix (Ion, 2026-11-16): the budget matrix compares Project Ops (Synerion for weeks not
+ * integrated yet) with the budget (Backlog); the reconciliation matrix compares Project Ops with Synerion in integrated
+ * weeks. Values are the matrix total row: model measures, nothing computed here.
+ */
+function ComparisonKpis({ total, mode, period, billedThrough }: { total: MatrixCell; mode: "budget" | "reconcile"; period: string; billedThrough: Date | null }): ReactElement {
+    const fmt = (v: number | null) => (v === null ? "—" : String(formatValue(v, "#,0")));
+    const through = billedThrough ? `through ${dateFormat.format(billedThrough)}` : "";
+    const diffClass =
+        total.diff === null || Math.round(total.diff) === 0
+            ? ""
+            : mode === "reconcile"
+              ? "ax-text-diff"
+              : total.diff > 0
+                ? "text-[var(--negative-ink)]"
+                : "text-[var(--positive-ink)]";
+    const items =
+        mode === "budget"
+            ? [
+                  { label: "Hours (Project Ops)", value: fmt(total.hours), note: `Billed ${through}; Synerion after` },
+                  { label: "Budget (Backlog)", value: fmt(total.planned), note: "Plan" },
+                  { label: "Difference", value: total.diff === null ? "—" : signedChange(total.diff, "#,0"), note: "Hours vs budget", className: diffClass },
+                  { label: "Variance", value: total.variance === null ? "—" : signedChange(total.variance, "#,0%"), note: "Of the budget", className: diffClass },
+              ]
+            : [
+                  { label: "Billed in Project Ops", value: fmt(total.hours), note: `T&M, ${through}`, className: "text-[var(--blue-300)]" },
+                  { label: "Logged in Synerion", value: fmt(total.planned), note: "Same weeks" },
+                  { label: "Difference", value: total.diff === null ? "—" : signedChange(total.diff, "#,0"), note: "Project Ops − Synerion", className: diffClass },
+                  { label: "Variance", value: total.variance === null ? "—" : signedChange(total.variance, "#,0%"), note: "Of Synerion", className: diffClass },
+              ];
+    return (
+        <div className="mb-4">
+            <div className="mb-2 text-200 font-semibold text-[var(--ink-muted)]">{period}</div>
+            <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {items.map((item) => (
+                    <div key={item.label} className="rounded-md bg-[var(--glass-sunken)] px-4 py-3 text-center">
+                        <dt className="ax-kpi-label">{item.label}</dt>
+                        <dd className={`m-0 mt-1 text-[22px] font-semibold tabular-nums ${"className" in item ? (item.className ?? "") : ""}`}>{item.value}</dd>
+                        <dd className="m-0 mt-0.5 text-200 text-muted-foreground">{item.note}</dd>
+                    </div>
+                ))}
+            </dl>
+        </div>
     );
 }
 
@@ -630,31 +677,6 @@ function TrendLegend(): ReactElement {
 
 const hoursFormat = (v: number | null) => (v === null ? "—" : String(formatValue(v, "#,0")));
 const varianceText = (v: number | null) => (v === null ? "—" : signedChange(v, "#,0%"));
-
-/** The 12-week totals: Synerion hours, budget, the difference and the variance, all from the model. */
-function TrendTotals({ table }: { table: QueryTable }): ReactElement {
-    const c = projectsTrendSummaryColumns;
-    const delta = numberCell(table, c.hoursVsPlan);
-    const variance = numberCell(table, c.variance);
-    // Status text uses the Auxis ink tokens (legible on both themes): over budget red, at or under green.
-    const tone = (v: number | null) => (v === null ? "" : v > 0 ? "text-[var(--negative-ink)]" : "text-[var(--positive-ink)]");
-    const items = [
-        { label: "Synerion hours", value: hoursFormat(numberCell(table, c.hours)), className: "" },
-        { label: "Budget hours", value: hoursFormat(numberCell(table, c.plannedHours)), className: "" },
-        { label: "Hours vs budget", value: delta === null ? "—" : signedChange(delta, "#,0"), className: tone(delta) },
-        { label: "Variance", value: varianceText(variance), className: tone(variance) },
-    ];
-    return (
-        <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {items.map((item) => (
-                <div key={item.label} className="rounded-md bg-[var(--glass-sunken)] px-4 py-3">
-                    <dt className="ax-kpi-label">{item.label}</dt>
-                    <dd className={`m-0 mt-1 text-[22px] font-semibold tabular-nums ${item.className}`}>{item.value}</dd>
-                </div>
-            ))}
-        </dl>
-    );
-}
 
 /**
  * Rows per month in the window, like the YTD block of the reference (Ion, 2026-11-07): hours and budget bars on one
