@@ -197,7 +197,7 @@ function PaceHelp({ id, onClose }: { id: string; onClose: () => void }): ReactEl
                     won&apos;t last; after it, there are hours to spare.
                 </li>
                 <li>
-                    <strong className="font-semibold">The chart</strong>: the gold area is the hours logged so far (hover a week to see it); the red dashed line continues it
+                    <strong className="font-semibold">The chart</strong>: the gold line is the hours logged so far (hover a week to see it); the red dashed line continues it
                     at the current pace; the green dotted line is the pace needed; the solid line across is the budget.
                 </li>
                 <li>
