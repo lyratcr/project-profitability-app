@@ -1,4 +1,4 @@
-// P6 weekly trend: Synerion hours (bars) vs plan hours (line) and the variance % per week by Sunday-Saturday week (dim_calendar[start_of_week_sun],
+// P6 weekly trend: Synerion hours (bars) vs plan hours (Backlog, line) and Project Ops billed hours (line) and the variance % per week by Sunday-Saturday week (dim_calendar[start_of_week_sun],
 // never year_week: open item #22). The app sends the 12-week window; the last week may be the current one, to date.
 EVALUATE
 ADDCOLUMNS (
@@ -20,7 +20,10 @@ ADDCOLUMNS (
                 NOT ISBLANK ( [Synerion Hours_app] ) || NOT ISBLANK ( [Planned Hours_app] ),
                 COALESCE ( [Planned Hours_app], 0 )
             ),
-        "Variance", [Hours vs Plan Variance %_app]
+        "Variance", [Hours vs Plan Variance %_app],
+        // Third series (Ion, 2026-11-16): T&M hours billed in Project Ops (Actual scenario); blank for weeks the
+        // integration hasn't posted yet and for Fixed Fee projects (no hours of work in Project Ops).
+        "Billed", [Billed Hours by Person_app]
     ),
     "Week", FORMAT ( dim_calendar[start_of_week_sun], "m/d" ),
     "WeekKey", VALUE ( FORMAT ( dim_calendar[start_of_week_sun], "yyyymmdd" ) )

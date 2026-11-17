@@ -141,6 +141,8 @@ export const projectsTrendSummaryColumns = {
     plannedHours: "[PlannedHours]",
     hoursVsPlan: "[HoursVsPlan]",
     variance: "[Variance]",
+    billed: "[Billed]",
+    billedVsSynerion: "[BilledVsSynerion]",
 } as const;
 
 /** `filters` = project + the trend's 12-week window (the same arguments as the weekly trend). */

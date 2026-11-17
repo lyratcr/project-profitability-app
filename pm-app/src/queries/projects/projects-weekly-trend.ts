@@ -10,6 +10,7 @@ export const projectsTrendColumns = {
     hours: "[Hours]",
     plannedHours: "[PlannedHours]",
     variance: "[Variance]",
+    billed: "[Billed]",
     week: "[Week]",
     weekKey: "[WeekKey]",
 } as const;
@@ -23,7 +24,8 @@ export const VARIANCE_FORMAT = "+#,0%;−#,0%;0%";
 export const trendColumnMetadata: ColumnMetadataMap = {
     [projectsTrendColumns.weekStart]: { name: "WeekStart", displayName: "Week starting" },
     [projectsTrendColumns.hours]: { name: "Hours", displayName: "Synerion hours", format: "#,0" },
-    [projectsTrendColumns.plannedHours]: { name: "PlannedHours", displayName: "Budget hours", format: "#,0" },
+    [projectsTrendColumns.plannedHours]: { name: "PlannedHours", displayName: "Budget hours (Backlog)", format: "#,0" },
+    [projectsTrendColumns.billed]: { name: "Billed", displayName: "Billed in Project Ops", format: "#,0" },
     [projectsTrendColumns.variance]: { name: "Variance", displayName: "Variance vs budget", format: VARIANCE_FORMAT },
     [projectsTrendColumns.week]: { name: "Week", displayName: "Week" },
     [projectsTrendColumns.weekKey]: { name: "WeekKey", displayName: "Week key" },
@@ -40,6 +42,8 @@ export interface GlassBarColors {
     deep: string;
     /** `--ink`: the budget line, in front of the bars. */
     plan: string;
+    /** `--blue-300` (`--chart-2`): the Project Ops billed line (Ion, 2026-11-16). */
+    billed: string;
     /** `--ink-muted`: zero line and the labels in the variance panel. */
     muted: string;
     /** `--surface`: the 2px ring around points. */
@@ -65,7 +69,8 @@ export const TREND_Y_AXIS_WIDTH = 46;
 export const TREND_TOOLTIP = [
     { field: "Week", type: "ordinal", title: "Week starting" },
     { field: "Hours", type: "quantitative", title: "Synerion hours", format: ",.0f" },
-    { field: "PlannedHours", type: "quantitative", title: "Budget hours", format: ",.0f" },
+    { field: "PlannedHours", type: "quantitative", title: "Budget hours (Backlog)", format: ",.0f" },
+    { field: "Billed", type: "quantitative", title: "Billed in Project Ops", format: ",.0f" },
     { field: "Variance", type: "quantitative", title: "Variance vs budget" },
 ];
 
@@ -92,6 +97,9 @@ function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
     layers[1].layer[0].encoding.y.axis = null;
     layers[1].layer[0].encoding.y.title = "Hours";
     (spec as Record<string, unknown>).resolve = { scale: { y: "shared" } };
+    // Project Ops billed hours (Ion, 2026-11-16): a second line on the same hours axis, after the budget line.
+    const planLayer = layers[1].layer[0];
+    layers[1].layer.push({ mark: { type: "line", point: true }, encoding: { y: { ...planLayer.encoding.y, field: "Billed", axis: null } } });
     for (const group of layers) for (const layer of group.layer) layer.encoding.tooltip = TREND_TOOLTIP;
     if (glass) {
         layers[0].layer[0].encoding.y.axis = { minExtent: TREND_Y_AXIS_WIDTH, maxExtent: TREND_Y_AXIS_WIDTH };
@@ -116,9 +124,19 @@ function weeklySpec(glass?: GlassBarColors): VisualizationSpec {
             type: "line",
             color: glass.plan,
             strokeWidth: 2.5,
+            // Dashed: the budget is a plan, an assumption; what already happened (Project Ops) is solid (Ion, 2026-11-16).
+            strokeDash: [6, 4],
             strokeCap: "round",
             strokeJoin: "round",
             point: { filled: true, color: glass.plan, size: 64, stroke: glass.ring, strokeWidth: 2 },
+        };
+        layers[1].layer[1].mark = {
+            type: "line",
+            color: glass.billed,
+            strokeWidth: 2.5,
+            strokeCap: "round",
+            strokeJoin: "round",
+            point: { filled: true, shape: "diamond", color: glass.billed, size: 70, stroke: glass.ring, strokeWidth: 2 },
         };
     }
     return spec;

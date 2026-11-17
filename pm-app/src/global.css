@@ -682,3 +682,7 @@ body {
   background: rgba(250, 180, 52, 0.22);
   border-color: rgba(250, 180, 52, 0.45);
 }
+
+/* Reconciliation KPI difference: amber ink, legible in both themes (Ion, 2026-11-16). */
+.ax-text-diff { color: var(--accent-ink, #7a5b00); }
+[data-theme="dark"] .ax-text-diff { color: var(--yellow-300); }

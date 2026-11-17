@@ -51,7 +51,7 @@ describe("ProjectsPage", () => {
         expect(run.some((q) => /SUMMARIZECOLUMNS \(\s*dim_project\[project_key\],\s*dim_project\[project_name\],\s*ROLLUPADDISSUBTOTAL/.test(q))).toBe(true);
         expect(run.some((q) => q.includes("dim_project[project_manager_name],"))).toBe(true);
         expect(run.some((q) => q.includes("dim_employee[employee_full_name]"))).toBe(false);
-        expect(screen.getByText("Hours vs budget by project")).toBeTruthy();
+        expect(screen.getByText("Project Ops vs budget (Backlog) by project")).toBeTruthy();
         expect(screen.getByText("How is the project right now?")).toBeTruthy();
     });
 
