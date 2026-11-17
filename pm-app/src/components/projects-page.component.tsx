@@ -1,10 +1,11 @@
-import { useMemo, type ReactElement } from "react";
+import { useMemo, type ReactElement, type ReactNode } from "react";
 import { formatValue } from "@microsoft/fabric-visuals-core";
 import { useDesignTokens } from "@/hooks/use-design-tokens";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { signedChange } from "@/lib/change";
 import { describeFilterContext } from "@/lib/filter-context";
 import { dateRangeArg, filterArgs, monthWindow, TREND_MONTHS, writeFilters, type FilterOptions, type FilterState } from "@/lib/filters";
+import { completeWeeksWindow } from "@/lib/pace";
 import { describeDaysLeft, parseModelDate, planEndStatus, type PlanEndStatus } from "@/lib/plan-end";
 import { cell, numberCell } from "@/lib/query-table";
 import { pageHref, type PageDef } from "@/lib/routes";
@@ -13,10 +14,14 @@ import { toDataTable } from "@/lib/to-data-table";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { lastWeek, reviewWindow, thisWeek, trendWindow, weekSpan, type Week } from "@/lib/weeks";
 import {
+    PACE_HISTORY_WEEKS,
+    PACE_WEEKS,
     PROJECT_TREND_WEEKS,
     PROJECTS_FORMATS,
     projectsKpiColumns,
     projectsKpis,
+    projectsPace,
+    projectsPaceWeeks,
     PEOPLE_MATRIX_WEEKS,
     projectsPeopleBreakdown,
     projectsPeopleWeeks,
@@ -34,6 +39,7 @@ import {
 } from "@/queries/projects";
 import { AxCard } from "./ax/ax-card.component";
 import { AxPageHeader } from "./ax/ax-page-header.component";
+import { PaceToPlanEnd } from "./pace-to-plan-end.component";
 import { QueryStates, type QueryResult } from "./query-states.component";
 import { PeopleWeekMatrix } from "./people-week-matrix.component";
 import { ReportTable } from "./report-table.component";
@@ -102,6 +108,9 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
         // People x week matrix: the current week (to date) and the 7 before it, so future weeks never read as -plan.
         const matrixWindow = trendWindow(at, at, PEOPLE_MATRIX_WEEKS);
         const matrixArgs = [dateRangeArg(matrixWindow.start, matrixWindow.end), ...project];
+        // Act 4: the pace window (last complete weeks) and the burn-up's history, both ending last Saturday.
+        const paceWindow = completeWeeksWindow(at, PACE_WEEKS);
+        const historyWindow = completeWeeksWindow(at, PACE_HISTORY_WEEKS);
         const matrixWeeks = Array.from({ length: PEOPLE_MATRIX_WEEKS }, (_, i) => new Date(matrixWindow.start.getFullYear(), matrixWindow.start.getMonth(), matrixWindow.start.getDate() + 7 * i));
         return {
             at,
@@ -116,13 +125,17 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
             weekly: projectsWeeklyTrend({ filters: trendArgs, glass }),
             variance: glass ? projectsWeeklyVariance({ filters: trendArgs, glass }) : null,
             trendSummary: projectsTrendSummary({ filters: trendArgs }),
-            trendMonths: projectsTrendMonths({ filters: trendArgs }),
+            // Act 3: hours by month over the same months as revenue by month, so both tables read side by side (Ion, 2026-11-16).
+            trendMonths: projectsTrendMonths({ filters: [dateRangeArg(months.start, months.end), ...project] }),
             matrixWeeks,
             peopleWeeks: projectsPeopleWeeks({ filters: matrixArgs }),
             peopleBreakdown: projectsPeopleBreakdown({ filters: matrixArgs }),
             roleWeeks: projectsRoleWeeks({ filters: matrixArgs }),
             projectWeeks: projectsProjectWeeks({ filters: matrixArgs }),
             revenue: projectsRevenueByMonth({ filters: [dateRangeArg(months.start, months.end), ...project] }),
+            paceAsOf: paceWindow.end,
+            pace: projectsPace({ filters: [dateRangeArg(paceWindow.start, paceWindow.end), ...project] }),
+            paceWeeks: projectsPaceWeeks({ filters: [dateRangeArg(historyWindow.start, historyWindow.end), ...project] }),
         };
     }, [filters, nowKey, glass]);
 
@@ -141,6 +154,8 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
     const roleWeeksResult = useSemanticModelQuery(run(model.roleWeeks));
     const projectWeeksResult = useSemanticModelQuery(run(model.projectWeeks));
     const revenueResult = useSemanticModelQuery(run(model.revenue));
+    const paceResult = useSemanticModelQuery(run(model.pace));
+    const paceWeeksResult = useSemanticModelQuery(run(model.paceWeeks));
 
     const context = describeFilterContext(page, filters, options, model.at);
     const reviewHref = pageHref(page, writeFilters(params, { ...filters, week: model.review.week }));
@@ -179,109 +194,145 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                 </div>
             ) : (
                 <>
-                    {/* Row 1, the two things the PMs read first (Ion, 2026-11-13): the project budget (with the plan end date at its
-                        foot) and last week / this week vs plan, half the width each. Forecast is left out: it's manual and not in the model. */}
-                    <div className="grid grid-cols-1 gap-grid lg:grid-cols-2">
-                        <QueryStates result={kpiResult} shape="kpi" title="Project budget" emptyMessage="This project has no plan or revenue in the model.">
-                            {(table) => {
-                                const planEnd = parseModelDate(cell(table, projectsKpiColumns.planEnd));
-                                return <ProjectBudget table={table} planEnd={planEnd} status={planEnd ? planEndStatus(planEnd, model.at) : null} />;
-                            }}
-                        </QueryStates>
-                        <AxCard className="h-full" title="Last week and this week vs plan" subtitle="Hours in Synerion; plan from the Backlog scenario">
-                            <WeekVsPlan last={{ week: model.last, result: lastWeekResult }} current={{ week: model.current, result: thisWeekResult }} />
-                            <p className="caption m-0 mt-3 text-muted-foreground">
-                                Fixed Fee plan is posted on the first of each month and T&amp;M plan by day, so a week only holds the Fixed Fee plan when it contains the
-                                1st. &quot;Hours not yet in Project Ops&quot; are logged in Synerion but not integrated yet.
-                            </p>
-                        </AxCard>
-                    </div>
+                    {/* Project Health tells a story in four acts (Ion, 2026-11-16): today, how we got here, in money, what comes next. */}
+                    <StoryAct step={1} title="Today" question="How is the project right now?">
+                        {/* Row 1, the two things the PMs read first (Ion, 2026-11-13): the project budget (with the plan end date at its
+                            foot) and last week / this week vs plan, half the width each. Forecast is left out: it's manual and not in the model. */}
+                        <div className="grid grid-cols-1 gap-grid lg:grid-cols-2">
+                            <QueryStates result={kpiResult} shape="kpi" title="Project budget" emptyMessage="This project has no plan or revenue in the model.">
+                                {(table) => {
+                                    const planEnd = parseModelDate(cell(table, projectsKpiColumns.planEnd));
+                                    return <ProjectBudget table={table} planEnd={planEnd} status={planEnd ? planEndStatus(planEnd, model.at) : null} />;
+                                }}
+                            </QueryStates>
+                            <AxCard className="h-full" title="Last week and this week vs plan" subtitle="Hours in Synerion; plan from the Backlog scenario">
+                                <WeekVsPlan last={{ week: model.last, result: lastWeekResult }} current={{ week: model.current, result: thisWeekResult }} />
+                                <p className="caption m-0 mt-3 text-muted-foreground">
+                                    Fixed Fee plan is posted on the first of each month and T&amp;M plan by day, so a week only holds the Fixed Fee plan when it contains the
+                                    1st. &quot;Hours not yet in Project Ops&quot; are logged in Synerion but not integrated yet.
+                                </p>
+                            </AxCard>
+                        </div>
 
-                    {/* Row 2: the people x week matrix (Ion, 2026-11-13). */}
-                    <div id={PEOPLE_TABLE_ID} className="scroll-mt-4">
+                    </StoryAct>
+
+                    <StoryAct step={2} title="How we got here" question="The shape of the last weeks first, then who drove it">
                         <AxCard
-                            title="Hours vs budget by person"
-                            subtitle={`Last ${PEOPLE_MATRIX_WEEKS} weeks, Sunday to Saturday · the highlighted column is the week in the Week filter`}
-                            aside={<MatrixLegend />}
+                            title="Weekly hours vs budget"
+                            subtitle={`Up to ${PROJECT_TREND_WEEKS} weeks · ${weekSpan({ ...model.current, start: model.trend.start })} · weeks with hours or budget · the last one is this week, to date`}
+                            aside={<TrendLegend />}
                         >
-                            {/* One model query per block: people, plan by role, and the project row; the matrix only places them. */}
-                            <QueryStates result={peopleWeeksResult} shape="table" title="Hours vs budget by person" emptyMessage="Nobody logged time or was planned on this project in these weeks.">
-                                {(people) => (
-                                    <QueryStates result={roleWeeksResult} shape="table" title="Plan by role" allowEmpty>
-                                        {(roles) => (
-                                            <QueryStates result={projectWeeksResult} shape="table" title="Project total" allowEmpty>
-                                                {(project) => (
-                                                    <PeopleWeekMatrix
-                                                        matrix={buildPeopleMatrix(people, roles, project)}
-                                                        weeks={model.matrixWeeks}
-                                                        currentWeek={model.current.start}
-                                                        selectedWeek={filters.week.start}
-                                                        breakdown={breakdown}
-                                                        breakdownState={breakdownState}
-                                                        project={filters.project ?? ""}
-                                                    />
-                                                )}
-                                            </QueryStates>
-                                        )}
-                                    </QueryStates>
-                                )}
+                            <QueryStates result={trendResult} shape="chart" title="Weekly hours vs budget">
+                                {(table) => {
+                                    const data = toDataTable(table, model.weekly.columnMetadata);
+                                    return (
+                                        <>
+                                            {/* Layers: glass bars behind, the budget line in front with a CSS drop shadow (global.css). */}
+                                            <div className="ax-trend-layered">
+                                                <TrendChart chromeless data={data} spec={model.weekly.vegaLiteSpec} title="Weekly hours vs budget" height={260} capabilities={TREND_CAPABILITIES} />
+                                            </div>
+                                            {model.variance && (
+                                                <div className="ax-trend-lollipop">
+                                                    <TrendChart chromeless data={data} spec={model.variance.vegaLiteSpec} title="Weekly variance vs budget" height={150} capabilities={TREND_CAPABILITIES} />
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                }}
+                            </QueryStates>
+                            <div className="mt-5 rounded-md bg-[var(--glass-sunken)] px-3 py-1.5 text-center text-200 font-semibold text-[var(--ink)]">
+                                Last {PROJECT_TREND_WEEKS} weeks · {weekSpan({ ...model.current, start: model.trend.start })}
+                            </div>
+                            <QueryStates result={trendSummaryResult} shape="kpi" title="Hours vs budget summary" className="mt-3">
+                                {(table) => <TrendTotals table={table} />}
                             </QueryStates>
                             <p className="caption m-0 mt-3 text-muted-foreground">
-                                Budget = the person&apos;s plan hours (Backlog) matched by Auxis ID. Hours logged without a budget count as over (+); budget without hours as under
-                                (−). Plan not assigned to a person is shown by role; catalog services are not people (open item #27). On Fixed Fee projects the month&apos;s plan
-                                lands in the week that holds the 1st (#26).
+                                Budget = plan hours (Backlog scenario). On Fixed Fee projects the weekly budget is tiny, so the variance is very large (open item #26).
                             </p>
                         </AxCard>
-                    </div>
 
-                    <AxCard
-                        title="Weekly hours vs budget"
-                        subtitle={`Up to ${PROJECT_TREND_WEEKS} weeks · ${weekSpan({ ...model.current, start: model.trend.start })} · weeks with hours or budget · the last one is this week, to date`}
-                        aside={<TrendLegend />}
-                    >
-                        <QueryStates result={trendResult} shape="chart" title="Weekly hours vs budget">
-                            {(table) => {
-                                const data = toDataTable(table, model.weekly.columnMetadata);
-                                return (
-                                    <>
-                                        {/* Layers: glass bars behind, the budget line in front with a CSS drop shadow (global.css). */}
-                                        <div className="ax-trend-layered">
-                                            <TrendChart chromeless data={data} spec={model.weekly.vegaLiteSpec} title="Weekly hours vs budget" height={260} capabilities={TREND_CAPABILITIES} />
-                                        </div>
-                                        {model.variance && (
-                                            <div className="ax-trend-lollipop">
-                                                <TrendChart chromeless data={data} spec={model.variance.vegaLiteSpec} title="Weekly variance vs budget" height={150} capabilities={TREND_CAPABILITIES} />
-                                            </div>
-                                        )}
-                                    </>
-                                );
-                            }}
-                        </QueryStates>
-                        <div className="mt-5 rounded-md bg-[var(--glass-sunken)] px-3 py-1.5 text-center text-200 font-semibold text-[var(--ink)]">
-                            Last {PROJECT_TREND_WEEKS} weeks · {weekSpan({ ...model.current, start: model.trend.start })}
+
+                        {/* The people x week matrix, right under the weekly chart it explains (Ion, 2026-11-16). */}
+                        <div id={PEOPLE_TABLE_ID} className="scroll-mt-4">
+                            <AxCard
+                                title="Hours vs budget by person"
+                                subtitle={`Last ${PEOPLE_MATRIX_WEEKS} weeks, Sunday to Saturday · the highlighted column is the week in the Week filter`}
+                                aside={<MatrixLegend />}
+                            >
+                                {/* One model query per block: people, plan by role, and the project row; the matrix only places them. */}
+                                <QueryStates result={peopleWeeksResult} shape="table" title="Hours vs budget by person" emptyMessage="Nobody logged time or was planned on this project in these weeks.">
+                                    {(people) => (
+                                        <QueryStates result={roleWeeksResult} shape="table" title="Plan by role" allowEmpty>
+                                            {(roles) => (
+                                                <QueryStates result={projectWeeksResult} shape="table" title="Project total" allowEmpty>
+                                                    {(project) => (
+                                                        <PeopleWeekMatrix
+                                                            matrix={buildPeopleMatrix(people, roles, project)}
+                                                            weeks={model.matrixWeeks}
+                                                            currentWeek={model.current.start}
+                                                            selectedWeek={filters.week.start}
+                                                            breakdown={breakdown}
+                                                            breakdownState={breakdownState}
+                                                            project={filters.project ?? ""}
+                                                        />
+                                                    )}
+                                                </QueryStates>
+                                            )}
+                                        </QueryStates>
+                                    )}
+                                </QueryStates>
+                                <p className="caption m-0 mt-3 text-muted-foreground">
+                                    Budget = the person&apos;s plan hours (Backlog) matched by Auxis ID. Hours logged without a budget count as over (+); budget without hours as under
+                                    (−). Plan not assigned to a person is shown by role; catalog services are not people (open item #27). On Fixed Fee projects the month&apos;s plan
+                                    lands in the week that holds the 1st (#26).
+                                </p>
+                            </AxCard>
                         </div>
-                        <QueryStates result={trendSummaryResult} shape="kpi" title="Hours vs budget summary" className="mt-3">
-                            {(table) => <TrendTotals table={table} />}
-                        </QueryStates>
-                        <QueryStates result={trendMonthsResult} shape="table" title="Hours vs budget by month" className="mt-3">
-                            {(table) => <TrendMonths table={table} window={model.trend} />}
-                        </QueryStates>
-                        <p className="caption m-0 mt-3 text-muted-foreground">
-                            Budget = plan hours (Backlog scenario). * The window cuts the first and last months. On Fixed Fee projects the weekly budget is tiny,
-                            so the variance is very large (open item #26).
-                        </p>
-                    </AxCard>
 
-                    <AxCard
-                        title="Revenue by month vs plan"
-                        subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · actual (Actual scenario) vs plan (Backlog scenario)`}
-                    >
-                        <QueryStates result={revenueResult} shape="table" title="Revenue by month">
-                            {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} />}
-                        </QueryStates>
-                    </AxCard>
+                    </StoryAct>
+
+                    <StoryAct step={3} title="In money" question="What it means month by month">
+                        <div className="grid grid-cols-1 gap-grid lg:grid-cols-2">
+                        <AxCard
+                            title="Hours vs budget by month"
+                            subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · Synerion hours vs plan hours (Backlog scenario)`}
+                        >
+                            <QueryStates result={trendMonthsResult} shape="table" title="Hours vs budget by month">
+                                {(table) => <TrendMonths table={table} window={model.months} />}
+                            </QueryStates>
+                            <p className="caption m-0 mt-3 text-muted-foreground">Budget = plan hours (Backlog scenario). * Only through the end of the week in the Week filter.</p>
+                        </AxCard>
+                        <AxCard
+                            title="Revenue by month vs plan"
+                            subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · actual (Actual scenario) vs plan (Backlog scenario)`}
+                        >
+                            <QueryStates result={revenueResult} shape="table" title="Revenue by month">
+                                {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} />}
+                            </QueryStates>
+                        </AxCard>
+                        </div>
+                    </StoryAct>
+
+                    <StoryAct step={4} title="What comes next" question="If the team keeps this pace, does the hours budget last?">
+                        <PaceToPlanEnd pace={paceResult} history={paceWeeksResult} asOf={model.paceAsOf} />
+                    </StoryAct>
                 </>
             )}
+        </section>
+    );
+}
+
+/** One act of the Project Health story: a small numbered heading and its cards. */
+function StoryAct({ step, title, question, children }: { step: number; title: string; question: string; children: ReactNode }): ReactElement {
+    const id = `act-${step}`;
+    return (
+        <section aria-labelledby={id} className="flex flex-col gap-grid">
+            <h2 id={id} className="ax-act m-0">
+                <span className="ax-act-step">{step}</span>
+                <span className="ax-act-title">{title}</span>
+                <span className="ax-act-question">{question}</span>
+            </h2>
+            {children}
         </section>
     );
 }

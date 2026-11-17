@@ -1,0 +1,9 @@
+// P6 act 4 burn-up: hours to date at the end of each Sunday-Saturday week (cumulative from the start of the
+// project), for the weeks in the date range the app sends (the last 26 complete weeks). One row per week.
+EVALUATE
+SUMMARIZECOLUMNS (
+    dim_calendar[start_of_week_sun],
+    /* @filters */
+    "HoursToDate", [Hours To Date_app]
+)
+ORDER BY dim_calendar[start_of_week_sun]
