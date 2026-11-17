@@ -121,20 +121,31 @@ export interface FilterState {
     org: OrgSelection;
     country?: string;
     customer?: string;
+    /** Project manager (PM app, Ion 2026-11-16): narrows the project list; Project Operations PM per project (#30). */
+    pm?: string;
     project?: string;
 }
 
-export type FilterKey = "period" | "week" | "org" | "country" | "customer" | "project";
+export type FilterKey = "period" | "week" | "org" | "country" | "customer" | "pm" | "project";
 
 /** Option lists loaded from the model; the whitelist for every non-period filter. */
 export interface FilterOptions {
     org: ReadonlyArray<readonly [string, string, string]>;
     countries: readonly string[];
     customers: readonly string[];
-    projects: ReadonlyArray<{ key: string; name: string | null }>;
+    /** Projects of the selected org and customer, with their PM (`dim_project[project_manager_name]`). */
+    projects: ReadonlyArray<ProjectOption>;
+    /** Distinct PMs of `projects`, sorted. */
+    pms: readonly string[];
 }
 
-const PARAM = { period: "period", week: "week", l1: "l1", l2: "l2", l3: "l3", country: "country", customer: "customer", project: "project" } as const;
+export interface ProjectOption {
+    key: string;
+    name: string | null;
+    pm: string | null;
+}
+
+const PARAM = { period: "period", week: "week", l1: "l1", l2: "l2", l3: "l3", country: "country", customer: "customer", pm: "pm", project: "project" } as const;
 
 /**
  * Reads filter state from the hash query. Values not found in `options` are dropped, so nothing
@@ -153,8 +164,10 @@ export function readFilters(params: URLSearchParams, today: Date, options: Filte
     if (country !== null && options.countries.includes(country)) state.country = country;
     const customer = params.get(PARAM.customer);
     if (customer !== null && options.customers.includes(customer)) state.customer = customer;
+    const pm = params.get(PARAM.pm);
+    if (pm !== null && options.pms.includes(pm)) state.pm = pm;
     const project = params.get(PARAM.project);
-    if (project !== null && options.projects.some((p) => p.key === project)) state.project = project;
+    if (project !== null && projectsOf(options, state.pm).some((p) => p.key === project)) state.project = project;
     return state;
 }
 
@@ -169,6 +182,7 @@ export function writeFilters(params: URLSearchParams, state: FilterState): URLSe
     set(PARAM.l3, state.org.l1 && state.org.l2 ? state.org.l3 : undefined);
     set(PARAM.country, state.country);
     set(PARAM.customer, state.customer);
+    set(PARAM.pm, state.pm);
     set(PARAM.project, state.project);
     return next;
 }
@@ -228,6 +242,30 @@ export function filterArgs(state: FilterState, applies: ReadonlySet<FilterKey>):
         for (const column of FILTER_COLUMNS.project) args.push(treatas(state.project, column));
     }
     return args;
+}
+
+/** The project list as the filter bar shows it: the org / customer list, narrowed to one PM when one is picked. */
+export function projectsOf(options: FilterOptions, pm: string | undefined): ReadonlyArray<ProjectOption> {
+    return pm === undefined ? options.projects : options.projects.filter((p) => p.pm === pm);
+}
+
+/**
+ * The projects a PM app page covers (Ion, 2026-11-16, aggregated view): the picked project; else, when an org,
+ * customer or PM is picked, every project left in the list; else null, meaning every project the viewer may see
+ * (row-level security limits it). The org, customer and PM only choose the projects: the measures then filter by
+ * project, so every number uses the project's own org.
+ */
+export function projectScope(state: FilterState, options: FilterOptions): string[] | null {
+    if (state.project !== undefined) return [state.project];
+    const narrowed = state.org.l1 !== undefined || state.customer !== undefined || state.pm !== undefined;
+    return narrowed ? projectsOf(options, state.pm).map((p) => p.key) : null;
+}
+
+/** SUMMARIZECOLUMNS filter arguments for a project scope (none for null: every visible project). */
+export function projectScopeArgs(keys: readonly string[] | null): string[] {
+    if (keys === null) return [];
+    const list = keys.length > 0 ? keys.map(daxString).join(", ") : daxString("");
+    return FILTER_COLUMNS.project.map((column) => `KEEPFILTERS ( TREATAS ( { ${list} }, ${column} ) )`);
 }
 
 export const FILTERS_PLACEHOLDER = "/* @filters */";

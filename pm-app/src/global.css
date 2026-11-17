@@ -570,3 +570,69 @@ body {
   box-shadow: var(--shadow-float);
   white-space: nowrap;
 }
+
+/* Aggregated view and week scroll (Ion, 2026-11-16). The matrix scrolls sideways from the first week to this week;
+   the name column (left) and Total / Var. (right) stay put. A visible gold scrollbar says there is more to the left. */
+.ax-matrix-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: var(--yellow-500, var(--chart-1)) var(--glass-sunken, var(--surface-sunken));
+  padding-bottom: 6px;
+}
+.ax-matrix-scroll::-webkit-scrollbar { height: 12px; }
+.ax-matrix-scroll::-webkit-scrollbar-track { background: var(--glass-sunken, var(--surface-sunken)); border-radius: 999px; }
+.ax-matrix-scroll::-webkit-scrollbar-thumb { background: var(--yellow-500, var(--chart-1)); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+.ax-matrix-scroll:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.ax-matrix .ax-matrix-pin-total,
+.ax-matrix .ax-matrix-pin-var {
+  position: sticky;
+  z-index: 1;
+  background: var(--surface-raised);
+}
+.ax-matrix .ax-matrix-pin-var { right: 0; min-width: 76px; width: 76px; }
+.ax-matrix .ax-matrix-pin-total { right: 76px; min-width: 92px; }
+.ax-matrix thead .ax-matrix-pin-total,
+.ax-matrix thead .ax-matrix-pin-var { background: var(--surface-sunken); }
+.ax-matrix .ax-matrix-cell { min-width: 72px; }
+.ax-show-all {
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--glass-sunken, var(--surface-sunken));
+  cursor: pointer;
+}
+.ax-show-all:hover { border-color: var(--yellow-500, var(--chart-1)); }
+.ax-link-button {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong, var(--line));
+  text-underline-offset: 3px;
+}
+.ax-link-button:hover { text-decoration-color: var(--yellow-500, var(--chart-1)); }
+.ax-pace-table td, .ax-pace-table th { vertical-align: middle; }
+/* Sticky name column must be opaque once the weeks scroll under it; long project names are cut with an ellipsis. */
+.ax-matrix tbody .ax-matrix-name {
+  background: var(--surface-raised);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ax-matrix-total .ax-matrix-name,
+.ax-matrix-total .ax-matrix-pin-total,
+.ax-matrix-total .ax-matrix-pin-var { background: var(--surface-sunken); }
+/* Row hover in the liquid look is translucent: keep the pinned cells opaque and tint them on top instead. */
+.ax-liquid .ax-matrix tr:hover .ax-matrix-pin-total,
+.ax-liquid .ax-matrix tr:hover .ax-matrix-pin-var,
+.ax-liquid .ax-matrix tr:hover .ax-matrix-name {
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 9999px var(--glass-sunken);
+}

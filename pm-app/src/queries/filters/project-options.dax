@@ -3,6 +3,7 @@
 // The org markers take the selected L1 > L2 > L3 as the project's org (hours: project_L*, revenue: financial_L*);
 // the customer markers take the selected customer (hours: project_customer, revenue: financial_customer).
 // So the list only shows the projects of that org and customer. Markers with nothing selected are removed.
+// Each project also carries its PM from dim_project (Project Operations, #30) for the PM filter (PM app, 2026-11-16).
 DEFINE
     VAR _hours = CALCULATETABLE ( DISTINCT ( fact_profitability_metrics[project_key] ) /* @hours-org */ /* @hours-customer */ )
     VAR _revenue = CALCULATETABLE ( DISTINCT ( fact_revenue_metrics[project_key] ) /* @revenue-org */ /* @revenue-customer */ )
@@ -14,6 +15,11 @@ ADDCOLUMNS (
         CALCULATE (
             MAX ( fact_profitability_metrics[project_name] ),
             TREATAS ( { [project_key] }, fact_profitability_metrics[project_key] )
+        ),
+    "Project Manager",
+        CALCULATE (
+            MAX ( dim_project[project_manager_name] ),
+            TREATAS ( { [project_key] }, dim_project[project_key] )
         )
 )
 ORDER BY [project_key]

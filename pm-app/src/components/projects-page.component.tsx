@@ -4,16 +4,19 @@ import { useDesignTokens } from "@/hooks/use-design-tokens";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import { signedChange } from "@/lib/change";
 import { describeFilterContext } from "@/lib/filter-context";
-import { dateRangeArg, filterArgs, monthWindow, TREND_MONTHS, writeFilters, type FilterOptions, type FilterState } from "@/lib/filters";
+import { DATA_START, dateRangeArg, monthWindow, projectScope, projectScopeArgs, TREND_MONTHS, type FilterOptions, type FilterState } from "@/lib/filters";
 import { completeWeeksWindow } from "@/lib/pace";
 import { describeDaysLeft, parseModelDate, planEndStatus, type PlanEndStatus } from "@/lib/plan-end";
 import { cell, numberCell } from "@/lib/query-table";
 import { pageHref, type PageDef } from "@/lib/routes";
-import { buildBreakdown, buildPeopleMatrix } from "@/lib/people-week";
+
+import { buildPeopleMatrix, buildProjectMatrix, matrixWeeks, type PeopleMatrix } from "@/lib/people-week";
 import { toDataTable } from "@/lib/to-data-table";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
-import { lastWeek, reviewWindow, thisWeek, trendWindow, weekSpan, type Week } from "@/lib/weeks";
+import { defaultWeek, lastWeek, reviewWindow, thisWeek, trendWindow, weekSpan, weekStartOf, type Week } from "@/lib/weeks";
 import {
+    AGGREGATE_MATRIX_WEEKS,
+    AGGREGATE_ROWS,
     PACE_HISTORY_WEEKS,
     PACE_WEEKS,
     PROJECT_TREND_WEEKS,
@@ -21,11 +24,12 @@ import {
     projectsKpiColumns,
     projectsKpis,
     projectsPace,
+    projectsPaceByProject,
     projectsPaceWeeks,
-    PEOPLE_MATRIX_WEEKS,
     projectsPeopleBreakdown,
     projectsPeopleWeeks,
     projectsProjectWeeks,
+    projectsProjectsWeeks,
     projectsRoleWeeks,
     projectsRevenueByMonth,
     projectsRevenueColumns,
@@ -40,6 +44,7 @@ import {
 import { AxCard } from "./ax/ax-card.component";
 import { AxPageHeader } from "./ax/ax-page-header.component";
 import { PaceToPlanEnd } from "./pace-to-plan-end.component";
+import { ProjectsByPace } from "./projects-by-pace.component";
 import { QueryStates, type QueryResult } from "./query-states.component";
 import { PeopleWeekMatrix } from "./people-week-matrix.component";
 import { ReportTable } from "./report-table.component";
@@ -50,6 +55,8 @@ interface ProjectsPageProps {
     filters: FilterState;
     options: FilterOptions | null;
     params: URLSearchParams;
+    /** Changes the filters (act 4 opens a project). */
+    onFiltersChange?: (next: FilterState) => void;
     now?: Date;
 }
 
@@ -82,9 +89,14 @@ const WEEK_ROWS = [
  * dim_project fails until open item #1 is fixed. Not released until #1 and #2 (daily Synerion loads with
  * unapproved time) are closed.
  */
-export function ProjectsPage({ page, filters, options, params, now = new Date() }: ProjectsPageProps): ReactElement {
-    // Wait for the project list, so an unvalidated project never reaches a query; and P6 needs one project.
-    const ready = options !== null && filters.project !== undefined;
+export function ProjectsPage({ page, filters, options, params, onFiltersChange, now = new Date() }: ProjectsPageProps): ReactElement {
+    // Aggregated view (Ion, 2026-11-16): one project, or every project the org / customer / PM filters leave (or every
+    // project the viewer may see). Wait for the project list, so an unvalidated project never reaches a query.
+    const scope = useMemo(() => (options ? projectScope(filters, options) : null), [filters, options]);
+    const single = filters.project !== undefined;
+    const emptyScope = scope !== null && scope.length === 0;
+    const ready = options !== null && !emptyScope;
+    const projectCount = scope?.length ?? options?.projects.length ?? 0;
     // Calendar day and hour matter (the review window ends Tuesday morning); minutes don't.
     const nowKey = [now.getFullYear(), now.getMonth(), now.getDate(), now.getHours()].join("-");
 
@@ -98,20 +110,23 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
     const model = useMemo(() => {
         const [y, m, d, h] = nowKey.split("-").map(Number);
         const at = new Date(y, m, d, h);
-        const project = filterArgs(filters, new Set(["project"]));
+        const project = projectScopeArgs(scope);
         const weekArgs = (w: Week) => [dateRangeArg(w.start, w.end), ...project];
         const last = lastWeek(at);
         const current = thisWeek(at);
         const trend = trendWindow(at, at, PROJECT_TREND_WEEKS);
-        const months = monthWindow(filters.week.weekEnd);
+        // Act 3 runs to the end of the review week (last Saturday, or this week once the review is over).
+        const months = monthWindow(defaultWeek(at).weekEnd);
         const trendArgs = [dateRangeArg(trend.start, trend.end), ...project];
-        // People x week matrix: the current week (to date) and the 7 before it, so future weeks never read as -plan.
-        const matrixWindow = trendWindow(at, at, PEOPLE_MATRIX_WEEKS);
+        // Matrix (Ion, 2026-11-16): one project from its first week (data start) to this week, to date; several projects
+        // the last AGGREGATE_MATRIX_WEEKS weeks. Future weeks never show, so they never read as -plan.
+        const matrixWindow = single
+            ? { start: weekStartOf(new Date(DATA_START.year, DATA_START.month - 1, 1)), end: at }
+            : trendWindow(at, at, AGGREGATE_MATRIX_WEEKS);
         const matrixArgs = [dateRangeArg(matrixWindow.start, matrixWindow.end), ...project];
         // Act 4: the pace window (last complete weeks) and the burn-up's history, both ending last Saturday.
         const paceWindow = completeWeeksWindow(at, PACE_WEEKS);
         const historyWindow = completeWeeksWindow(at, PACE_HISTORY_WEEKS);
-        const matrixWeeks = Array.from({ length: PEOPLE_MATRIX_WEEKS }, (_, i) => new Date(matrixWindow.start.getFullYear(), matrixWindow.start.getMonth(), matrixWindow.start.getDate() + 7 * i));
         return {
             at,
             last,
@@ -127,38 +142,49 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
             trendSummary: projectsTrendSummary({ filters: trendArgs }),
             // Act 3: hours by month over the same months as revenue by month, so both tables read side by side (Ion, 2026-11-16).
             trendMonths: projectsTrendMonths({ filters: [dateRangeArg(months.start, months.end), ...project] }),
-            matrixWeeks,
+            matrixWindow,
             peopleWeeks: projectsPeopleWeeks({ filters: matrixArgs }),
-            peopleBreakdown: projectsPeopleBreakdown({ filters: matrixArgs }),
+            // Tooltip of one cell: that person, that week (or the whole window), run only on hover.
+            breakdownFor: (employee: string, week: Date | null) =>
+                projectsPeopleBreakdown({
+                    filters: [
+                        week ? dateRangeArg(week, new Date(week.getFullYear(), week.getMonth(), week.getDate() + 6)) : dateRangeArg(matrixWindow.start, matrixWindow.end),
+                        ...project,
+                        `KEEPFILTERS ( TREATAS ( { "${employee.replace(/"/g, '""')}" }, dim_employee[employee_number] ) )`,
+                    ],
+                }),
             roleWeeks: projectsRoleWeeks({ filters: matrixArgs }),
             projectWeeks: projectsProjectWeeks({ filters: matrixArgs }),
+            projectsWeeks: projectsProjectsWeeks({ filters: matrixArgs }),
             revenue: projectsRevenueByMonth({ filters: [dateRangeArg(months.start, months.end), ...project] }),
             paceAsOf: paceWindow.end,
             pace: projectsPace({ filters: [dateRangeArg(paceWindow.start, paceWindow.end), ...project] }),
+            paceByProject: projectsPaceByProject({ filters: [dateRangeArg(paceWindow.start, paceWindow.end), ...project] }),
             paceWeeks: projectsPaceWeeks({ filters: [dateRangeArg(historyWindow.start, historyWindow.end), ...project] }),
         };
-    }, [filters, nowKey, glass]);
+    }, [scope, single, nowKey, glass]);
 
     const run = (q: { connection: string; query: string }) => ({ connection: q.connection, query: ready ? q.query : "" });
+    // Queries only one view needs stay idle in the other.
+    const runIf = (when: boolean, q: { connection: string; query: string }) => run(when ? q : { ...q, query: "" });
     const kpiResult = useSemanticModelQuery(run(model.kpis));
     const lastWeekResult = useSemanticModelQuery(run(model.lastWeekQuery));
     const thisWeekResult = useSemanticModelQuery(run(model.thisWeekQuery));
     const trendResult = useSemanticModelQuery(run(model.weekly));
     const trendSummaryResult = useSemanticModelQuery(run(model.trendSummary));
     const trendMonthsResult = useSemanticModelQuery(run(model.trendMonths));
-    const peopleWeeksResult = useSemanticModelQuery(run(model.peopleWeeks));
-    // Cell tooltips: loaded beside the matrix, which never waits for it; the tooltip shows its own loading / error line.
-    const breakdownData = useSemanticModelQuery(run(model.peopleBreakdown)).data;
-    const breakdown = useMemo(() => (breakdownData?.status === "success" ? buildBreakdown(breakdownData.table) : null), [breakdownData]);
-    const breakdownState = breakdownData?.status === "success" ? "ready" : breakdownData?.status === "error" ? "error" : "loading";
-    const roleWeeksResult = useSemanticModelQuery(run(model.roleWeeks));
+    const peopleWeeksResult = useSemanticModelQuery(runIf(single, model.peopleWeeks));
+    const roleWeeksResult = useSemanticModelQuery(runIf(single, model.roleWeeks));
+    const projectsWeeksResult = useSemanticModelQuery(runIf(!single, model.projectsWeeks));
     const projectWeeksResult = useSemanticModelQuery(run(model.projectWeeks));
     const revenueResult = useSemanticModelQuery(run(model.revenue));
-    const paceResult = useSemanticModelQuery(run(model.pace));
-    const paceWeeksResult = useSemanticModelQuery(run(model.paceWeeks));
+    const paceResult = useSemanticModelQuery(runIf(single, model.pace));
+    const paceWeeksResult = useSemanticModelQuery(runIf(single, model.paceWeeks));
+    const paceByProjectResult = useSemanticModelQuery(runIf(!single, model.paceByProject));
 
     const context = describeFilterContext(page, filters, options, model.at);
-    const reviewHref = pageHref(page, writeFilters(params, { ...filters, week: model.review.week }));
+    const reviewHref = pageHref(page, params);
+    const projectsLabel = `${projectCount} project${projectCount === 1 ? "" : "s"}`;
 
     return (
         <section aria-labelledby="page-title" className="flex flex-col gap-6">
@@ -188,21 +214,21 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                 </div>
             )}
 
-            {filters.project === undefined ? (
+            {emptyScope ? (
                 <div className="ax-card text-300 text-muted-foreground">
-                    <p className="m-0">Pick a project in the Project filter to see its progress against plan.</p>
+                    <p className="m-0">No projects match these filters. Change the organization, customer or project manager.</p>
                 </div>
             ) : (
                 <>
                     {/* Project Health tells a story in four acts (Ion, 2026-11-16): today, how we got here, in money, what comes next. */}
-                    <StoryAct step={1} title="Today" question="How is the project right now?">
+                    <StoryAct step={1} title="Today" question={single || projectCount === 1 ? "How is the project right now?" : `How are the ${projectsLabel} right now?`}>
                         {/* Row 1, the two things the PMs read first (Ion, 2026-11-13): the project budget (with the plan end date at its
                             foot) and last week / this week vs plan, half the width each. Forecast is left out: it's manual and not in the model. */}
                         <div className="grid grid-cols-1 gap-grid lg:grid-cols-2">
                             <QueryStates result={kpiResult} shape="kpi" title="Project budget" emptyMessage="This project has no plan or revenue in the model.">
                                 {(table) => {
                                     const planEnd = parseModelDate(cell(table, projectsKpiColumns.planEnd));
-                                    return <ProjectBudget table={table} planEnd={planEnd} status={planEnd ? planEndStatus(planEnd, model.at) : null} />;
+                                    return <ProjectBudget table={table} planEnd={planEnd} status={planEnd && single ? planEndStatus(planEnd, model.at) : null} projects={single ? null : projectCount} />;
                                 }}
                             </QueryStates>
                             <AxCard className="h-full" title="Last week and this week vs plan" subtitle="Hours in Synerion; plan from the Backlog scenario">
@@ -252,39 +278,62 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                         </AxCard>
 
 
-                        {/* The people x week matrix, right under the weekly chart it explains (Ion, 2026-11-16). */}
+                        {/* The people (one project) or project (several) x week matrix, right under the weekly chart it explains (Ion, 2026-11-16). */}
                         <div id={PEOPLE_TABLE_ID} className="scroll-mt-4">
                             <AxCard
-                                title="Hours vs budget by person"
-                                subtitle={`Last ${PEOPLE_MATRIX_WEEKS} weeks, Sunday to Saturday · the highlighted column is the week in the Week filter`}
+                                title={single ? "Hours vs budget by person" : "Hours vs budget by project"}
+                                subtitle={
+                                    single
+                                        ? "Every week from the project's first, Sunday to Saturday · scroll sideways for earlier weeks · the highlighted column is last week"
+                                        : `Last ${AGGREGATE_MATRIX_WEEKS} weeks, Sunday to Saturday · scroll sideways for earlier weeks · pick a project to see it by person`
+                                }
                                 aside={<MatrixLegend />}
                             >
-                                {/* One model query per block: people, plan by role, and the project row; the matrix only places them. */}
-                                <QueryStates result={peopleWeeksResult} shape="table" title="Hours vs budget by person" emptyMessage="Nobody logged time or was planned on this project in these weeks.">
-                                    {(people) => (
-                                        <QueryStates result={roleWeeksResult} shape="table" title="Plan by role" allowEmpty>
-                                            {(roles) => (
-                                                <QueryStates result={projectWeeksResult} shape="table" title="Project total" allowEmpty>
-                                                    {(project) => (
-                                                        <PeopleWeekMatrix
-                                                            matrix={buildPeopleMatrix(people, roles, project)}
-                                                            weeks={model.matrixWeeks}
-                                                            currentWeek={model.current.start}
-                                                            selectedWeek={filters.week.start}
-                                                            breakdown={breakdown}
-                                                            breakdownState={breakdownState}
-                                                            project={filters.project ?? ""}
-                                                        />
-                                                    )}
-                                                </QueryStates>
-                                            )}
-                                        </QueryStates>
-                                    )}
-                                </QueryStates>
+                                {single ? (
+                                    /* One model query per block: people, plan by role, and the project row; the matrix only places them. */
+                                    <QueryStates result={peopleWeeksResult} shape="table" title="Hours vs budget by person" emptyMessage="Nobody logged time or was planned on this project yet.">
+                                        {(people) => (
+                                            <QueryStates result={roleWeeksResult} shape="table" title="Plan by role" allowEmpty>
+                                                {(roles) => (
+                                                    <QueryStates result={projectWeeksResult} shape="table" title="Project total" allowEmpty>
+                                                        {(project) => (
+                                                            <MatrixView
+                                                                matrix={buildPeopleMatrix(people, roles, project)}
+                                                                current={model.current.start}
+                                                                selected={model.last.start}
+                                                                breakdownFor={model.breakdownFor}
+                                                                project={filters.project ?? ""}
+                                                                rowLabel="Person"
+                                                            />
+                                                        )}
+                                                    </QueryStates>
+                                                )}
+                                            </QueryStates>
+                                        )}
+                                    </QueryStates>
+                                ) : (
+                                    <QueryStates result={projectsWeeksResult} shape="table" title="Hours vs budget by project" emptyMessage="No hours or plan on these projects in these weeks.">
+                                        {(projects) => (
+                                            <QueryStates result={projectWeeksResult} shape="table" title="Total" allowEmpty>
+                                                {(total) => (
+                                                    <MatrixView
+                                                        matrix={buildProjectMatrix(projects, total)}
+                                                        current={model.current.start}
+                                                        selected={model.last.start}
+                                                        project={projectsLabel}
+                                                        rowLabel="Project"
+                                                        rowLimit={AGGREGATE_ROWS}
+                                                        onRowPick={(key) => onFiltersChange?.({ ...filters, project: key })}
+                                                    />
+                                                )}
+                                            </QueryStates>
+                                        )}
+                                    </QueryStates>
+                                )}
                                 <p className="caption m-0 mt-3 text-muted-foreground">
-                                    Budget = the person&apos;s plan hours (Backlog) matched by Auxis ID. Hours logged without a budget count as over (+); budget without hours as under
-                                    (−). Plan not assigned to a person is shown by role; catalog services are not people (open item #27). On Fixed Fee projects the month&apos;s plan
-                                    lands in the week that holds the 1st (#26).
+                                    {single
+                                        ? "Budget = the person's plan hours (Backlog) matched by Auxis ID. Hours logged without a budget count as over (+); budget without hours as under (−). Plan not assigned to a person is shown by role; catalog services are not people (open item #27). On Fixed Fee projects the month's plan lands in the week that holds the 1st (#26)."
+                                        : "Budget = the project's plan hours (Backlog). Total = the weeks shown. On Fixed Fee projects the month's plan lands in the week that holds the 1st (#26)."}
                                 </p>
                             </AxCard>
                         </div>
@@ -300,7 +349,7 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                             <QueryStates result={trendMonthsResult} shape="table" title="Hours vs budget by month">
                                 {(table) => <TrendMonths table={table} window={model.months} />}
                             </QueryStates>
-                            <p className="caption m-0 mt-3 text-muted-foreground">Budget = plan hours (Backlog scenario). * Only through the end of the week in the Week filter.</p>
+                            <p className="caption m-0 mt-3 text-muted-foreground">Budget = plan hours (Backlog scenario). * Only through {dateFormat.format(model.months.end)}.</p>
                         </AxCard>
                         <AxCard
                             title="Revenue by month vs plan"
@@ -313,12 +362,51 @@ export function ProjectsPage({ page, filters, options, params, now = new Date() 
                         </div>
                     </StoryAct>
 
-                    <StoryAct step={4} title="What comes next" question="If the team keeps this pace, does the hours budget last?">
-                        <PaceToPlanEnd pace={paceResult} history={paceWeeksResult} asOf={model.paceAsOf} />
+                    <StoryAct step={4} title="What comes next" question={single ? "If the team keeps this pace, does the hours budget last?" : "Which projects' hours budgets won't last at this pace?"}>
+                        {single ? (
+                            <PaceToPlanEnd pace={paceResult} history={paceWeeksResult} asOf={model.paceAsOf} />
+                        ) : (
+                            <ProjectsByPace result={paceByProjectResult} onPick={(key) => onFiltersChange?.({ ...filters, project: key })} />
+                        )}
                     </StoryAct>
                 </>
             )}
         </section>
+    );
+}
+
+/** Lays the matrix over the weeks that hold data (first week to this week). */
+function MatrixView({
+    matrix,
+    current,
+    selected,
+    breakdownFor,
+    project,
+    rowLabel,
+    rowLimit,
+    onRowPick,
+}: {
+    matrix: PeopleMatrix;
+    current: Date;
+    selected: Date;
+    breakdownFor?: (employee: string, week: Date | null) => { connection: string; query: string };
+    project: string;
+    rowLabel: string;
+    rowLimit?: number;
+    onRowPick?: (key: string) => void;
+}): ReactElement {
+    return (
+        <PeopleWeekMatrix
+            matrix={matrix}
+            weeks={matrixWeeks(matrix, current)}
+            currentWeek={current}
+            selectedWeek={selected}
+            breakdownQuery={breakdownFor}
+            project={project}
+            rowLabel={rowLabel}
+            rowLimit={rowLimit}
+            onRowPick={onRowPick}
+        />
     );
 }
 
@@ -546,7 +634,7 @@ function TrendMonths({ table, window }: { table: QueryTable; window: { start: Da
  * Variance), and the plan end date with the days left at its foot. Every figure is a model measure; the bar width shows
  * % Actual; the days left come from the viewer's local date.
  */
-function ProjectBudget({ table, planEnd, status }: { table: QueryTable; planEnd: Date | null; status: PlanEndStatus | null }): ReactElement {
+function ProjectBudget({ table, planEnd, status, projects }: { table: QueryTable; planEnd: Date | null; status: PlanEndStatus | null; projects: number | null }): ReactElement {
     const c = projectsKpiColumns;
     const progress = numberCell(table, c.progress);
     const money = (raw: string) => {
@@ -567,7 +655,7 @@ function ProjectBudget({ table, planEnd, status }: { table: QueryTable; planEnd:
     const width = progress === null ? 0 : Math.min(1, Math.max(0, progress)) * 100;
     return (
         <section className="ax-card ax-spotlight ax-kpi-hero flex h-full flex-col" aria-label="Project budget">
-            <div className="ax-kpi-label">Project budget · whole project life</div>
+            <div className="ax-kpi-label">{projects === null ? "Project budget · whole project life" : `Budget of ${projects} project${projects === 1 ? "" : "s"} · whole project life`}</div>
             <div className="mt-3">
                 <div className="ax-budget-track" aria-hidden="true">
                     <span className="ax-budget-fill" style={{ width: `${width}%` }} />
@@ -591,9 +679,11 @@ function ProjectBudget({ table, planEnd, status }: { table: QueryTable; planEnd:
             </dl>
             <div className="ax-budget-end mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md px-3 py-2">
                 <span className="text-200 text-[var(--ink-muted)]">
-                    Plan end date <span className="ml-1 text-300 font-semibold tabular-nums text-[var(--ink)]">{planEnd ? dateFormat.format(planEnd) : "—"}</span>
+                    {projects === null ? "Plan end date" : "Latest plan end"} <span className="ml-1 text-300 font-semibold tabular-nums text-[var(--ink)]">{planEnd ? dateFormat.format(planEnd) : "—"}</span>
                 </span>
-                {status ? (
+                {projects !== null ? (
+                    <span className="text-200 text-[var(--ink-muted)]">{projects} project{projects === 1 ? "" : "s"}</span>
+                ) : status ? (
                     <span className="flex items-center gap-1.5 text-200 text-[var(--ink-muted)]">
                         <span className={`ax-dot ax-dot-${status.tone}`} aria-hidden="true" />
                         {describeDaysLeft(status.daysLeft)}

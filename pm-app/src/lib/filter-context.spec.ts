@@ -5,7 +5,7 @@ import { monthPeriod } from "./filters";
 import { testPage } from "@/test/page-fixtures";
 
 const page = testPage;
-const options = { org: [], countries: [], customers: [], projects: [{ key: "PAR-401-01", name: "PAR-401-01 Project" }] };
+const options = { org: [], countries: [], customers: [], projects: [{ key: "PAR-401-01", name: "PAR-401-01 Project", pm: null }], pms: [] };
 
 describe("describeFilterContext", () => {
     it("lists the page's filters in words", () => {

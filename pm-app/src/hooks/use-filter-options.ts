@@ -76,15 +76,19 @@ export function useFilterOptions(params: URLSearchParams, appliesOrg: boolean, a
 
     const keys = column(projectQ.data.table, optionColumns.projectKey);
     const names = column(projectQ.data.table, optionColumns.projectName);
+    const managers = column(projectQ.data.table, optionColumns.projectManager);
+    const text = (v: unknown) => (typeof v === "string" && v.trim() !== "" ? v.trim() : null);
+    const projects = keys
+        .map((key, i) => ({ key, name: text(names[i]), pm: text(managers[i]) }))
+        .filter((p): p is { key: string; name: string | null; pm: string | null } => typeof p.key === "string" && p.key !== "");
 
     return {
         options: {
             org: orgRows,
             countries: asText(column(countryQ.data.table, optionColumns.country)),
             customers,
-            projects: keys
-                .map((key, i) => ({ key, name: typeof names[i] === "string" ? (names[i] as string) : null }))
-                .filter((p): p is { key: string; name: string | null } => typeof p.key === "string" && p.key !== ""),
+            projects,
+            pms: [...new Set(projects.map((p) => p.pm).filter((pm): pm is string => pm !== null))].sort((a, b) => a.localeCompare(b)),
         },
         isLoading,
         error,

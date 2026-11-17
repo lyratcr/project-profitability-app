@@ -15,7 +15,8 @@ const options: FilterOptions = {
     ],
     countries: ["Colombia", "Costa Rica", "United States"],
     customers: ["Access Corporation  "],
-    projects: [{ key: "PAR-401-01", name: "PAR-401-01 Project" }],
+    projects: [{ key: "PAR-401-01", name: "PAR-401-01 Project", pm: null }],
+    pms: [],
 };
 const page = testPage;
 const state: FilterState = { period: monthPeriod(2026, 10), week: thisWeek(today), org: {} };

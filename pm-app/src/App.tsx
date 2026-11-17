@@ -38,7 +38,7 @@ function App() {
                     />
                     <div className="pt-6">
                         {page.id === "projects" ? (
-                            <ProjectsPage page={page} filters={filters.state} options={filters.options} params={route.params} />
+                            <ProjectsPage page={page} filters={filters.state} options={filters.options} params={route.params} onFiltersChange={filters.setFilters} />
                         ) : (
                             <PagePlaceholder page={page} />
                         )}
