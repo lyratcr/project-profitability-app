@@ -47,7 +47,8 @@ describe("ProjectsPage", () => {
         const run = hook.calls.filter((q) => q !== "");
         expect(run.length).toBeGreaterThan(0);
         expect(run.some((q) => /TREATAS \( \{[^}]*\}, fact_\w+\[project_key\] \)/.test(q))).toBe(false);
-        expect(run.some((q) => q.includes("SUMMARIZECOLUMNS (\n        dim_project[project_key],\n        dim_project[project_name],\n        ROLLUPADDISSUBTOTAL"))).toBe(true);
+        // Line-ending agnostic: on Windows the checkout turns the .dax files into CRLF.
+        expect(run.some((q) => /SUMMARIZECOLUMNS \(\s*dim_project\[project_key\],\s*dim_project\[project_name\],\s*ROLLUPADDISSUBTOTAL/.test(q))).toBe(true);
         expect(run.some((q) => q.includes("dim_project[project_manager_name],"))).toBe(true);
         expect(run.some((q) => q.includes("dim_employee[employee_full_name]"))).toBe(false);
         expect(screen.getByText("Hours vs budget by project")).toBeTruthy();
