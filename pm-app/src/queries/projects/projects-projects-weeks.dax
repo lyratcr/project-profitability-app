@@ -1,6 +1,8 @@
 // P6 aggregated view (Ion, 2026-11-16): the project x week matrix when several projects are in scope. Per project and
 // Sunday-Saturday week, Synerion hours vs the project's plan (Backlog), the difference and the variance %, plus each
 // project's total over the window (IsWeekTotal = 1). Same measures as the project row of the people x week matrix.
+// Hours (Ion, 2026-11-16): [Matrix Hours_app] = Project Ops billed T&M hours for weeks the integration already
+// posted, Synerion for later weeks and for Fixed Fee projects; SynerionHours and BilledVsSynerion feed the tooltip.
 EVALUATE
 FILTER (
     SUMMARIZECOLUMNS (
@@ -8,10 +10,12 @@ FILTER (
         dim_project[project_name],
         ROLLUPADDISSUBTOTAL ( dim_calendar[start_of_week_sun], "IsWeekTotal" ),
         /* @filters */
-        "Hours", [Synerion Hours_app],
+        "Hours", [Matrix Hours_app],
         "PlannedHours", [Planned Hours by Person_app],
-        "Diff", [Hours vs Plan by Person_app],
-        "Variance", [Hours vs Plan Variance % by Person_app]
+        "Diff", [Matrix Hours vs Plan by Person_app],
+        "Variance", [Matrix Hours vs Plan Variance % by Person_app],
+        "SynerionHours", [Synerion Hours_app],
+        "BilledVsSynerion", IF ( NOT ISBLANK ( [Synerion Hours_app] ) || NOT ISBLANK ( [Matrix Hours_app] ), [Matrix Hours_app] - [Synerion Hours_app] )
     ),
     NOT ISBLANK ( dim_project[project_key] )
 )

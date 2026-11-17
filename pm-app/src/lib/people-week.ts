@@ -7,10 +7,16 @@ import { cell, numberCell } from "./query-table";
  * measure value placed in its row and week; nothing is computed here. Weeks run Sunday-Saturday.
  */
 export interface MatrixCell {
+    /** Matrix hours: Project Ops billed hours for integrated weeks, else Synerion (Ion, 2026-11-16). */
     hours: number | null;
     planned: number | null;
     diff: number | null;
     variance: number | null;
+    /** Synerion hours of the same cell, and the matrix hours minus them (adjustments made in Project Ops). */
+    synerion?: number | null;
+    billedVsSynerion?: number | null;
+    /** The cell's hours come from Project Ops (integrated week, not a Fixed Fee project). */
+    fromProjectOps?: boolean;
 }
 
 export interface MatrixRow {
@@ -35,6 +41,7 @@ export function weekKey(value: unknown): string | null {
 }
 
 const isTotal = (table: QueryTable, i: number) => cell(table, c.isWeekTotal, i) === true;
+const has = (table: QueryTable, raw: string) => table.columns.some((col) => col.name === raw);
 
 function readCell(table: QueryTable, i: number): MatrixCell {
     return {
@@ -42,6 +49,10 @@ function readCell(table: QueryTable, i: number): MatrixCell {
         planned: numberCell(table, c.plannedHours, i),
         diff: numberCell(table, c.diff, i),
         variance: numberCell(table, c.variance, i),
+        // Source columns only where the query returns them (people and project rows of the matrix).
+        ...(has(table, c.synerionHours) ? { synerion: numberCell(table, c.synerionHours, i) } : {}),
+        ...(has(table, c.billedVsSynerion) ? { billedVsSynerion: numberCell(table, c.billedVsSynerion, i) } : {}),
+        ...(has(table, c.fromProjectOps) ? { fromProjectOps: numberCell(table, c.fromProjectOps, i) === 1 } : {}),
     };
 }
 

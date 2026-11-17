@@ -54,6 +54,10 @@ export function CellTooltip({ id, anchor, name, period, weekStart, value, breakd
     }, [anchor, breakdown, state]);
 
     const total = value.hours ?? 0;
+    // The breakdown is Synerion's (Project Ops has no pay category or day detail): its bars use the Synerion hours.
+    const fromProjectOps = value.fromProjectOps === true;
+    const detailTotal = value.synerion ?? total;
+    const adjusted = value.billedVsSynerion ?? null;
     const tone = diffTone(value.diff);
     const days = weekStart
         ? Array.from({ length: 7 }, (_, i) => {
@@ -74,9 +78,23 @@ export function CellTooltip({ id, anchor, name, period, weekStart, value, breakd
             <div className="ax-cell-tooltip-name">{name}</div>
             <div className="ax-cell-tooltip-muted">{period}</div>
             <div className="mt-2 flex items-baseline justify-between gap-3">
-                <span className="ax-cell-tooltip-muted">Hours on the project</span>
+                <span className="ax-cell-tooltip-muted">{fromProjectOps ? "Billed in Project Ops" : weekStart ? "Logged in Synerion" : "Hours on the project"}</span>
                 <span className="text-[18px] font-semibold tabular-nums text-[var(--ink)]">{hours(total)} h</span>
             </div>
+            {fromProjectOps && (
+                <>
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="ax-cell-tooltip-muted">Logged in Synerion</span>
+                        <span className="tabular-nums">{value.synerion === null || value.synerion === undefined ? "—" : `${hours(value.synerion)} h`}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="ax-cell-tooltip-muted">Adjusted in Project Ops</span>
+                        <span className="font-semibold tabular-nums text-[var(--ink)]">
+                            {adjusted !== null && Math.round(adjusted) !== 0 ? `${signedChange(Math.round(adjusted), "#,0")} h` : "None"}
+                        </span>
+                    </div>
+                </>
+            )}
             <div className="flex items-center justify-between gap-3">
                 <span className="ax-cell-tooltip-muted">{value.planned === null ? "No budget for this person" : `Budget ${hours(value.planned)} h`}</span>
                 {tone !== null && value.diff !== null && <span className={`ax-var-pill is-${tone}`}>{signedChange(Math.round(value.diff), "#,0")}</span>}
@@ -89,13 +107,13 @@ export function CellTooltip({ id, anchor, name, period, weekStart, value, breakd
             {state === "ready" && breakdown && (
                 <>
                     <section className="ax-cell-tooltip-section" aria-label="By pay category">
-                        <div className="ax-cell-tooltip-heading">By pay category</div>
+                        <div className="ax-cell-tooltip-heading">{fromProjectOps ? "Synerion detail · by pay category" : "By pay category"}</div>
                         {categoryRows(breakdown.categories).map((r) => (
                             <div key={r.label} className={`ax-cell-tooltip-row${r.hours === null ? " is-empty" : ""}`}>
                                 <span>{r.label}</span>
                                 <span className="ax-cell-tooltip-track" aria-hidden="true">
-                                    {r.hours !== null && total > 0 && (
-                                        <span style={{ width: `${Math.min(100, (r.hours / total) * 100)}%`, background: r.color }} />
+                                    {r.hours !== null && detailTotal > 0 && (
+                                        <span style={{ width: `${Math.min(100, (r.hours / detailTotal) * 100)}%`, background: r.color }} />
                                     )}
                                 </span>
                                 <span className="text-right tabular-nums">{r.hours === null ? "—" : hours(r.hours)}</span>

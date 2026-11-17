@@ -1175,3 +1175,57 @@ Independent check: plain `SUM ( worked_hours )` to 2026-11-14, `SUM ( hours_quan
 **Correction (2026-11-16):** the first validation reported 11 weeks before plan end for ALK-401-01. The right value is **15** (2027-02-25 to 2027-06-11 = 106 days). The 11 came only from the one combined validation query (`ADDCOLUMNS` over six projects plus the check columns); the same measure gives 15 in every other shape, including the app's query, and the same validation without the check columns. If it ever reappears, compare against `DATEDIFF` run on its own.
 
 **App queries** (`pm-app/src/queries/projects/`): `projects-pace.dax` (one row: the nine measures and `[Plan End Date_app]`, with the project and the last 4 complete weeks) and `projects-pace-weeks.dax` (`[Hours To Date_app]` per `dim_calendar[start_of_week_sun]` over the last 26 complete weeks, for the burn-up). Both run on the published model on 2026-11-16: ALK-401-01 one row (8,617 / 6,400 / 150 / 74 / 2027-02-25 / 15) and 26 weeks (2,568 on the week of 2026-05-17 up to 6,400 on the week of 2026-11-08); GOT-401-05 budget blank.
+
+## 20. Matrix hours: Project Ops for integrated weeks, Synerion after (P6 matrix): CREATED 2026-11-16
+
+Ion approved this on 2026-11-16 ("Sí, créalas"). The P6 matrix shows what is billed: once the weekly integration has posted a week to Project Operations, that week uses the T&M hours in Project Ops (which can carry adjustments made only there); weeks not integrated yet, the current week always included, use Synerion. Fixed Fee projects keep Synerion (Project Ops has no hours of work for them: GOT-401-05, October 2026, 4 h in Project Ops vs 701 h in Synerion). Three measures in `_Measures`, folder `_app\Projects`.
+
+```dax
+Matrix Hours_app =                                  -- #,0
+VAR _cutoff = [Last Revenue Date_app]               -- last day with T&M actuals (follows the integration)
+VAR _fixedFee = CALCULATETABLE ( VALUES ( fact_revenue_metrics[project_key] ), REMOVEFILTERS ( dim_calendar ),
+    fact_revenue_metrics[scenario] = "Backlog", fact_revenue_metrics[revenue_type] = "Fixed Fee" )
+RETURN
+    SUMX (
+        VALUES ( dim_calendar[start_of_week_sun] ),
+        VAR _week = dim_calendar[start_of_week_sun]
+        VAR _ff = CALCULATE ( [Synerion Hours_app], KEEPFILTERS ( TREATAS ( _fixedFee, fact_profitability_metrics[project_key] ) ) )
+        VAR _billed = CALCULATE ( SUM ( fact_revenue_metrics[hours_quantity] ),
+            fact_revenue_metrics[scenario] = "Actual", fact_revenue_metrics[revenue_type] = "T&M",
+            USERELATIONSHIP ( fact_revenue_metrics[employee_number], dim_employee[employee_number] ),
+            KEEPFILTERS ( NOT fact_revenue_metrics[project_key] IN _fixedFee ) )
+        RETURN IF ( _week <= _cutoff,
+            IF ( NOT ISBLANK ( _ff ) || NOT ISBLANK ( _billed ), COALESCE ( _ff, 0 ) + COALESCE ( _billed, 0 ) ),
+            CALCULATE ( [Synerion Hours_app] ) )
+    )
+
+Matrix Hours vs Plan by Person_app =               -- #,0;-#,0;0
+VAR _hours = [Matrix Hours_app]
+VAR _plan = [Planned Hours by Person_app]
+RETURN IF ( NOT ISBLANK ( _hours ) || NOT ISBLANK ( _plan ), COALESCE ( _hours, 0 ) - COALESCE ( _plan, 0 ) )
+
+Matrix Hours vs Plan Variance % by Person_app =    -- +0%;-0%;0%
+VAR _hours = [Matrix Hours_app]
+VAR _plan = [Planned Hours by Person_app]
+RETURN IF ( NOT ISBLANK ( _plan ) && _plan <> 0, DIVIDE ( _hours - _plan, _plan ), IF ( _hours > 0, 1 ) )
+```
+
+Rules and notes:
+- A week is integrated when its Sunday is on or before `[Last Revenue Date_app]` (2026-11-06 on 2026-11-16, so the week of Nov 1 is in Project Ops and the week of Nov 8 is not; after Tuesday's integration the date moves to Nov 13 and Nov 8 switches by itself).
+- In an integrated week, hours logged in Synerion but not billed (for example a holiday) don't count: the matrix shows what Project Ops bills.
+- Mixed T&M + Fixed Fee projects count as Fixed Fee (Synerion), the same rule as `Hours Budget_app`.
+
+**Validated (2026-11-16, model measures; all 3 valid in `INFO.MEASURES()`):**
+
+| Project | Week | Synerion | Project Ops T&M | Matrix |
+|---|---|---|---|---|
+| APA-401-04 | Oct 11 | 128 | 112 | 112 |
+| APA-401-04 | Nov 1 | 144 | 120 | 120 |
+| APA-401-04 | Nov 8 | 120 | — | 120 (not integrated) |
+| ALK-401-01 | Oct 4 – Nov 1 | 160 | 160 | 160 |
+| GOT-401-05 (Fixed Fee) | Nov 1 | 196 | — | 196 |
+
+By person, APA-401-04, week of Oct 11: Alejandro Nino 48 Synerion → 40 billed (8 h Holiday on Oct 12 not billed), Daniela Uribe 48 → 40, Olga Yate 32 → 32; sum 112 = the project row.
+
+**App queries:** `projects-people-weeks.dax`, `projects-project-weeks.dax` and `projects-projects-weeks.dax` return `[Matrix Hours_app]` as Hours (with the Matrix diff and variance), plus `SynerionHours` and `BilledVsSynerion` (matrix minus Synerion, computed in the query) for the tooltip; the people query also returns `FromProjectOps` (1 when the cell is an integrated week of a non-Fixed Fee project). `projects-billed-through.dax` returns `[Last Revenue Date_app]` for the header and legend.
+

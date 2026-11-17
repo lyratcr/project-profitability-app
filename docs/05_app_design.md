@@ -86,6 +86,8 @@
 
 **Filters and aggregated view** (Ion, 2026-11-16). L1, L2, L3, Customer, Project manager and Project ("All projects (N)"), in cascade; no Week filter. Each list only shows what the viewer may see (row-level security). The org, customer and PM choose the projects; every visual is then filtered by those project keys. With one project the page reads as above. With several: act 1 sums them ("Budget of N projects", latest plan end); act 2 shows "Hours vs budget by project" (project × week, last 52 weeks, 25 rows then "Show all"; a project's name opens it); act 3 sums; act 4 shows "Projects by pace" (one row per project: PM, status, budget left, current vs needed pace, runout date, weeks before plan end; earliest runout first; a project's name opens it). Matrices scroll sideways from the first week (one project: its first week; several: 52 weeks) to this week, open at this week, with the name column and Total / Var. pinned. Active vs finished projects: open item #31.
 
+**Matrix hours** (Ion, 2026-11-16): weeks already integrated into Project Operations show the T&M hours billed there (`Matrix Hours_app`, `08` § 20); later weeks, the current one always, show Synerion, marked "Synerion" in the header. Fixed Fee projects always show Synerion. The tooltip of an integrated week shows the billed hours, the Synerion hours and the adjustment, then the Synerion detail.
+
 **Monday review banner** (Mondays, and any day until the integration runs):
 "Review last week's hours (Sun dd – Sat dd). Synerion approval closes **today at end of day**; the integration to Project Operations runs **Tuesday early morning**." It links to the week table below, filtered to last week.
 
