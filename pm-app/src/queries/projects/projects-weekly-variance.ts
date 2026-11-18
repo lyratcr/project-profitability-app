@@ -4,16 +4,17 @@ import query from "./projects-weekly-trend.dax?raw";
 import { TREND_TOOLTIP, TREND_Y_AXIS_WIDTH, trendColumnMetadata, type GlassBarColors } from "./projects-weekly-trend";
 
 /**
- * Variance panel under the hours chart (Ion, 2026-11-07): per week a lollipop from 0 to the model's variance %, blue
- * below the budget and amber above, with the signed % at its end; "no plan" where the week has none. The invisible rule
+ * Variance panel under the hours chart (Ion, 2026-11-07; Project Ops vs Backlog 2026-11-18): per week a lollipop from 0
+ * to the query's variance %, green up when Project Ops is above the Backlog and red down when below, with the signed %
+ * at its end; "not posted" for a week the integration hasn't posted yet, "no plan" for a posted week with no plan. The invisible rule
  * layer (the first with x) carries every week, so the x domain keeps all weeks in the query's order and lines up with
  * the chart above.
  */
 function varianceSpec(glass: GlassBarColors): VisualizationSpec {
     const x = { field: "Week", type: "ordinal", sort: null, title: null, axis: { labelAngle: 0 } };
     const y = { field: "Variance", type: "quantitative", title: "Variance", axis: { minExtent: TREND_Y_AXIS_WIDTH, maxExtent: TREND_Y_AXIS_WIDTH, tickCount: 3, format: "+.0%" } };
-    // Over budget (more hours than planned) in red, at or under budget in green.
-    const color = { condition: { test: "datum.Variance > 0", value: glass.above }, value: glass.below };
+    // Above the Backlog green (up), below it red (down), as Hours vs Backlog by month (Ion, 2026-11-18).
+    const color = { condition: { test: "datum.Variance < 0", value: glass.negative }, value: glass.positive };
     const withVariance = { filter: "isValid(datum.Variance)" };
     // Whole percents (Ion, 2026-11-07); d3 writes a true minus. Under half a percent reads 0%, not −0%.
     const label = { calculate: "abs(datum.Variance) < 0.005 ? '0%' : format(datum.Variance, '+,.0%')", as: "VarianceLabel" };
@@ -37,7 +38,7 @@ function varianceSpec(glass: GlassBarColors): VisualizationSpec {
             { transform: [withVariance, { filter: "datum.Variance < 0" }, label], mark: { ...text, baseline: "top", dy: 8 }, encoding: { x, y, text: { field: "VarianceLabel" } } },
             { transform: [withVariance, { filter: "datum.Variance >= 0" }, label], mark: { ...text, baseline: "bottom", dy: -8 }, encoding: { x, y, text: { field: "VarianceLabel" } } },
             {
-                transform: [{ filter: "!isValid(datum.Variance)" }, { calculate: "'no plan'", as: "NoPlan" }],
+                transform: [{ filter: "!isValid(datum.Variance)" }, { calculate: "datum.Posted === 0 ? 'not posted' : 'no plan'", as: "NoPlan" }],
                 mark: { ...text, fontWeight: 400, baseline: "bottom", dy: -4 },
                 encoding: { x, y: zero, text: { field: "NoPlan" } },
             },

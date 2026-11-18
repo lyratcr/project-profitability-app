@@ -134,7 +134,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
     // Ink and surface switch with the theme; the hook reads them again when it changes.
     const tokens = useDesignTokens(GLASS_TOKENS);
     const glass = useMemo(() => (tokens
-            ? { light: tokens[0], base: tokens[1], deep: tokens[2], plan: tokens[3], muted: tokens[4], ring: tokens[5], below: tokens[6], above: tokens[7], billed: tokens[8] }
+            ? { light: tokens[0], base: tokens[1], deep: tokens[2], plan: tokens[3], muted: tokens[4], ring: tokens[5], positive: tokens[6], negative: tokens[7], billed: tokens[8] }
             : undefined), [tokens]);
 
     const model = useMemo(() => {
@@ -318,8 +318,9 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                             </QueryStates>
                             <p className="caption m-0 mt-3 text-muted-foreground">
                                 Three scenarios: Synerion hours logged (bars), budget = plan hours (Backlog) and T&amp;M hours billed in Project Ops
-                                (blue, solid: it already happened; only weeks the integration has posted; none for Fixed Fee projects). The budget line is dashed: it's a plan. The variance compares Synerion with the budget. On
-                                Fixed Fee projects the weekly budget is tiny, so the variance is very large (open item #26).
+                                (blue, solid: it already happened; only weeks the integration has posted; none for Fixed Fee projects). The budget line is dashed: it's a plan. The variance compares Project Ops with the Backlog
+                                (green up above it, red down below it), only in weeks the integration has posted. On Fixed Fee projects the weekly budget is
+                                tiny, so the variance is very large (open item #26).
                             </p>
                         </AxCard>
 
@@ -718,11 +719,11 @@ function TrendLegend(): ReactElement {
             </li>
             <li className="flex items-center gap-2">
                 <span aria-hidden="true" className="inline-block size-2 rounded-full bg-[var(--positive)]" />
-                Under budget
+                Above Backlog
             </li>
             <li className="flex items-center gap-2">
                 <span aria-hidden="true" className="inline-block size-2 rounded-full bg-[var(--negative)]" />
-                Over budget
+                Below Backlog
             </li>
         </ul>
     );
