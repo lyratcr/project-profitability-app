@@ -10,6 +10,7 @@ export const projectsTrendColumns = {
     hours: "[Hours]",
     plannedHours: "[PlannedHours]",
     variance: "[Variance]",
+    posted: "[Posted]",
     billed: "[Billed]",
     week: "[Week]",
     weekKey: "[WeekKey]",
@@ -18,7 +19,7 @@ export const projectsTrendColumns = {
 /** Weeks in the P6 trend (docs/05_app_design.md: last 12 weeks). */
 export const PROJECT_TREND_WEEKS = 12;
 
-/** `Hours vs Plan Variance %_app`'s format, whole percents (Ion, 2026-11-07), with a true minus (Auxis: deltas carry a sign). */
+/** The variance's format (as `Hours vs Plan Variance %_app`), whole percents (Ion, 2026-11-07), with a true minus (Auxis: deltas carry a sign). */
 export const VARIANCE_FORMAT = "+#,0%;−#,0%;0%";
 
 export const trendColumnMetadata: ColumnMetadataMap = {
@@ -26,7 +27,8 @@ export const trendColumnMetadata: ColumnMetadataMap = {
     [projectsTrendColumns.hours]: { name: "Hours", displayName: "Synerion hours", format: "#,0" },
     [projectsTrendColumns.plannedHours]: { name: "PlannedHours", displayName: "Budget hours (Backlog)", format: "#,0" },
     [projectsTrendColumns.billed]: { name: "Billed", displayName: "Billed in Project Ops", format: "#,0" },
-    [projectsTrendColumns.variance]: { name: "Variance", displayName: "Variance vs budget", format: VARIANCE_FORMAT },
+    [projectsTrendColumns.variance]: { name: "Variance", displayName: "Project Ops vs Backlog", format: VARIANCE_FORMAT },
+    [projectsTrendColumns.posted]: { name: "Posted", displayName: "Posted in Project Ops" },
     [projectsTrendColumns.week]: { name: "Week", displayName: "Week" },
     [projectsTrendColumns.weekKey]: { name: "WeekKey", displayName: "Week key" },
 };
@@ -49,12 +51,13 @@ export interface GlassBarColors {
     /** `--surface`: the 2px ring around points. */
     ring: string;
     /**
-     * Auxis status fills (Ion, 2026-11-07): `--positive` (green-500) when the hours stay under the budget, `--negative`
-     * (red-500) when they go over it. Dataviz palette check: normal-vision ΔE 26.7, CVD ΔE 17.5 in both themes; the red
-     * is 2.3:1 on the dark surface, relieved by the signed label on every point (README: status is never colour alone).
+     * Auxis status fills: `--positive` (green-500) when Project Ops is above the Backlog, `--negative` (red-500) when it
+     * is below (Ion, 2026-11-18, as Hours vs Backlog by month; was red over budget, green under). Dataviz palette check:
+     * normal-vision ΔE 26.7, CVD ΔE 17.5 in both themes; the red is 2.3:1 on the dark surface, relieved by the signed
+     * label on every point (README: status is never colour alone).
      */
-    below: string;
-    above: string;
+    positive: string;
+    negative: string;
 }
 
 /** Bar width in px: at most 24 (dataviz mark spec), leaving air between weeks. */
@@ -71,7 +74,7 @@ export const TREND_TOOLTIP = [
     { field: "Hours", type: "quantitative", title: "Synerion hours", format: ",.0f" },
     { field: "PlannedHours", type: "quantitative", title: "Budget hours (Backlog)", format: ",.0f" },
     { field: "Billed", type: "quantitative", title: "Billed in Project Ops", format: ",.0f" },
-    { field: "Variance", type: "quantitative", title: "Variance vs budget" },
+    { field: "Variance", type: "quantitative", title: "Project Ops vs Backlog", format: "+.0%" },
 ];
 
 type Layer = { mark: unknown; encoding: Record<string, unknown>; transform?: unknown[] };

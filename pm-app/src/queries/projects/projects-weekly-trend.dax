@@ -1,5 +1,7 @@
 // P6 weekly trend: Synerion hours (bars) vs plan hours (Backlog, line) and Project Ops billed hours (line) and the variance % per week by Sunday-Saturday week (dim_calendar[start_of_week_sun],
 // never year_week: open item #22). The app sends the 12-week window; the last week may be the current one, to date.
+DEFINE
+    VAR _cutoff = [Last Revenue Date_app]
 EVALUATE
 ADDCOLUMNS (
     SUMMARIZECOLUMNS (
@@ -20,7 +22,26 @@ ADDCOLUMNS (
                 NOT ISBLANK ( [Synerion Hours_app] ) || NOT ISBLANK ( [Planned Hours_app] ),
                 COALESCE ( [Planned Hours_app], 0 )
             ),
-        "Variance", [Hours vs Plan Variance %_app],
+        // Variance = hours billed in Project Ops (Actual) vs plan hours (Backlog), as in Hours vs Backlog by month (Ion,
+        // 2026-11-18; was Synerion vs plan), with the blue line's measure (T&M billed) so the variance matches the gap drawn
+        // above it (Billed Hours_app also counts non-T&M quantities, open item #27). Only weeks the integration has posted (week
+        // Sunday on or before Last Revenue Date_app, like Synerion Hours Integrated_app): a later week has no Project
+        // Ops hours yet, which is not −100%. Same rules as Hours vs Plan Variance %_app: +100% with hours and no plan.
+        "Variance",
+            VAR _plan = [Planned Hours_app]
+            VAR _billed = [Billed Hours by Person_app]
+            RETURN
+                IF (
+                    MAX ( dim_calendar[start_of_week_sun] ) <= _cutoff,
+                    IF ( NOT ISBLANK ( _plan ) && _plan <> 0, DIVIDE ( COALESCE ( _billed, 0 ) - _plan, _plan ), IF ( _billed > 0, 1 ) )
+                ),
+        // 1 when the week is posted in Project Ops, 0 when not yet: the variance panel says "not posted" instead of "no plan".
+        // Blank in weeks with neither hours nor plan, so they still drop out.
+        "Posted",
+            IF (
+                NOT ISBLANK ( [Synerion Hours_app] ) || NOT ISBLANK ( [Planned Hours_app] ),
+                IF ( MAX ( dim_calendar[start_of_week_sun] ) <= _cutoff, 1, 0 )
+            ),
         // Third series (Ion, 2026-11-16): T&M hours billed in Project Ops (Actual scenario); blank for weeks the
         // integration hasn't posted yet and for Fixed Fee projects (no hours of work in Project Ops).
         "Billed", [Billed Hours by Person_app]
