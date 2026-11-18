@@ -75,7 +75,7 @@ const REVENUE_MONTH_WIDTHS = { Month: 84, Actual: 94, Planned: 104, VsPlan: 86, 
 /** A model value as the matrix's variance pill: over the Backlog red, under green, on it neutral (Ion, 2026-11-17). */
 function revenuePill(tone: ReturnType<typeof diffTone>, text: string): ReactNode {
     return (
-        <span className="flex justify-end">
+        <span className="flex justify-center">
             <span className={`ax-var-pill is-${tone ?? "even"}`}>{text}</span>
         </span>
     );
@@ -454,7 +454,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                             subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · Actual Rev (Actual scenario) vs Backlog Rev (Backlog scenario); % Execution = Actual Rev / Backlog Rev`}
                         >
                             <QueryStates result={revenueResult} shape="table" title="Revenue by month">
-                                {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} columnWidths={REVENUE_MONTH_WIDTHS} cellRenderers={REVENUE_MONTH_CELLS} />}
+                                {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} columnWidths={REVENUE_MONTH_WIDTHS} cellRenderers={REVENUE_MONTH_CELLS} centered />}
                             </QueryStates>
                         </AxCard>
                         </div>

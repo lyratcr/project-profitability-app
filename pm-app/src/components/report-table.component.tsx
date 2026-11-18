@@ -33,6 +33,8 @@ interface ReportTableProps {
     columnWidths?: Readonly<Record<string, number>>;
     /** Custom cells by column `name`, e.g. the coloured variance pills (Ion, 2026-11-17). They format the value themselves. */
     cellRenderers?: Readonly<Record<string, CellRenderer>>;
+    /** Centre every header and cell (Ion, 2026-11-17: Revenue by month vs Backlog). */
+    centered?: boolean;
 }
 
 /** The grid's own column list (id = column name, header = display name) with the requested widths and cells. */
@@ -58,6 +60,7 @@ export function ReportTable({
     hiddenColumns,
     columnWidths,
     cellRenderers,
+    centered = false,
 }: ReportTableProps): ReactElement {
     const { theme } = useThemeContext();
     const table = hiddenColumns && hiddenColumns.length > 0 ? withoutColumns(queryTable, hiddenColumns) : queryTable;
@@ -79,5 +82,6 @@ export function ReportTable({
 
     const data = toDataTable(table, columnMetadata);
     const columns = columnWidths || cellRenderers ? customColumns(data, columnWidths ?? {}, cellRenderers ?? {}) : undefined;
-    return <DataGrid data={data} columns={columns} defaultSort={defaultSort} pageSize={pageSize} theme={theme} {...frame} />;
+    const grid = <DataGrid data={data} columns={columns} defaultSort={defaultSort} pageSize={pageSize} theme={theme} {...frame} />;
+    return centered ? <div className="ax-grid-centered">{grid}</div> : grid;
 }

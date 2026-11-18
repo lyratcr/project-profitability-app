@@ -686,3 +686,18 @@ body {
 /* Reconciliation KPI difference: amber ink, legible in both themes (Ion, 2026-11-16). */
 .ax-text-diff { color: var(--accent-ink, #7a5b00); }
 [data-theme="dark"] .ax-text-diff { color: var(--yellow-300); }
+
+/* A DataGrid with every header and cell centred (ReportTable `centered`, Ion 2026-11-17). Numbers included: the grid
+   right-aligns them by default. */
+.ax-grid-centered td,
+.ax-grid-centered td[data-numeric-styling="true"],
+.ax-grid-centered th {
+  text-align: center !important;
+}
+/* Header: the label and its column-menu button sit together in the middle (the grid pushes the button right). */
+.ax-grid-centered th > span:first-child {
+  justify-content: center;
+}
+.ax-grid-centered th > span:first-child > span {
+  flex-grow: 0;
+}
