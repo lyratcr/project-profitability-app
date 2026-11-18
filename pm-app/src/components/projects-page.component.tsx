@@ -229,6 +229,8 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
     // Matrix source (Ion, 2026-11-16): weeks up to the last day billed in Project Ops show Project Ops hours.
     const billedThroughData = useSemanticModelQuery(run(projectsBilledThrough())).data;
     const billedThrough = billedThroughData?.status === "success" ? parseModelDate(cell(billedThroughData.table, BILLED_THROUGH_COLUMN)) : null;
+    // Saturday of the last week integrated into Project Ops: where Hours vs Backlog by month stops (display only).
+    const integratedThrough = billedThrough ? new Date(weekStartOf(billedThrough).getFullYear(), weekStartOf(billedThrough).getMonth(), weekStartOf(billedThrough).getDate() + 6) : null;
 
     const context = describeFilterContext(page, filters, options, model.at);
     const reviewHref = pageHref(page, params);
@@ -447,13 +449,16 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                         </AxCard>
                         {/* Hours by month closes act 2; act 3 is all money (Ion, 2026-11-17). */}
                         <AxCard
-                            title="Hours vs budget by month"
-                            subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · Synerion hours vs plan hours (Backlog scenario)`}
+                            title="Hours vs Backlog by month"
+                            subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · hours billed in Project Ops (Actual) vs plan hours (Backlog scenario)`}
                         >
-                            <QueryStates result={trendMonthsResult} shape="table" title="Hours vs budget by month">
-                                {(table) => <TrendMonths table={table} window={model.months} />}
+                            <QueryStates result={trendMonthsResult} shape="table" title="Hours vs Backlog by month">
+                                {(table) => <TrendMonths table={table} window={model.months} through={integratedThrough} />}
                             </QueryStates>
-                            <p className="caption m-0 mt-3 text-muted-foreground">Budget = plan hours (Backlog scenario). * Only through {dateFormat.format(model.months.end)}.</p>
+                            <p className="caption m-0 mt-3 text-muted-foreground">
+                                Backlog = plan hours (Backlog scenario). Both columns stop at the last week integrated into Project Ops
+                                {integratedThrough ? ` (through ${dateFormat.format(integratedThrough)})` : ""}, so a month compares the same days. * Partial month.
+                            </p>
                         </AxCard>
                     </StoryAct>
 
@@ -727,10 +732,12 @@ const hoursFormat = (v: number | null) => (v === null ? "—" : String(formatVal
 const varianceText = (v: number | null) => (v === null ? "—" : signedChange(v, "#,0%"));
 
 /**
- * Rows per month in the window, like the YTD block of the reference (Ion, 2026-11-07): hours and budget bars on one
- * scale, the difference, and a variance bar coloured by its sign. Bar lengths only scale the model's numbers for display.
+ * Rows per month in the window (Ion, 2026-11-07; Project Ops vs Backlog 2026-11-18): hours billed in Project Ops and
+ * Backlog bars on one scale, the difference, and a diverging variance bar around a zero line (red below, green above,
+ * the number on the other side). Bar lengths only scale the model's numbers for display.
  */
-function TrendMonths({ table, window }: { table: QueryTable; window: { start: Date; end: Date } }): ReactElement {
+function TrendMonths({ table, window, through }: { table: QueryTable; window: { start: Date; end: Date }; through: Date | null }): ReactElement {
+    const end = through && through < window.end ? through : window.end;
     const c = projectsTrendSummaryColumns;
     const rows = table.rows.map((_, i) => {
         const key = numberCell(table, c.monthNumber, i) ?? 0;
@@ -738,7 +745,7 @@ function TrendMonths({ table, window }: { table: QueryTable; window: { start: Da
         const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
         return {
             label: String(cell(table, c.month, i) ?? ""),
-            partial: monthStart < window.start || monthEnd > window.end,
+            partial: monthStart < window.start || monthEnd > end,
             hours: numberCell(table, c.hours, i),
             plan: numberCell(table, c.plannedHours, i),
             delta: numberCell(table, c.hoursVsPlan, i),
@@ -751,14 +758,14 @@ function TrendMonths({ table, window }: { table: QueryTable; window: { start: Da
     return (
         <div className="overflow-x-auto">
             <table className="ax-table w-full">
-                <caption className="sr-only">Hours vs budget by month</caption>
+                <caption className="sr-only">Hours vs Backlog by month</caption>
                 <thead>
                     <tr>
                         <th scope="col">Month</th>
-                        <th scope="col">Synerion hours</th>
-                        <th scope="col">Budget hours</th>
-                        <th scope="col" className="ax-num">Hours vs budget</th>
-                        <th scope="col">Variance</th>
+                        <th scope="col">Project Ops hours</th>
+                        <th scope="col">Backlog hours</th>
+                        <th scope="col" className="ax-num">Hours vs Backlog</th>
+                        <th scope="col" className="text-center">Variance</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -776,7 +783,7 @@ function TrendMonths({ table, window }: { table: QueryTable; window: { start: Da
                             </td>
                             <td>
                                 {r.plan === null ? (
-                                    <span className="text-muted-foreground">No budget yet</span>
+                                    <span className="text-muted-foreground">No Backlog yet</span>
                                 ) : (
                                     <span className="flex items-center gap-2">
                                         <span className="ax-month-bar ax-month-bar-plan" style={{ width: pct(r.plan, maxHours) }} aria-hidden="true" />
@@ -785,25 +792,31 @@ function TrendMonths({ table, window }: { table: QueryTable; window: { start: Da
                                 )}
                             </td>
                             <td className="ax-num">{r.delta === null ? "—" : signedChange(r.delta, "#,0")}</td>
-                            <td>
-                                {r.variance === null ? (
-                                    "—"
-                                ) : (
-                                    <span className="flex items-center gap-2">
-                                        <span
-                                            className={`ax-month-bar ax-month-bar-variance ${r.variance > 0 ? "is-above" : "is-below"}`}
-                                            style={{ width: pct(r.variance, maxVariance) }}
-                                            aria-hidden="true"
-                                        />
-                                        <span className="whitespace-nowrap tabular-nums">{varianceText(r.variance)}</span>
-                                    </span>
-                                )}
-                            </td>
+                            <td>{r.variance === null ? <span className="block text-center">—</span> : <DivergingVariance value={r.variance} max={maxVariance} />}</td>
                         </tr>
                     ))}
                 </tbody>
             </table>
         </div>
+    );
+}
+
+/**
+ * Variance as a bar from a zero line (Ion, 2026-11-18): below the Backlog the red bar grows left and the number sits on
+ * the right; above it the green bar grows right and the number sits on the left. Rounded to whole percents as shown.
+ */
+function DivergingVariance({ value, max }: { value: number; max: number }): ReactElement {
+    const pct = Math.round(value * 100);
+    const tone = pct < 0 ? "is-below" : pct > 0 ? "is-above" : "is-even";
+    const width = pct === 0 ? "0%" : `${Math.max(6, (Math.abs(value) / max) * 100)}%`;
+    const text = <span className={`ax-diverge-text ${tone}`}>{varianceText(value)}</span>;
+    const bar = <span className={`ax-diverge-bar ${tone}`} style={{ width }} aria-hidden="true" />;
+    return (
+        <span className="ax-diverge" aria-label={`Variance ${varianceText(value)}`}>
+            <span className="ax-diverge-half is-left">{pct < 0 ? bar : pct > 0 ? text : null}</span>
+            <span className="ax-diverge-axis" aria-hidden="true" />
+            <span className="ax-diverge-half is-right">{pct < 0 ? text : pct > 0 ? bar : text}</span>
+        </span>
     );
 }
 
