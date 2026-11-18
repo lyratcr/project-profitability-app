@@ -262,6 +262,8 @@ export const projectsRevenueByPersonColumns = {
     billed: "[Billed]",
     backlog: "[Backlog]",
     exec: "[Exec]",
+    shareToDate: "[ShareToDate]",
+    share: "[Share]",
 } as const;
 
 /** One row per person with revenue lines on the project: billed and Backlog to date and whole project (docs/08 § 23). */

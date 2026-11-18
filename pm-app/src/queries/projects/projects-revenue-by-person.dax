@@ -1,7 +1,7 @@
 // P6 act 3, Revenue by person (Ion, 2026-11-17; docs/08_app_measures.md § 23): per person (Auxis ID on the Project Ops
 // line), revenue billed and Backlog, to date and for the whole project, with the % Execution of each. "To date" =
 // through the Saturday of the last week integrated into Project Ops (the matrix and the projection use the same
-// cutoff). Employee names are allowed here by the design (PM app, people detail). The app sends the project scope only.
+// cutoff), and each person's share of what the project billed. Employee names are allowed here by the design (PM app, people detail). The app sends the project scope only.
 DEFINE
     VAR _cutoff = [Last Revenue Date_app]
     VAR _cutoffWeekEnd = CALCULATE ( MAX ( dim_calendar[start_of_week_sun] ), dim_calendar[date] = _cutoff ) + 6
@@ -16,7 +16,13 @@ FILTER (
         "ExecToDate", CALCULATE ( [Revenue Execution % by Person_app], DATESBETWEEN ( dim_calendar[date], BLANK (), _cutoffWeekEnd ) ),
         "Billed", [Actual Revenue by Person_app],
         "Backlog", [Planned Revenue by Person_app],
-        "Exec", [Revenue Execution % by Person_app]
+        "Exec", [Revenue Execution % by Person_app],
+        // Share of the project's billed revenue (tile colour, Ion 2026-11-17): the person over everyone billed.
+        "ShareToDate", CALCULATE (
+            DIVIDE ( [Actual Revenue by Person_app], CALCULATE ( [Actual Revenue by Person_app], REMOVEFILTERS ( dim_employee ) ) ),
+            DATESBETWEEN ( dim_calendar[date], BLANK (), _cutoffWeekEnd )
+        ),
+        "Share", DIVIDE ( [Actual Revenue by Person_app], CALCULATE ( [Actual Revenue by Person_app], REMOVEFILTERS ( dim_employee ) ) )
     ),
     NOT ISBLANK ( dim_employee[employee_number] )
 )
