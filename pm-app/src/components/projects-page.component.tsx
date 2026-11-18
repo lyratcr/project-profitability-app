@@ -69,6 +69,9 @@ interface ProjectsPageProps {
 }
 
 const PEOPLE_TABLE_ID = "who-logged-time";
+/** Revenue by month (act 3): widths that let the short headers read whole (Ion, 2026-11-17). */
+const REVENUE_MONTH_WIDTHS = { Month: 84, Actual: 94, Planned: 104, VsPlan: 78, VsPlanPct: 110 } as const;
+
 const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink", "ink-muted", "surface", "positive", "negative", "blue-300"] as const;
 // The weekly trend's spec carries a tooltip with both series (VegaVisual's line crosshair would show only the plan),
 // and its one plan label is wider than a week's column (VegaVisual would cut it to "Pla…").
@@ -432,10 +435,10 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                         </AxCard>
                         <AxCard
                             title="Revenue by month vs plan"
-                            subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · actual (Actual scenario) vs plan (Backlog scenario)`}
+                            subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · Actual Rev (Actual scenario) vs Backlog Rev (Backlog scenario); % Execution = Actual Rev / Backlog Rev`}
                         >
                             <QueryStates result={revenueResult} shape="table" title="Revenue by month">
-                                {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} />}
+                                {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} columnWidths={REVENUE_MONTH_WIDTHS} />}
                             </QueryStates>
                         </AxCard>
                         </div>
