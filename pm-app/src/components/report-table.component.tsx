@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
-import { DataGrid, type SortConfig } from "@microsoft/fabric-datagrid";
+import { DataGrid, type GridColumnDef, type SortConfig } from "@microsoft/fabric-datagrid";
+import type { DataTable } from "@microsoft/fabric-visuals-core";
 import { useThemeContext } from "@/hooks/theme.context";
 import { withoutColumns } from "@/lib/query-table";
 import { toDataTable, toRollupDataTables, type ColumnMetadataMap } from "@/lib/to-data-table";
@@ -22,10 +23,20 @@ interface ReportTableProps {
     chromeless?: boolean;
     /** Raw names of query columns that only order the rows (e.g. a numeric month key); not shown. */
     hiddenColumns?: readonly string[];
+    /**
+     * Starting widths in px by column `name` (the metadata name), so short headers read whole without resizing
+     * (Ion, 2026-11-17). Columns not listed keep the grid's default width; the formats still come from the data.
+     */
+    columnWidths?: Readonly<Record<string, number>>;
+}
+
+/** The grid's own column list (id = column name, header = display name) with the requested widths. */
+function sizedColumns(data: DataTable, widths: Readonly<Record<string, number>>): GridColumnDef[] {
+    return data.columns.map((c) => ({ id: c.name, header: c.displayName ?? c.name, ...(widths[c.name] !== undefined ? { width: widths[c.name], minWidth: widths[c.name] } : {}) }));
 }
 
 /** Table with model-provided grand totals (build plan 2.4). */
-export function ReportTable({ table: queryTable, columnMetadata, title, subtitle, grandTotalFlag, defaultSort, pageSize = 25, chromeless = false, hiddenColumns }: ReportTableProps): ReactElement {
+export function ReportTable({ table: queryTable, columnMetadata, title, subtitle, grandTotalFlag, defaultSort, pageSize = 25, chromeless = false, hiddenColumns, columnWidths }: ReportTableProps): ReactElement {
     const { theme } = useThemeContext();
     const table = hiddenColumns && hiddenColumns.length > 0 ? withoutColumns(queryTable, hiddenColumns) : queryTable;
     const frame = chromeless ? { chromeless: true as const } : { header: { title, subtitle } };
@@ -44,5 +55,6 @@ export function ReportTable({ table: queryTable, columnMetadata, title, subtitle
         );
     }
 
-    return <DataGrid data={toDataTable(table, columnMetadata)} defaultSort={defaultSort} pageSize={pageSize} theme={theme} {...frame} />;
+    const data = toDataTable(table, columnMetadata);
+    return <DataGrid data={data} columns={columnWidths ? sizedColumns(data, columnWidths) : undefined} defaultSort={defaultSort} pageSize={pageSize} theme={theme} {...frame} />;
 }

@@ -94,9 +94,10 @@ function peopleMetadata(currentWeek: boolean): ColumnMetadataMap {
         [projectsPeopleColumns.employee]: { name: "Employee", displayName: "Employee" },
         [projectsPeopleColumns.tasks]: { name: "Tasks", displayName: "Tasks" },
         [projectsPeopleColumns.payCategories]: { name: "PayCategories", displayName: "Pay categories" },
-        [projectsPeopleColumns.hours]: { name: "Hours", displayName: "Hours on project", format: "#,0.0" },
-        [projectsPeopleColumns.totalHours]: { name: "TotalHours", displayName: currentWeek ? "All their hours (to date)" : "All their hours", format: "#,0.0" },
-        [projectsPeopleColumns.timeAllocation]: { name: "TimeAllocation", displayName: "Time allocation", format: "0.0%" },
+        // No decimals on P6, % included (Ion, 2026-11-07, 2026-11-13, 2026-11-17).
+        [projectsPeopleColumns.hours]: { name: "Hours", displayName: "Hours on project", format: PROJECTS_FORMATS.hours },
+        [projectsPeopleColumns.totalHours]: { name: "TotalHours", displayName: currentWeek ? "All their hours (to date)" : "All their hours", format: PROJECTS_FORMATS.hours },
+        [projectsPeopleColumns.timeAllocation]: { name: "TimeAllocation", displayName: "Time allocation", format: PROJECTS_FORMATS.percent },
         [projectsPeopleColumns.flags]: { name: "Flags", displayName: "Flags" },
     };
 }
@@ -122,10 +123,11 @@ export const projectsRevenueColumns = {
 
 const revenueMetadata: ColumnMetadataMap = {
     [projectsRevenueColumns.month]: { name: "Month", displayName: "Month" },
-    [projectsRevenueColumns.actual]: { name: "Actual", displayName: "Actual revenue", format: MONEY },
-    [projectsRevenueColumns.planned]: { name: "Planned", displayName: "Planned revenue", format: MONEY },
-    [projectsRevenueColumns.vsPlan]: { name: "VsPlan", displayName: "Actual − plan", format: "\\$#,0;−\\$#,0;\\$#,0" },
-    [projectsRevenueColumns.vsPlanPct]: { name: "VsPlanPct", displayName: "Actual / plan", format: "0.0%" },
+    // Short headers, as in the executives' Backlog vs Actuals report (Ion, 2026-11-17); no decimals, % included.
+    [projectsRevenueColumns.actual]: { name: "Actual", displayName: "Actual Rev", format: MONEY },
+    [projectsRevenueColumns.planned]: { name: "Planned", displayName: "Backlog Rev", format: MONEY },
+    [projectsRevenueColumns.vsPlan]: { name: "VsPlan", displayName: "∆ Rev", format: "\\$#,0;−\\$#,0;\\$#,0" },
+    [projectsRevenueColumns.vsPlanPct]: { name: "VsPlanPct", displayName: "% Execution", format: PROJECTS_FORMATS.percent },
 };
 
 /** `filters` = project + the 12-month window (`dateRangeArg(monthWindow(...))`). */
