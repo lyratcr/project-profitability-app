@@ -14,6 +14,8 @@ import reconcileProjectWeeksQuery from "./projects-reconcile-project-weeks.dax?r
 import reconcileProjectsWeeksQuery from "./projects-reconcile-projects-weeks.dax?raw";
 import projectsWeeksQuery from "./projects-projects-weeks.dax?raw";
 import revenueByMonthQuery from "./projects-revenue-by-month.dax?raw";
+import revenueByPersonQuery from "./projects-revenue-by-person.dax?raw";
+import revenueUnassignedQuery from "./projects-revenue-unassigned.dax?raw";
 import revenueProjectionQuery from "./projects-revenue-projection.dax?raw";
 import revenueProjectionWeeksQuery from "./projects-revenue-projection-weeks.dax?raw";
 import roleWeeksQuery from "./projects-role-weeks.dax?raw";
@@ -247,6 +249,35 @@ export const projectsPaceWeeksColumns = {
 /** Hours to date at the end of each week; `filters` carry the project and the last PACE_HISTORY_WEEKS complete weeks. */
 export function projectsPaceWeeks({ filters = [] }: ProjectsParams = {}) {
     return { connection: CONNECTION, query: applyFilters(paceWeeksQuery, filters) } as const;
+}
+
+// ---------------------------------------------------------------- revenue by person (act 3, Ion 2026-11-17)
+
+export const projectsRevenueByPersonColumns = {
+    employeeNumber: "dim_employee[employee_number]",
+    employeeName: "dim_employee[employee_full_name]",
+    billedToDate: "[BilledToDate]",
+    backlogToDate: "[BacklogToDate]",
+    execToDate: "[ExecToDate]",
+    billed: "[Billed]",
+    backlog: "[Backlog]",
+    exec: "[Exec]",
+} as const;
+
+/** One row per person with revenue lines on the project: billed and Backlog to date and whole project (docs/08 § 23). */
+export function projectsRevenueByPerson({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(revenueByPersonQuery, filters) } as const;
+}
+
+export const projectsRevenueUnassignedColumns = {
+    role: "fact_revenue_metrics[resource_role]",
+    backlogToDate: "[BacklogToDate]",
+    backlog: "[Backlog]",
+} as const;
+
+/** Backlog revenue planned for a role with no person, to date and whole project ("Planned, not billed yet"). */
+export function projectsRevenueUnassigned({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(revenueUnassignedQuery, filters) } as const;
 }
 
 // ---------------------------------------------------------------- revenue to plan end (act 4, Guille 2026-11-17)

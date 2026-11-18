@@ -1787,6 +1787,40 @@ table _Measures
 		displayFolder: _app\Revenue Projection
 		lineageTag: 50f4454f-4cd1-4083-9af6-c2d69ef24e64
 
+	/// ADDED 2026-11-17 (Fabric app): Actual revenue billed to the person (Auxis ID on the Project Ops line, inactive employee_number relationship). P6 Revenue by person.
+	measure 'Actual Revenue by Person_app' = CALCULATE ( [Actual Revenue_app], USERELATIONSHIP ( fact_revenue_metrics[employee_number], dim_employee[employee_number] ) )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Projects
+		lineageTag: e5b63b6d-705d-4137-a84c-8f41e931ed15
+
+	/// ADDED 2026-11-17 (Fabric app): Plan (Backlog) revenue assigned to the person (Auxis ID on the Project Ops line). P6 Revenue by person.
+	measure 'Planned Revenue by Person_app' = CALCULATE ( [Planned Revenue_app], USERELATIONSHIP ( fact_revenue_metrics[employee_number], dim_employee[employee_number] ) )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Projects
+		lineageTag: 35ce64d1-8451-43a6-b64b-9c28c93355b2
+
+	/// ADDED 2026-11-17 (Fabric app): % Execution of the person (billed vs their Backlog), same rules as the executives' % Execution: blank with no activity; 0% for credit notes with no Backlog; 100% when billing with no Backlog of their own; else Actual / Backlog.
+	measure 'Revenue Execution % by Person_app' =
+			VAR _Actuals = COALESCE ( [Actual Revenue by Person_app], 0 )
+			VAR _Backlog = [Planned Revenue by Person_app]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        _Actuals = 0 && _Backlog = 0, BLANK (),
+			        _Actuals < 0 && _Backlog = 0, 0,
+			        _Actuals > 0 && _Backlog = 0, 1,
+			        DIVIDE ( _Actuals, _Backlog )
+			    )
+		formatString: 0%
+		displayFolder: _app\Projects
+		lineageTag: d8c459b2-72dd-4887-8934-61046fd88fdf
+
+	/// ADDED 2026-11-17 (Fabric app): Plan (Backlog) revenue not assigned to a person: planned at role level or without resource. Group by fact_revenue_metrics[resource_role].
+	measure 'Planned Revenue Unassigned_app' = CALCULATE ( [Planned Revenue_app], KEEPFILTERS ( fact_revenue_metrics[resource_match] IN { "role", "no_resource" } ) )
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: _app\Projects
+		lineageTag: 0ac4509a-8def-4066-a9db-3420d7fa5ed7
+
 	column Column
 		isHidden
 		formatString: 0

@@ -50,3 +50,74 @@ export function smoothPath(pts: ReadonlyArray<{ px: number; py: number }>): stri
     }
     return d;
 }
+
+export interface TreemapTile<T> {
+    item: T;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
+/**
+ * Squarified treemap (Bruls, Huizing, van Wijk): tiles with areas proportional to `value`, as close to squares as the
+ * order allows, biggest first. Items with no positive value are left out. Display geometry only.
+ */
+export function squarify<T>(items: readonly T[], value: (item: T) => number, width: number, height: number): TreemapTile<T>[] {
+    const nodes = items
+        .map((item) => ({ item, v: value(item) }))
+        .filter((n) => n.v > 0)
+        .sort((a, b) => b.v - a.v);
+    const total = nodes.reduce((sum, n) => sum + n.v, 0);
+    if (total <= 0 || width <= 0 || height <= 0) return [];
+    const scale = (width * height) / total;
+    const out: TreemapTile<T>[] = [];
+    let x = 0;
+    let y = 0;
+    let w = width;
+    let h = height;
+    let row: { item: T; a: number }[] = [];
+    const worst = (r: { a: number }[], side: number) => {
+        const s = r.reduce((sum, n) => sum + n.a, 0);
+        const max = Math.max(...r.map((n) => n.a));
+        const min = Math.min(...r.map((n) => n.a));
+        return Math.max((side * side * max) / (s * s), (s * s) / (side * side * min));
+    };
+    const place = () => {
+        const s = row.reduce((sum, n) => sum + n.a, 0);
+        if (w >= h) {
+            const cw = s / h;
+            let cy = y;
+            for (const n of row) {
+                const ch = n.a / cw;
+                out.push({ item: n.item, x, y: cy, w: cw, h: ch });
+                cy += ch;
+            }
+            x += cw;
+            w -= cw;
+        } else {
+            const rh = s / w;
+            let cx = x;
+            for (const n of row) {
+                const cwid = n.a / rh;
+                out.push({ item: n.item, x: cx, y, w: cwid, h: rh });
+                cx += cwid;
+            }
+            y += rh;
+            h -= rh;
+        }
+        row = [];
+    };
+    for (const n of nodes) {
+        const a = n.v * scale;
+        const side = Math.min(w, h);
+        if (row.length === 0 || worst([...row, { a }], side) <= worst(row, side)) row.push({ item: n.item, a });
+        else {
+            place();
+            row.push({ item: n.item, a });
+        }
+    }
+    if (row.length > 0) place();
+    return out;
+}
+
