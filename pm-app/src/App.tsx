@@ -13,7 +13,7 @@ import { FilterBar } from "./components/filter-bar.component";
 import { useGlobalFilters } from "./hooks/use-global-filters";
 import { useHashRoute } from "./hooks/use-hash-route";
 
-// PM app shell (Ion, 2026-11-16): Project Progress (P6, moved out of the executive app) and a Resource Utilization placeholder.
+// PM app shell (Ion, 2026-11-16): Project Progress (P6, moved out of the executive app) and the Resource Utilization and Resource Allocation (2026-11-18) placeholders.
 // Same Auxis look: logo watermark, glass header, liquid glass on the page (design-system bundle.css `.ax-liquid`).
 function App() {
     const route = useHashRoute();
