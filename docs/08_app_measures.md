@@ -46,7 +46,7 @@ Validated as query-scoped measures (`DEFINE MEASURE`) on 2026-11-04 against the 
 | `_app\Projects` | **Planned Hours_app** | `#,0` | 30,891 | 5,284 |
 | `_app\Projects` | **Billed Hours_app** | `#,0` | 30,864 | 9,854 |
 | `_app\Projects` | **Revenue vs Plan_app** | `\$#,0;(\$#,0);\$#,0` | -$69,770 | $2,547,191 |
-| `_app\Projects` | **Revenue vs Plan %_app** | `0.0%` | 98.9% | 955.1% |
+| `_app\Projects` | **Revenue vs Plan %_app** (FIXED 2026-11-17, % Execution) | `0%` | 98.9% | 955.1% |
 | `_app\Projects` | **Hours vs Plan_app** | `#,0;-#,0;0` | 236,431 | 55,435 |
 | `_app\Projects` | **Hours vs Plan %_app** | `0.0%` | 865.4% | 1149.1% |
 | `_app\Projects` | **Hours Not Yet Billed_app** | `#,0;-#,0;0` | 236,458 | 50,865 |
@@ -308,12 +308,25 @@ Description: `ADDED 2026-11-04 (Fabric app): Actual minus planned revenue. Month
 
 ### Revenue vs Plan %_app
 
-Folder `_app\Projects` · format `0.0%`  
-Description: `ADDED 2026-11-04 (Fabric app): Actual / planned revenue. Monthly or longer periods only.`
+Folder `_app\Projects` · format `0%` (was `0.0%`)  
+Description: `ADDED 2026-11-04 (Fabric app): Actual / planned revenue. Monthly or longer periods only. FIXED 2026-11-17 (Fabric app): % Execution as in the executives' dashboard (Actuals vs Backlog): ...`
+
+FIXED 2026-11-17 (Ion: "Sí, corrígela"): same logic as the executives' dashboard measure `% Execution Actuals vs Backlog`, so both apps read like it. Was `DIVIDE ( [Actual Revenue_app], [Planned Revenue_app] )`.
 
 ```dax
-DIVIDE ( [Actual Revenue_app], [Planned Revenue_app] )
+VAR _Actuals = COALESCE ( [Actual Revenue_app], 0 )
+VAR _Backlog = [Planned Revenue_app]
+RETURN
+    SWITCH (
+        TRUE (),
+        _Actuals = 0 && _Backlog = 0, BLANK (),        -- 1: no activity
+        _Actuals < 0 && _Backlog = 0, 0,               -- 2: credit note, no Backlog
+        _Actuals > 0 && _Backlog = 0, 1,               -- 3: unbudgeted revenue (upside)
+        DIVIDE ( _Actuals, _Backlog )                  -- 4: standard (a negative Actual gives a negative %)
+    )
 ```
+
+Validated on the published model (2026, project × month, 1,711 rows): 60 upside months now 100% (e.g. SIM-101-02 Jan 2026, $22,382 with no Backlog), 24 credit-note months 0% (MOS-401-04 Jan 2026, −$27,380), 174 months with Backlog and nothing billed 0% (all three were blank before); where both Actual and Backlog exist the value equals the plain DIVIDE (0 differences). Valid in `INFO.MEASURES()`.
 
 ### Hours vs Plan_app
 
