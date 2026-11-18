@@ -441,13 +441,18 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                         </div>
                     </StoryAct>
 
-                    <StoryAct step={4} title="What comes next" question={single ? "If the team keeps this pace, does the hours budget last?" : "Which projects' hours budgets won't last at this pace?"}>
+                    <StoryAct
+                        step={4}
+                        title="What comes next"
+                        question={single ? "Where does the revenue land, and does the hours budget last at this pace?" : "Where does the revenue land, and which hours budgets won't last at this pace?"}
+                    >
+                        {/* Revenue first, then the hours pace (Ion, 2026-11-17). */}
+                        <RevenueProjection summary={revenueProjectionResult} weeks={revenueProjectionWeeksResult} single={single} />
                         {single ? (
                             <PaceToPlanEnd pace={paceResult} history={paceWeeksResult} asOf={model.paceAsOf} />
                         ) : (
                             <ProjectsByPace result={paceByProjectResult} onPick={(key) => onFiltersChange?.({ ...filters, project: key })} />
                         )}
-                        <RevenueProjection summary={revenueProjectionResult} weeks={revenueProjectionWeeksResult} single={single} />
                     </StoryAct>
                 </>
             )}
