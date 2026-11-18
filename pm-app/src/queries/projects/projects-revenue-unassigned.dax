@@ -1,0 +1,14 @@
+// P6 act 3, Revenue by person, "Planned, not billed yet" chips (Ion, 2026-11-17): Backlog revenue planned for a role
+// with no person in Project Operations, by role, to date (through the Saturday of the last integrated week) and for
+// the whole project. The app sends the project scope only.
+DEFINE
+    VAR _cutoff = [Last Revenue Date_app]
+    VAR _cutoffWeekEnd = CALCULATE ( MAX ( dim_calendar[start_of_week_sun] ), dim_calendar[date] = _cutoff ) + 6
+EVALUATE
+SUMMARIZECOLUMNS (
+    fact_revenue_metrics[resource_role],
+    /* @filters */
+    "BacklogToDate", CALCULATE ( [Planned Revenue Unassigned_app], DATESBETWEEN ( dim_calendar[date], BLANK (), _cutoffWeekEnd ) ),
+    "Backlog", [Planned Revenue Unassigned_app]
+)
+ORDER BY [Backlog] DESC

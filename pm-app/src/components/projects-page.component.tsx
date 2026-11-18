@@ -29,7 +29,9 @@ import {
     projectsPace,
     projectsPaceByProject,
     projectsPaceWeeks,
+    projectsRevenueByPerson,
     projectsRevenueProjection,
+    projectsRevenueUnassigned,
     projectsRevenueProjectionWeeks,
     projectsPeopleBreakdown,
     projectsPeopleWeeks,
@@ -52,6 +54,7 @@ import { AxCard } from "./ax/ax-card.component";
 import { AxPageHeader } from "./ax/ax-page-header.component";
 import { PaceToPlanEnd } from "./pace-to-plan-end.component";
 import { ProjectsByPace } from "./projects-by-pace.component";
+import { RevenueByPerson } from "./revenue-by-person.component";
 import { RevenueProjection } from "./revenue-projection.component";
 import { QueryStates, type QueryResult } from "./query-states.component";
 import { PeopleWeekMatrix } from "./people-week-matrix.component";
@@ -192,6 +195,9 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
             paceWeeks: projectsPaceWeeks({ filters: [dateRangeArg(historyWindow.start, historyWindow.end), ...project] }),
             // Act 4, revenue to plan end (Guille, 2026-11-17): the project scope only; the model splits billed and Backlog weeks.
             revenueProjection: projectsRevenueProjection({ filters: project }),
+            // Act 3, revenue by person (Ion, 2026-11-17): the project scope only; the query splits "to date" and the whole project.
+            revenueByPerson: projectsRevenueByPerson({ filters: project }),
+            revenueUnassigned: projectsRevenueUnassigned({ filters: project }),
             revenueProjectionWeeks: projectsRevenueProjectionWeeks({ filters: project }),
         };
     }, [scope, single, nowKey, glass]);
@@ -216,6 +222,9 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
     const paceWeeksResult = useSemanticModelQuery(runIf(single, model.paceWeeks));
     const paceByProjectResult = useSemanticModelQuery(runIf(!single, model.paceByProject));
     const revenueProjectionResult = useSemanticModelQuery(run(model.revenueProjection));
+    // People detail only with one project (as the people matrix): the aggregated view shows no names.
+    const revenueByPersonResult = useSemanticModelQuery(runIf(single, model.revenueByPerson));
+    const revenueUnassignedResult = useSemanticModelQuery(runIf(single, model.revenueUnassigned));
     const revenueProjectionWeeksResult = useSemanticModelQuery(run(model.revenueProjectionWeeks));
     // Matrix source (Ion, 2026-11-16): weeks up to the last day billed in Project Ops show Project Ops hours.
     const billedThroughData = useSemanticModelQuery(run(projectsBilledThrough())).data;
@@ -436,10 +445,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                 Project Ops (for example, a holiday not billed) or an integration problem. Fixed Fee projects are left out: Project Ops has no hours of work for them.
                             </p>
                         </AxCard>
-                    </StoryAct>
-
-                    <StoryAct step={3} title="In money" question="What it means month by month">
-                        <div className="grid grid-cols-1 gap-grid lg:grid-cols-2">
+                        {/* Hours by month closes act 2; act 3 is all money (Ion, 2026-11-17). */}
                         <AxCard
                             title="Hours vs budget by month"
                             subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · Synerion hours vs plan hours (Backlog scenario)`}
@@ -449,6 +455,10 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                             </QueryStates>
                             <p className="caption m-0 mt-3 text-muted-foreground">Budget = plan hours (Backlog scenario). * Only through {dateFormat.format(model.months.end)}.</p>
                         </AxCard>
+                    </StoryAct>
+
+                    <StoryAct step={3} title="In money" question="What it means month by month, and who billed it">
+                        <div className="grid grid-cols-1 gap-grid lg:grid-cols-2">
                         <AxCard
                             title="Revenue by month vs Backlog"
                             subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · Actual Rev (Actual scenario) vs Backlog Rev (Backlog scenario); % Execution = Actual Rev / Backlog Rev`}
@@ -457,6 +467,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                 {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} columnWidths={REVENUE_MONTH_WIDTHS} cellRenderers={REVENUE_MONTH_CELLS} centered />}
                             </QueryStates>
                         </AxCard>
+                        <RevenueByPerson people={revenueByPersonResult} roles={revenueUnassignedResult} summary={revenueProjectionResult} single={single} />
                         </div>
                     </StoryAct>
 

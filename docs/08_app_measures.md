@@ -1324,3 +1324,27 @@ Independent check: plain sums over `fact_revenue_metrics` for the T&M projects g
 
 **Caveats:** T&M projects are $28.4 M of the $228.5 M SOW (most revenue is Fixed Fee). The cutoff is `Last Revenue Date_app`, which runs under row-level security (#33): fixing that measure fixes these ten.
 
+## 23. Revenue by person (P6 act 3): CREATED 2026-11-17
+
+Ion asked for the detail of revenue by person under Revenue by month vs Backlog, for T&M projects (Fixed Fee projects bill by service line, not by person), with "To date" and "Whole project" views. Ion approved the DAX on 2026-11-17 ("Sí, créalas"). Four measures in `_Measures`, folder `_app\Projects`.
+
+```dax
+Actual Revenue by Person_app  = CALCULATE ( [Actual Revenue_app],  USERELATIONSHIP ( fact_revenue_metrics[employee_number], dim_employee[employee_number] ) )   -- $#,0
+Planned Revenue by Person_app = CALCULATE ( [Planned Revenue_app], USERELATIONSHIP ( fact_revenue_metrics[employee_number], dim_employee[employee_number] ) )   -- $#,0
+
+Revenue Execution % by Person_app =                -- 0%; same rules as the executives' % Execution (Revenue vs Plan %_app)
+VAR _Actuals = COALESCE ( [Actual Revenue by Person_app], 0 )
+VAR _Backlog = [Planned Revenue by Person_app]
+RETURN SWITCH ( TRUE (),
+    _Actuals = 0 && _Backlog = 0, BLANK (),
+    _Actuals < 0 && _Backlog = 0, 0,
+    _Actuals > 0 && _Backlog = 0, 1,
+    DIVIDE ( _Actuals, _Backlog ) )
+
+Planned Revenue Unassigned_app = CALCULATE ( [Planned Revenue_app], KEEPFILTERS ( fact_revenue_metrics[resource_match] IN { "role", "no_resource" } ) )   -- $#,0
+```
+
+**App queries** (`pm-app/src/queries/projects/projects-revenue-by-person.dax`, `projects-revenue-unassigned.dax`): "To date" = dates through the Saturday of the week that holds `[Last Revenue Date_app]` (the cutoff the matrix and the projection use), as a query filter (`DATESBETWEEN ( dim_calendar[date], BLANK (), _cutoffWeekEnd )`); "Whole project" = no date filter.
+
+**Validated (2026-11-17, MOS-401-09, model measures; all 4 valid in `INFO.MEASURES()`):** billed by person sums to $261,362 = plain sum of Actual lines with an Auxis ID (both views); people Backlog $229,905 + unassigned (roles) $46,462 = the $276,367 SOW. Iliak Herrera 78% to date ($24,974 of $32,200) vs 38% of the whole project ($64,975); Erick Angulo 140% to date; 20 people bill with no Backlog line of their own (100%, "No plan"); roles Systems Engineer Sr, Systems Engineer and IT Manager planned with no person. Found: the Project Ops line "Alejandro Garita" ($14,940 plan) maps by Auxis ID to Gustavo Cervantes, who has billed nothing (to check with the PMO).
+
