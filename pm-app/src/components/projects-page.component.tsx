@@ -764,8 +764,8 @@ function TrendMonths({ table, window, through }: { table: QueryTable; window: { 
                         <th scope="col">Month</th>
                         <th scope="col">Project Ops hours</th>
                         <th scope="col">Backlog hours</th>
-                        <th scope="col" className="ax-num">Hours vs Backlog</th>
-                        <th scope="col" className="text-center">Variance</th>
+                        <th scope="col" className="ax-center">Hours vs Backlog</th>
+                        <th scope="col" className="ax-center">Variance</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -791,7 +791,7 @@ function TrendMonths({ table, window, through }: { table: QueryTable; window: { 
                                     </span>
                                 )}
                             </td>
-                            <td className="ax-num">{r.delta === null ? "—" : signedChange(r.delta, "#,0")}</td>
+                            <td className="ax-center">{r.delta === null ? "—" : <SignedHours value={r.delta} />}</td>
                             <td>{r.variance === null ? <span className="block text-center">—</span> : <DivergingVariance value={r.variance} max={maxVariance} />}</td>
                         </tr>
                     ))}
@@ -799,6 +799,17 @@ function TrendMonths({ table, window, through }: { table: QueryTable; window: { 
             </table>
         </div>
     );
+}
+
+/**
+ * Hours vs Backlog, centred and coloured like the variance next to it (Ion, 2026-11-18): red below the Backlog, green
+ * above, muted when it rounds to zero. Plain coloured text, no background: the soft fill lowers the contrast (dark green
+ * on a pill is 3.6:1, the text alone 4.8:1 or more in both themes).
+ */
+function SignedHours({ value }: { value: number }): ReactElement {
+    const rounded = Math.round(value);
+    const tone = rounded < 0 ? "is-below" : rounded > 0 ? "is-above" : "is-even";
+    return <span className={`ax-diverge-text ${tone}`}>{signedChange(value, "#,0")}</span>;
 }
 
 /**
