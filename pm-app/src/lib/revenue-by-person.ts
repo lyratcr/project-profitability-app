@@ -13,6 +13,8 @@ export interface PersonRevenue {
     backlog: number | null;
     /** The model's % Execution (billed vs the person's Backlog; 100% when they bill with no Backlog of their own). */
     execution: number | null;
+    /** The person's share of what the project billed (model). */
+    share: number | null;
 }
 
 export function readPeopleRevenue(table: QueryTable, view: RevenueView): PersonRevenue[] {
@@ -23,6 +25,7 @@ export function readPeopleRevenue(table: QueryTable, view: RevenueView): PersonR
         billed: numberCell(table, toDate ? p.billedToDate : p.billed, i),
         backlog: numberCell(table, toDate ? p.backlogToDate : p.backlog, i),
         execution: numberCell(table, toDate ? p.execToDate : p.exec, i),
+        share: numberCell(table, toDate ? p.shareToDate : p.share, i),
     }));
 }
 
@@ -34,17 +37,23 @@ export function readUnassignedRevenue(table: QueryTable, view: RevenueView): { r
     }));
 }
 
-/**
- * Colour band of a person's tile (Ion, 2026-11-17: colourful but professional, official palette). Reads the model's
- * % as shown (whole percents). `no-plan`: billing with no Backlog line of their own (the model returns 100% then).
- */
-export type ExecutionBand = "ahead" | "on" | "behind" | "well-behind" | "no-plan";
+/** No Backlog line of their own: they bill on a role's or nobody's plan (the model returns 100% then). */
+export function hasNoPlan(person: Pick<PersonRevenue, "backlog">): boolean {
+    return person.backlog === null || person.backlog === 0;
+}
 
-export function executionBand(person: Pick<PersonRevenue, "backlog" | "execution">): ExecutionBand {
-    if (person.backlog === null || person.backlog === 0) return "no-plan";
-    const pct = Math.round((person.execution ?? 0) * 100);
-    if (pct > 105) return "ahead";
-    if (pct >= 95) return "on";
-    if (pct >= 75) return "behind";
-    return "well-behind";
+/**
+ * Colour tier of a person's tile: their share of what the project billed (Ion, 2026-11-17: colour by each person's %
+ * of the project total, so the tiles show variety). Reads the model's share as shown (whole percents). The person's
+ * progress against their own Backlog stays in the pill.
+ */
+export type ShareTier = "25" | "15" | "10" | "5" | "0";
+
+export function shareTier(share: number | null): ShareTier {
+    const pct = Math.round((share ?? 0) * 100);
+    if (pct >= 25) return "25";
+    if (pct >= 15) return "15";
+    if (pct >= 10) return "10";
+    if (pct >= 5) return "5";
+    return "0";
 }

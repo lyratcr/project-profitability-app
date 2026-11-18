@@ -728,8 +728,27 @@ body {
 .ax-person-tile:hover { transform: translateY(-1px); box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--tile) 60%, transparent); }
 .ax-person-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ax-person-amount { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.ax-person-share { font-size: 11px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ax-person-share {
+  align-self: flex-start;
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 0 7px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .ax-person-pill { position: absolute; left: 10px; bottom: 8px; }
+/* Inside a tile the pill sits on the faded part: solid tones so it reads (same meaning as the matrix pills). */
+.ax-person-pill.is-over { background: var(--red-500); color: #fff; }
+.ax-person-pill.is-under { background: var(--positive-ink); color: #fff; }
+.ax-person-pill.is-even { background: color-mix(in srgb, var(--surface) 80%, transparent); color: var(--ink); }
 .ax-person-swatch {
   display: inline-block; width: 12px; height: 12px; border-radius: 4px;
   background: linear-gradient(155deg, var(--tile), color-mix(in srgb, var(--tile) 15%, transparent));

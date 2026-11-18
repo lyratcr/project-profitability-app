@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { squarify } from "./chart-geometry";
-import { executionBand, readPeopleRevenue, readUnassignedRevenue } from "./revenue-by-person";
+import { hasNoPlan, readPeopleRevenue, readUnassignedRevenue, shareTier } from "./revenue-by-person";
 import { projectsRevenueByPerson, projectsRevenueUnassigned } from "@/queries/projects";
 
 // MOS-401-09 on the published model, 2026-11-17 (docs/08_app_measures.md § 23).
@@ -15,28 +15,30 @@ const people = {
         { name: "[Billed]" },
         { name: "[Backlog]" },
         { name: "[Exec]" },
+        { name: "[ShareToDate]" },
+        { name: "[Share]" },
     ],
     rows: [
-        ["1348", "Iliak Herrera", 24974, 32200, 0.776, 24974, 64975, 0.384],
-        ["1257", "Erick Angulo", 22387, 16000, 1.399, 22387, 16600, 1.349],
-        ["X1", "Javier Alvarado", 11200, null, 1, 11200, null, 1],
+        ["1348", "Iliak Herrera", 24974, 32200, 0.776, 24974, 64975, 0.384, 0.096, 0.096],
+        ["1257", "Erick Angulo", 22387, 16000, 1.399, 22387, 16600, 1.349, 0.086, 0.086],
+        ["X1", "Javier Alvarado", 11200, null, 1, 11200, null, 1, 0.043, 0.043],
     ],
 } as unknown as QueryTable;
 
 describe("revenue by person", () => {
     it("reads the model's values for the view asked", () => {
-        expect(readPeopleRevenue(people, "to-date")[0]).toEqual({ key: "1348", name: "Iliak Herrera", billed: 24974, backlog: 32200, execution: 0.776 });
+        expect(readPeopleRevenue(people, "to-date")[0]).toEqual({ key: "1348", name: "Iliak Herrera", billed: 24974, backlog: 32200, execution: 0.776, share: 0.096 });
         expect(readPeopleRevenue(people, "whole")[0]).toMatchObject({ backlog: 64975, execution: 0.384 });
     });
 
-    it("bands each person by the % as shown, and billing with no Backlog as no plan", () => {
-        const [iliak, erick, javier] = readPeopleRevenue(people, "to-date");
-        expect(executionBand(iliak)).toBe("behind");
-        expect(executionBand(erick)).toBe("ahead");
-        expect(executionBand(javier)).toBe("no-plan");
-        expect(executionBand(readPeopleRevenue(people, "whole")[0])).toBe("well-behind");
-        expect(executionBand({ backlog: 15200, execution: 0.95 })).toBe("on");
-        expect(executionBand({ backlog: 100, execution: 1.054 })).toBe("on");
+    it("tiers each person by their share of billed as shown, and flags billing with no Backlog of their own", () => {
+        // ALK-401-01 shares (published model, 2026-11-17): 26%, 25%, 17%, 12%, 11%, 9%.
+        expect([0.257, 0.247, 0.173, 0.121, 0.108, 0.094].map(shareTier)).toEqual(["25", "25", "15", "10", "10", "5"]);
+        expect(shareTier(0.043)).toBe("0");
+        expect(shareTier(null)).toBe("0");
+        const [iliak, , javier] = readPeopleRevenue(people, "to-date");
+        expect(hasNoPlan(iliak)).toBe(false);
+        expect(hasNoPlan(javier)).toBe(true);
     });
 
     it("reads the roles planned with no person", () => {
@@ -79,6 +81,7 @@ describe("revenue by person queries", () => {
             expect(q).toContain("_cutoffWeekEnd");
         }
         expect(projectsRevenueByPerson({ filters: scope }).query).toContain("[Revenue Execution % by Person_app]");
+        expect(projectsRevenueByPerson({ filters: scope }).query).toContain("REMOVEFILTERS ( dim_employee )");
         expect(projectsRevenueUnassigned({ filters: scope }).query).toContain("[Planned Revenue Unassigned_app]");
     });
 });
