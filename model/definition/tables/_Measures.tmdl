@@ -1289,9 +1289,19 @@ table _Measures
 		displayFolder: _app\Projects
 		lineageTag: 657483db-2c52-42ab-a0f4-e0dd757849d7
 
-	/// ADDED 2026-11-04 (Fabric app): Actual / planned revenue. Monthly or longer periods only.
-	measure 'Revenue vs Plan %_app' = DIVIDE ( [Actual Revenue_app], [Planned Revenue_app] )
-		formatString: 0.0%
+	/// ADDED 2026-11-04 (Fabric app): Actual / planned revenue. Monthly or longer periods only. FIXED 2026-11-17 (Fabric app): % Execution as in the executives' dashboard (Actuals vs Backlog): blank with no activity; 0% for credit notes with no Backlog; 100% for revenue with no Backlog (upside); else Actual / Backlog (a negative Actual gives a negative %). Whole percents (Ion).
+	measure 'Revenue vs Plan %_app' =
+			VAR _Actuals = COALESCE ( [Actual Revenue_app], 0 )
+			VAR _Backlog = [Planned Revenue_app]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        _Actuals = 0 && _Backlog = 0, BLANK (),
+			        _Actuals < 0 && _Backlog = 0, 0,
+			        _Actuals > 0 && _Backlog = 0, 1,
+			        DIVIDE ( _Actuals, _Backlog )
+			    )
+		formatString: 0%
 		displayFolder: _app\Projects
 		lineageTag: 2e215692-3dfe-499b-a99b-5e04634c6130
 
