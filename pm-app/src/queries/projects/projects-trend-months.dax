@@ -1,13 +1,19 @@
-// P6 weekly trend summary by month: the same four measures for each calendar month in the 12-week window (the first
-// and last months are usually partial: the window cuts them). Months in calendar order.
+// P6 hours vs Backlog by month (Ion, 2026-11-18): hours billed in Project Ops (Actual) vs plan hours (Backlog), the
+// difference and the variance, per calendar month in the 12-month window. Both sides stop at the Saturday of the last
+// week integrated into Project Ops (the cutoff the matrix and the projection use), so the last month compares the same
+// days. Months in calendar order; the app marks partial months.
+DEFINE
+    VAR _cutoff = [Last Revenue Date_app]
+    VAR _cutoffWeekEnd = CALCULATE ( MAX ( dim_calendar[start_of_week_sun] ), dim_calendar[date] = _cutoff ) + 6
 EVALUATE
 SUMMARIZECOLUMNS (
     dim_calendar[year_month],
     dim_calendar[year_month_number],
     /* @filters */
-    "Hours", [Synerion Hours_app],
+    KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], BLANK (), _cutoffWeekEnd ) ),
+    "Hours", [Billed Hours_app],
     "PlannedHours", [Planned Hours_app],
-    "HoursVsPlan", [Hours vs Plan_app],
-    "Variance", [Hours vs Plan Variance %_app]
+    "HoursVsPlan", IF ( NOT ISBLANK ( [Billed Hours_app] ) || NOT ISBLANK ( [Planned Hours_app] ), COALESCE ( [Billed Hours_app], 0 ) - COALESCE ( [Planned Hours_app], 0 ) ),
+    "Variance", DIVIDE ( COALESCE ( [Billed Hours_app], 0 ) - COALESCE ( [Planned Hours_app], 0 ), [Planned Hours_app] )
 )
 ORDER BY dim_calendar[year_month_number]

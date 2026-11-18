@@ -253,9 +253,28 @@ body {
   opacity: 0.7;
 }
 .ax-month-bar-plan {
-  border: 1.5px solid var(--ink);
+  /* Solid Backlog bar (Ion, 2026-11-18). */
+  background: var(--ink);
   filter: drop-shadow(0 2px 2px var(--glass-line-shadow));
 }
+
+/* Diverging variance around a zero line (Ion, 2026-11-18): red grows left, green grows right, number opposite. */
+.ax-diverge { display: flex; align-items: center; width: 100%; min-width: 150px; }
+.ax-diverge-half { flex: 1 1 0; display: flex; align-items: center; min-width: 0; }
+.ax-diverge-half.is-left { justify-content: flex-end; }
+.ax-diverge-half.is-right { justify-content: flex-start; }
+.ax-diverge-axis { width: 2px; height: 20px; border-radius: 1px; background: var(--ink); opacity: 0.55; flex: 0 0 auto; }
+.ax-diverge-bar { display: block; height: 12px; max-width: 100%; }
+.ax-diverge-half.is-left .ax-diverge-bar { border-radius: 4px 0 0 4px; }
+.ax-diverge-half.is-right .ax-diverge-bar { border-radius: 0 4px 4px 0; }
+.ax-diverge-bar.is-below { background: linear-gradient(270deg, var(--negative), color-mix(in srgb, var(--negative) 55%, transparent)); }
+.ax-diverge-bar.is-above { background: linear-gradient(90deg, var(--positive), color-mix(in srgb, var(--positive) 55%, transparent)); }
+.ax-diverge-text { padding: 0 8px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ax-diverge-text.is-below { color: var(--negative-ink); }
+.ax-diverge-text.is-above { color: var(--positive-ink); }
+.ax-diverge-text.is-even { color: var(--ink-muted); }
+[data-theme="dark"] .ax-diverge-text.is-below { color: var(--red-300); }
+[data-theme="dark"] .ax-diverge-text.is-above { color: var(--green-500); }
 .ax-month-bar-variance {
   height: 4px;
 }
