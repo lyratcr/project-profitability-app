@@ -1,10 +1,13 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
 import { DataGrid, type GridColumnDef, type SortConfig } from "@microsoft/fabric-datagrid";
 import type { DataTable } from "@microsoft/fabric-visuals-core";
 import { useThemeContext } from "@/hooks/theme.context";
 import { withoutColumns } from "@/lib/query-table";
 import { toDataTable, toRollupDataTables, type ColumnMetadataMap } from "@/lib/to-data-table";
+
+/** Draws one cell from the model's raw value (the grid then skips its own formatting for that column). */
+export type CellRenderer = (value: unknown) => ReactNode;
 
 interface ReportTableProps {
     table: QueryTable;
@@ -28,15 +31,37 @@ interface ReportTableProps {
      * (Ion, 2026-11-17). Columns not listed keep the grid's default width; the formats still come from the data.
      */
     columnWidths?: Readonly<Record<string, number>>;
+    /** Custom cells by column `name`, e.g. the coloured variance pills (Ion, 2026-11-17). They format the value themselves. */
+    cellRenderers?: Readonly<Record<string, CellRenderer>>;
+    /** Centre every header and cell (Ion, 2026-11-17: Revenue by month vs Backlog). */
+    centered?: boolean;
 }
 
-/** The grid's own column list (id = column name, header = display name) with the requested widths. */
-function sizedColumns(data: DataTable, widths: Readonly<Record<string, number>>): GridColumnDef[] {
-    return data.columns.map((c) => ({ id: c.name, header: c.displayName ?? c.name, ...(widths[c.name] !== undefined ? { width: widths[c.name], minWidth: widths[c.name] } : {}) }));
+/** The grid's own column list (id = column name, header = display name) with the requested widths and cells. */
+function customColumns(data: DataTable, widths: Readonly<Record<string, number>>, renderers: Readonly<Record<string, CellRenderer>>): GridColumnDef[] {
+    return data.columns.map((c) => ({
+        id: c.name,
+        header: c.displayName ?? c.name,
+        ...(widths[c.name] !== undefined ? { width: widths[c.name], minWidth: widths[c.name] } : {}),
+        ...(renderers[c.name] ? { cellRenderer: (value: unknown) => renderers[c.name](value) } : {}),
+    }));
 }
 
 /** Table with model-provided grand totals (build plan 2.4). */
-export function ReportTable({ table: queryTable, columnMetadata, title, subtitle, grandTotalFlag, defaultSort, pageSize = 25, chromeless = false, hiddenColumns, columnWidths }: ReportTableProps): ReactElement {
+export function ReportTable({
+    table: queryTable,
+    columnMetadata,
+    title,
+    subtitle,
+    grandTotalFlag,
+    defaultSort,
+    pageSize = 25,
+    chromeless = false,
+    hiddenColumns,
+    columnWidths,
+    cellRenderers,
+    centered = false,
+}: ReportTableProps): ReactElement {
     const { theme } = useThemeContext();
     const table = hiddenColumns && hiddenColumns.length > 0 ? withoutColumns(queryTable, hiddenColumns) : queryTable;
     const frame = chromeless ? { chromeless: true as const } : { header: { title, subtitle } };
@@ -56,5 +81,7 @@ export function ReportTable({ table: queryTable, columnMetadata, title, subtitle
     }
 
     const data = toDataTable(table, columnMetadata);
-    return <DataGrid data={data} columns={columnWidths ? sizedColumns(data, columnWidths) : undefined} defaultSort={defaultSort} pageSize={pageSize} theme={theme} {...frame} />;
+    const columns = columnWidths || cellRenderers ? customColumns(data, columnWidths ?? {}, cellRenderers ?? {}) : undefined;
+    const grid = <DataGrid data={data} columns={columns} defaultSort={defaultSort} pageSize={pageSize} theme={theme} {...frame} />;
+    return centered ? <div className="ax-grid-centered">{grid}</div> : grid;
 }
