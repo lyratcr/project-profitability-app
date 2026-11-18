@@ -10,7 +10,7 @@ import { describeDaysLeft, parseModelDate, planEndStatus, type PlanEndStatus } f
 import { cell, numberCell } from "@/lib/query-table";
 import { pageHref, type PageDef } from "@/lib/routes";
 
-import { buildPeopleMatrix, buildProjectMatrix, matrixWeeks, type MatrixCell, type PeopleMatrix } from "@/lib/people-week";
+import { buildPeopleMatrix, buildProjectMatrix, diffTone, matrixWeeks, type MatrixCell, type PeopleMatrix } from "@/lib/people-week";
 import { toDataTable } from "@/lib/to-data-table";
 import { cn } from "@/lib/utils";
 import type { QueryTable } from "@microsoft/rayfin-connector-fabric-semanticmodel";
@@ -55,7 +55,7 @@ import { ProjectsByPace } from "./projects-by-pace.component";
 import { RevenueProjection } from "./revenue-projection.component";
 import { QueryStates, type QueryResult } from "./query-states.component";
 import { PeopleWeekMatrix } from "./people-week-matrix.component";
-import { ReportTable } from "./report-table.component";
+import { ReportTable, type CellRenderer } from "./report-table.component";
 import { TrendChart } from "./trend-chart.component";
 
 interface ProjectsPageProps {
@@ -70,7 +70,23 @@ interface ProjectsPageProps {
 
 const PEOPLE_TABLE_ID = "who-logged-time";
 /** Revenue by month (act 3): widths that let the short headers read whole (Ion, 2026-11-17). */
-const REVENUE_MONTH_WIDTHS = { Month: 84, Actual: 94, Planned: 104, VsPlan: 78, VsPlanPct: 110 } as const;
+const REVENUE_MONTH_WIDTHS = { Month: 84, Actual: 94, Planned: 104, VsPlan: 86, VsPlanPct: 110 } as const;
+
+/** A model value as the matrix's variance pill: over the Backlog red, under green, on it neutral (Ion, 2026-11-17). */
+function revenuePill(tone: ReturnType<typeof diffTone>, text: string): ReactNode {
+    return (
+        <span className="flex justify-end">
+            <span className={`ax-var-pill is-${tone ?? "even"}`}>{text}</span>
+        </span>
+    );
+}
+
+/** Revenue by month: ∆ Rev and % Execution coloured like the first matrix (Ion, 2026-11-17). Presentation only. */
+const REVENUE_MONTH_CELLS: Readonly<Record<string, CellRenderer>> = {
+    VsPlan: (v) => (typeof v === "number" ? revenuePill(diffTone(v), signedChange(Math.round(v), PROJECTS_FORMATS.money)) : null),
+    // % Execution reads against 100%: 101% is over the Backlog, 95% under (rounded as shown, no decimals).
+    VsPlanPct: (v) => (typeof v === "number" ? revenuePill(diffTone(Math.round(v * 100) - 100), String(formatValue(v, PROJECTS_FORMATS.percent))) : null),
+};
 
 const GLASS_TOKENS = ["yellow-100", "yellow-300", "yellow-500", "ink", "ink-muted", "surface", "positive", "negative", "blue-300"] as const;
 // The weekly trend's spec carries a tooltip with both series (VegaVisual's line crosshair would show only the plan),
@@ -434,11 +450,11 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                             <p className="caption m-0 mt-3 text-muted-foreground">Budget = plan hours (Backlog scenario). * Only through {dateFormat.format(model.months.end)}.</p>
                         </AxCard>
                         <AxCard
-                            title="Revenue by month vs plan"
+                            title="Revenue by month vs Backlog"
                             subtitle={`Last ${TREND_MONTHS} months · ${monthLabel.format(model.months.start)} – ${monthLabel.format(model.months.end)} · USD · Actual Rev (Actual scenario) vs Backlog Rev (Backlog scenario); % Execution = Actual Rev / Backlog Rev`}
                         >
                             <QueryStates result={revenueResult} shape="table" title="Revenue by month">
-                                {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} columnWidths={REVENUE_MONTH_WIDTHS} />}
+                                {(table) => <ReportTable chromeless table={table} columnMetadata={model.revenue.columnMetadata} title="Revenue by month" pageSize={TREND_MONTHS} hiddenColumns={[projectsRevenueColumns.monthNumber]} columnWidths={REVENUE_MONTH_WIDTHS} cellRenderers={REVENUE_MONTH_CELLS} />}
                             </QueryStates>
                         </AxCard>
                         </div>
