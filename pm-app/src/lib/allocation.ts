@@ -254,11 +254,15 @@ export function readWeeks(table: QueryTable): Map<string, Map<number, WeekCell>>
     return out;
 }
 
-/** How a week reads in the strip: over 40 h, full (no free hours left), or free (some or all of the 40 h). */
+/**
+ * How a week reads in the strip: over 40 h, full, or free. Whole hours, like the pills and the tooltip (Ion,
+ * 2026-11-19: 40.11 h planned read as over in the strip and full everywhere else): under half an hour over or
+ * free reads as full.
+ */
 export function weekLoad(cellValue: WeekCell | undefined): WeekLoad {
     if (cellValue === undefined) return "free";
-    if (cellValue.over > 0) return "over";
-    return cellValue.free > 0 ? "free" : "full";
+    if (Math.round(cellValue.over) > 0) return "over";
+    return Math.round(cellValue.free) > 0 ? "free" : "full";
 }
 
 export interface BookingSegment {

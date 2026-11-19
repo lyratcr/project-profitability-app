@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactElement } from "react";
 import { createPortal } from "react-dom";
 import { formatValue } from "@microsoft/fabric-visuals-core";
-import { DAY_LIMIT, WEEK_CAPACITY, type AllocationPerson, type WeekCell, type WeekDetail } from "@/lib/allocation";
+import { DAY_LIMIT, WEEK_CAPACITY, weekLoad, type AllocationPerson, type WeekCell, type WeekDetail } from "@/lib/allocation";
 import { ALLOCATION_FORMATS } from "@/queries/allocation";
 import type { BreakdownState } from "./people-week-tooltip.component";
 
@@ -49,7 +49,8 @@ export function AllocationWeekTooltip({ id, anchor, person, weekStart, load, det
     const days = Array.from({ length: 7 }, (_, i) => new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i));
     const meta = [person.role, person.l1].filter((v) => v !== null).join(" · ");
     const total = detail?.hours ?? load?.hours ?? null;
-    const over = load !== undefined && Math.round(load.over) > 0;
+    // Same reading as the strip (whole hours): over, fully booked, or free.
+    const reading = weekLoad(load);
     const free = load === undefined ? WEEK_CAPACITY : load.free;
 
     return createPortal(
@@ -74,8 +75,10 @@ export function AllocationWeekTooltip({ id, anchor, person, weekStart, load, det
                 <span className="tabular-nums">{WEEK_CAPACITY} h</span>
             </div>
             <div className="flex items-center justify-between gap-3">
-                <span className="ax-cell-tooltip-muted">{over ? "Over capacity" : "Free"}</span>
-                {over ? <span className="ax-var-pill is-over">+{hours(load!.over)} h</span> : <span className="ax-var-pill is-under">{hours(free)} h</span>}
+                <span className="ax-cell-tooltip-muted">{reading === "over" ? "Over capacity" : reading === "full" ? "Fully booked" : "Free"}</span>
+                {reading === "over" && <span className="ax-var-pill is-over">+{hours(load!.over)} h</span>}
+                {reading === "free" && <span className="ax-var-pill is-under">{hours(free)} h</span>}
+                {reading === "full" && <span className="ax-var-pill is-even">0 h free</span>}
             </div>
             {load !== undefined && (
                 <div className="flex items-center justify-between gap-3">
