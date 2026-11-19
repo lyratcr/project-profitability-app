@@ -138,6 +138,7 @@ After the PMs and Adan validated P6 (2026-11-16), Ion asked for a PM-only app, t
   - 2026-11-18: empty placeholder tab ("Resource Allocation", `#/allocation`, no filters, no data), like Resource Utilization; content later (mockup first).
   - Data finding (2026-11-18, model): about 90% of T&M Backlog hours are planned by person (496,336 of 548,723; 92% from this week on), the rest at role level; the Fixed Fee Backlog has no people (406,743 h on 114 projects, service lines, #27). A full view needs the Project Ops resource assignments (`msdyn_resourceassignment` / `bookableresourcebooking`) in gold: next step, a read-only Spark check of those tables (Ion runs it).
   - 2026-11-19: mockup direction approved by Ion (`04` log): role, month, Show (free / over 40 h) filters; Gantt by person with weekly free hours; per-person detail with hours, billing rate and planned revenue; names shown. Pending before the build: #35 (role sync UKG → Dataverse, Alejandro), #36 (real capacity, 40 h fixed meanwhile), #37 (Project Ops bookings in gold; Spark check).
+  - 2026-11-19: filters in two groups (`04` log): Resource (person's L1 / L2 / L3 as of the chosen month, Role) and Project (Customer, PM, Project). The person's L2 / L3 need gold (#38).
 - [ ] 6.7 Security tests ("Test as role" with other users: PM, manager, director, executive; a real PM in the app), open to all PMs, hide Projects in the executive app
 
 ## Phase 5 — Release
