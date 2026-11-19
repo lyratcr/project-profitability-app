@@ -1,0 +1,29 @@
+// A person's detail for the chosen month (Ion, 2026-11-19): per project, planned T&M hours, billing rate (planned
+// revenue over planned hours: what the client is billed, never the person's cost), planned revenue and the project's
+// share of the person's revenue. The filters marker takes the person (TREATAS on fact_revenue_metrics[employee_number]).
+DEFINE
+    MEASURE _Measures[RA Hours] = CALCULATE ( [Planned Hours_app], KEEPFILTERS ( fact_revenue_metrics[revenue_type] = "T&M" ) )
+    MEASURE _Measures[RA Revenue] = CALCULATE ( [Planned Revenue_app], KEEPFILTERS ( fact_revenue_metrics[revenue_type] = "T&M" ) )
+    VAR _monthFrom = @@MONTH_FROM@@
+    VAR _monthTo = @@MONTH_TO@@
+EVALUATE
+VAR _rows =
+    SUMMARIZECOLUMNS (
+        fact_revenue_metrics[project_key],
+        KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], _monthFrom, _monthTo ) ),
+        /* @filters */
+        "Hours", [RA Hours],
+        "Revenue", [RA Revenue],
+        "Total", CALCULATE ( [RA Revenue], REMOVEFILTERS ( fact_revenue_metrics[project_key] ) )
+    )
+RETURN
+    SELECTCOLUMNS (
+        // Total (for the share) is never blank, so keep only projects with hours or revenue in the month.
+        FILTER ( _rows, NOT ISBLANK ( [Hours] ) || NOT ISBLANK ( [Revenue] ) ),
+        "Project", fact_revenue_metrics[project_key],
+        "Hours", [Hours],
+        "Rate", DIVIDE ( [Revenue], [Hours] ),
+        "Revenue", [Revenue],
+        "Share", DIVIDE ( [Revenue], [Total] )
+    )
+ORDER BY [Revenue] DESC, [Project]

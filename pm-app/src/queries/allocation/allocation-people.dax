@@ -1,0 +1,15 @@
+EVALUATE
+SELECTCOLUMNS (
+    _people,
+    "EmployeeNumber", fact_revenue_metrics[employee_number],
+    "Employee", [Employee],
+    "Role", [Role],
+    "L1", [L1],
+    "MonthHours", [MonthHours],
+    "MonthRevenue", [MonthRevenue],
+    "FreeHours", [FreeHours],
+    "OverHours", [OverHours],
+    "PeakHours", [PeakHours],
+    "Rate", [Rate]
+)
+ORDER BY [Employee], [EmployeeNumber]

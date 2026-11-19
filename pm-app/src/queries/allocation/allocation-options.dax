@@ -1,0 +1,36 @@
+// Resource Allocation (6.17): the Role and L1 choices, from the people with T&M Backlog hours in the window. Role is
+// the role on their Backlog lines (the UKG role comes with the gold resource table, open item #35); L1 is the
+// person's current org from the UKG job history (through the UKG id).
+DEFINE
+    VAR _from = @@FROM@@
+    VAR _to = @@TO@@
+    VAR _today = @@TODAY@@
+    VAR _people =
+        CALCULATETABLE (
+            SUMMARIZE ( fact_revenue_metrics, fact_revenue_metrics[employee_number], fact_revenue_metrics[resource_role] ),
+            fact_revenue_metrics[scenario] = "Backlog",
+            fact_revenue_metrics[revenue_type] = "T&M",
+            NOT ISBLANK ( fact_revenue_metrics[employee_number] ),
+            DATESBETWEEN ( dim_calendar[date], _from, _to )
+        )
+    VAR _ukg =
+        CALCULATETABLE (
+            VALUES ( dim_employee[ukg_employee_id] ),
+            TREATAS ( SELECTCOLUMNS ( _people, "e", fact_revenue_metrics[employee_number] ), dim_employee[employee_number] )
+        )
+    VAR _l1 =
+        CALCULATETABLE (
+            VALUES ( dim_employee_history[L1] ),
+            TREATAS ( _ukg, dim_employee_history[ukg_employee_id] ),
+            dim_employee_history[effective_date] <= _today,
+            dim_employee_history[end_date] > _today
+        )
+EVALUATE
+FILTER (
+    UNION (
+        SELECTCOLUMNS ( DISTINCT ( SELECTCOLUMNS ( _people, "v", fact_revenue_metrics[resource_role] ) ), "Kind", "role", "Value", [v] ),
+        SELECTCOLUMNS ( _l1, "Kind", "l1", "Value", dim_employee_history[L1] )
+    ),
+    NOT ISBLANK ( [Value] )
+)
+ORDER BY [Kind], [Value]

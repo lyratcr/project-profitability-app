@@ -1,0 +1,39 @@
+    // One row per person (after allocation-set.dax): name (allowed on this page, Ion 2026-11-19), role on their
+    // Backlog lines, current org L1 (UKG job history through the UKG id), and the chosen month: planned hours and
+    // revenue, free and over hours (summed week by week against the 40 h capacity) and the busiest week.
+    VAR _monthWeeks = CALCULATETABLE ( VALUES ( dim_calendar[start_of_week_sun] ), DATESBETWEEN ( dim_calendar[date], _monthFrom, _monthTo ) )
+    VAR _base =
+        ADDCOLUMNS (
+            _set,
+            // dim_employee name; else the resource name on the person's Backlog lines (people missing from dim_employee).
+            "Employee",
+                COALESCE (
+                    LOOKUPVALUE ( dim_employee[employee_full_name], dim_employee[employee_number], fact_revenue_metrics[employee_number] ),
+                    CALCULATE ( MAX ( fact_revenue_metrics[resource_name] ), fact_revenue_metrics[scenario] = "Backlog", DATESBETWEEN ( dim_calendar[date], _from, _to ) )
+                ),
+            "Role",
+                CALCULATE (
+                    MAX ( fact_revenue_metrics[resource_role] ),
+                    fact_revenue_metrics[scenario] = "Backlog",
+                    fact_revenue_metrics[revenue_type] = "T&M",
+                    DATESBETWEEN ( dim_calendar[date], _from, _to )
+                ),
+            "L1",
+                VAR _ukg = LOOKUPVALUE ( dim_employee[ukg_employee_id], dim_employee[employee_number], fact_revenue_metrics[employee_number] )
+                RETURN
+                    CALCULATE (
+                        MAX ( dim_employee_history[L1] ),
+                        REMOVEFILTERS ( dim_employee_history ),
+                        dim_employee_history[ukg_employee_id] = _ukg,
+                        dim_employee_history[effective_date] <= _today,
+                        dim_employee_history[end_date] > _today
+                    ),
+            "MonthHours", CALCULATE ( [RA Hours], DATESBETWEEN ( dim_calendar[date], _monthFrom, _monthTo ) ),
+            "MonthRevenue", CALCULATE ( [RA Revenue], DATESBETWEEN ( dim_calendar[date], _monthFrom, _monthTo ) ),
+            "FreeHours", SUMX ( _monthWeeks, MAX ( 0, _capacity - COALESCE ( CALCULATE ( [RA Hours] ), 0 ) ) ),
+            "OverHours", SUMX ( _monthWeeks, MAX ( 0, COALESCE ( CALCULATE ( [RA Hours] ), 0 ) - _capacity ) ),
+            "PeakHours", MAXX ( _monthWeeks, COALESCE ( CALCULATE ( [RA Hours] ), 0 ) )
+        )
+    // Billing rate (Ion, 2026-11-19): the person's planned revenue over planned hours in the month; what the client
+    // is billed, never the person's cost.
+    VAR _people = ADDCOLUMNS ( _base, "Rate", DIVIDE ( [MonthRevenue], [MonthHours] ) )

@@ -1,0 +1,21 @@
+// The Gantt bars (after allocation-set.dax): planned T&M hours per person, project and week. The app joins
+// consecutive weeks of a project into one bar; every number shown is one of these weekly values.
+EVALUATE
+VAR _rows =
+    SUMMARIZECOLUMNS (
+        fact_revenue_metrics[employee_number],
+        fact_revenue_metrics[project_key],
+        dim_calendar[start_of_week_sun],
+        KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], _from, _to ) ),
+        KEEPFILTERS ( TREATAS ( _setKeys, fact_revenue_metrics[employee_number] ) ),
+        "Hours", [RA Hours]
+    )
+RETURN
+    SELECTCOLUMNS (
+        _rows,
+        "EmployeeNumber", fact_revenue_metrics[employee_number],
+        "Project", fact_revenue_metrics[project_key],
+        "WeekKey", VALUE ( FORMAT ( dim_calendar[start_of_week_sun], "yyyymmdd" ) ),
+        "Hours", [Hours]
+    )
+ORDER BY [EmployeeNumber], [Project], [WeekKey]

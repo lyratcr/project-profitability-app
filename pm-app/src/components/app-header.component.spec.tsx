@@ -43,7 +43,7 @@ describe("AppHeader", () => {
         renderHeader();
         expect(screen.getByText("PM Performance Hub")).toBeInTheDocument();
         const tabs = screen.getAllByRole("tab");
-        expect(tabs.map((t) => t.textContent)).toEqual(["Project Health", "Resource Utilization", "Resource Allocation"]);
+        expect(tabs.map((t) => t.textContent)).toEqual(["Project Health", "Resource Allocation", "Resource Utilization"]);
         expect(screen.getByRole("tab", { current: "page" })).toHaveTextContent("Project Health");
         expect(screen.getByRole("tab", { name: "Resource Utilization" })).toHaveAttribute("href", "#/utilization");
         expect(screen.getByRole("tab", { name: "Resource Allocation" })).toHaveAttribute("href", "#/allocation");

@@ -3,8 +3,8 @@ import { DEFAULT_PAGE, PAGES, pageHref, parseHash } from "./routes";
 
 // PM app (Ion, 2026-11-16): Project Health (Project Progress page) is the home page; Resource Utilization and Resource Allocation (2026-11-18) are placeholder tabs.
 describe("routes", () => {
-    it("has Project Progress as home page, then Utilization and Allocation tabs", () => {
-        expect(PAGES.map((p) => p.path)).toEqual(["/projects", "/utilization", "/allocation"]);
+    it("has Project Progress as home page, then Allocation and Utilization tabs (Ion, 2026-11-19)", () => {
+        expect(PAGES.map((p) => p.path)).toEqual(["/projects", "/allocation", "/utilization"]);
         expect(DEFAULT_PAGE.id).toBe("projects");
         expect(parseHash("#/utilization").page.id).toBe("utilization");
         expect(parseHash("#/allocation").page.id).toBe("allocation");
