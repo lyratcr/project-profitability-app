@@ -2,8 +2,9 @@
 // whole hours, as the list shows them (under half an hour over reads as none).
 EVALUATE
 ROW (
-    "People", COUNTROWS ( _people ),
+    // Counts are 0, not blank, when nobody matches (e.g. one person picked who isn't over 40 h).
+    "People", COUNTROWS ( _people ) + 0,
     "Revenue", SUMX ( _people, [MonthRevenue] ),
     "FreeHours", SUMX ( _people, [FreeHours] ),
-    "OverPeople", COUNTROWS ( FILTER ( _people, ROUND ( [OverHours], 0 ) > 0 ) )
+    "OverPeople", COUNTROWS ( FILTER ( _people, ROUND ( [OverHours], 0 ) > 0 ) ) + 0
 )
