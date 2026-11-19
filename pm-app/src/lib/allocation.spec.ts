@@ -108,6 +108,10 @@ describe("results", () => {
         expect(weekLoad(c1.get(20261115))).toBe("over");
         expect(weekLoad(c1.get(20261122))).toBe("full");
         expect(weekLoad(c1.get(20261129))).toBe("free");
+        // 40.11 h planned: 0.11 h over reads as full, as in the pill and the tooltip.
+        expect(weekLoad({ hours: 40.11, free: 0, over: 0.11, freeShare: 0 })).toBe("full");
+        expect(weekLoad({ hours: 39.7, free: 0.3, over: 0, freeShare: 0.0075 })).toBe("full");
+        expect(weekLoad({ hours: 41, free: 0, over: 1, freeShare: 0 })).toBe("over");
     });
 
     const person = (name: string, role: string, free: number, over: number, revenue: number): AllocationPerson => ({
