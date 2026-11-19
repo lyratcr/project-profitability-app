@@ -14,7 +14,9 @@ import {
     readOptions,
     readPeople,
     readWeeks,
+    AVAILABLE_MINS,
     type AllocationOrder,
+    type AvailableMin,
     type ShowFilter,
 } from "@/lib/allocation";
 import type { PageDef } from "@/lib/routes";
@@ -24,7 +26,8 @@ import { AxPageHeader } from "./ax/ax-page-header.component";
 import { QueryStates } from "./query-states.component";
 import { ResourceAllocationGantt } from "./resource-allocation-gantt.component";
 
-const SHOW_LABEL: Record<ShowFilter, string> = { all: "Everyone", free: "With free hours", over: "Over 40 h" };
+const SHOW_LABEL: Record<ShowFilter, string> = { all: "Everyone", available: "Available", over: "Over 40 h" };
+const AVAILABLE_LABEL: Record<AvailableMin, string> = { 8: "1 day+ a week", 20: "Half time+", 40: "Full time" };
 const ORDER_LABEL: Record<AllocationOrder, string> = { revenue: "Most revenue first", free: "Most free first", name: "By name" };
 const fmt = (v: number | null, format: string) => (v === null ? "—" : String(formatValue(v, format)));
 
@@ -42,6 +45,7 @@ export function ResourceAllocationPage({ page }: { page: PageDef }): ReactElemen
     const [l1, setL1] = useState<string | undefined>();
     const [monthKey, setMonthKey] = useState(window.months[0].key);
     const [show, setShow] = useState<ShowFilter>("all");
+    const [availableMin, setAvailableMin] = useState<AvailableMin>(20);
     const [order, setOrder] = useState<AllocationOrder>("revenue");
     const [open, setOpen] = useState<string | null>(null);
     // Person search (Ion, 2026-11-19): suggests only the people the Role and L1 filters leave; the pick goes to the
@@ -162,12 +166,36 @@ export function ResourceAllocationPage({ page }: { page: PageDef }): ReactElemen
                     </span>
                     <div className="ax-chips">
                         {(Object.keys(SHOW_LABEL) as ShowFilter[]).map((k) => (
-                            <button key={k} type="button" className="ax-chip" aria-pressed={show === k} onClick={() => setShow(k)}>
+                            <button
+                                key={k}
+                                type="button"
+                                className="ax-chip"
+                                aria-pressed={show === k}
+                                onClick={() => {
+                                    setShow(k);
+                                    // Looking for availability: the freest first.
+                                    if (k === "available" && order === "revenue") setOrder("free");
+                                }}
+                            >
                                 {SHOW_LABEL[k]}
                             </button>
                         ))}
                     </div>
                 </div>
+                {show === "available" && (
+                    <div className="ax-slicer" role="group" aria-labelledby={`${id}-min`}>
+                        <span id={`${id}-min`} className="ax-label">
+                            Free per week (avg)
+                        </span>
+                        <div className="ax-chips">
+                            {AVAILABLE_MINS.map((m) => (
+                                <button key={m} type="button" className="ax-chip" aria-pressed={availableMin === m} title={`${m} h free a week or more, on average in the month`} onClick={() => setAvailableMin(m)}>
+                                    {AVAILABLE_LABEL[m]}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 <Field label="Order" id={`${id}-order`}>
                     <select id={`${id}-order`} className="ax-select app-select-narrow" value={order} onChange={(e) => setOrder(e.target.value as AllocationOrder)}>
                         {(Object.keys(ORDER_LABEL) as AllocationOrder[]).map((k) => (
@@ -209,9 +237,10 @@ export function ResourceAllocationPage({ page }: { page: PageDef }): ReactElemen
             <AxCard title="Bookings by person" subtitle={`Planned T&M hours per project, week by week · ${month.label} shaded`} aside={<Legend />}>
                 <QueryStates result={peopleResult} shape="table" title="Bookings by person" emptyMessage="No one has T&M hours planned for these filters.">
                     {(table) => {
-                        const people = arrangePeople(readPeople(table), show, order);
+                        const people = arrangePeople(readPeople(table), show, order, availableMin);
                         if (people.length === 0) {
-                            return <p className="m-0 py-10 text-center text-300 text-muted-foreground">No one {show === "over" ? "is over 40 h" : "has free hours"} in {month.label} for these filters.</p>;
+                            const what = show === "over" ? "is over 40 h" : `has ${availableMin} h or more free a week`;
+                            return <p className="m-0 py-10 text-center text-300 text-muted-foreground">No one {what} in {month.label} for these filters.</p>;
                         }
                         return (
                             <ResourceAllocationGantt
