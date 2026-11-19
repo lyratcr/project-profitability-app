@@ -1,10 +1,11 @@
-import type { CSSProperties, ReactElement } from "react";
+import { useEffect, useId, useMemo, useState, type CSSProperties, type ReactElement } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { formatValue } from "@microsoft/fabric-visuals-core";
 import {
     lowestRate,
     personLoad,
     readDetail,
+    readWeekDetail,
     weekKeyOf,
     weekLoad,
     type AllocationMonth,
@@ -13,8 +14,11 @@ import {
     type Booking,
     type WeekCell,
 } from "@/lib/allocation";
-import { ALLOCATION_FORMATS } from "@/queries/allocation";
+import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
+import { ALLOCATION_FORMATS, allocationWeek } from "@/queries/allocation";
 import { cn } from "@/lib/utils";
+import { AllocationWeekTooltip } from "./allocation-week-tooltip.component";
+import type { BreakdownState } from "./people-week-tooltip.component";
 import { QueryStates, type QueryResult } from "./query-states.component";
 
 const fmt = (v: number | null, format: string) => (v === null ? "—" : String(formatValue(v, format)));
@@ -23,8 +27,6 @@ const money = (v: number | null) => fmt(v, ALLOCATION_FORMATS.money);
 const percent = (v: number | null) => fmt(v, ALLOCATION_FORMATS.percent);
 const compact = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 0 });
 const compactMoney = (v: number | null) => (v === null ? "—" : compact.format(v));
-const dayLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
-const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 
 interface GanttProps {
     window: AllocationWindow;
@@ -49,6 +51,31 @@ export function ResourceAllocationGantt({ window, month, people, bookings, weeks
     const band = { left: `${(month.firstWeek / window.weeks.length) * 100}%`, width: `${(month.weekCount / window.weeks.length) * 100}%` };
     const today = { left: `${(window.currentWeek / window.weeks.length) * 100}%` };
     const shortMonth = month.label.split(" ")[0];
+    const tooltipId = useId();
+
+    // Week tooltip (Ion, 2026-11-19): one query for the hovered person and week (cached, so a second hover is instant).
+    const [active, setActive] = useState<{ person: AllocationPerson; week: number; rect: DOMRect } | null>(null);
+    const weekConfig = active ? allocationWeek(active.person.employeeNumber, window.weeks[active.week]) : null;
+    const weekData = useSemanticModelQuery({ connection: weekConfig?.connection ?? "profitmodel", query: weekConfig?.query ?? "" }).data;
+    const weekDetail = useMemo(() => (weekData?.status === "success" ? readWeekDetail(weekData.table) : null), [weekData]);
+    const weekState: BreakdownState = weekData?.status === "success" ? "ready" : weekData?.status === "error" ? "error" : "loading";
+    // Fixed position: close on scroll, resize or Escape.
+    useEffect(() => {
+        if (!active) return;
+        const close = () => setActive(null);
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") close();
+        };
+        globalThis.addEventListener("scroll", close, true);
+        globalThis.addEventListener("resize", close);
+        globalThis.addEventListener("keydown", onKey);
+        return () => {
+            globalThis.removeEventListener("scroll", close, true);
+            globalThis.removeEventListener("resize", close);
+            globalThis.removeEventListener("keydown", onKey);
+        };
+    }, [active]);
+
     let role: string | null | undefined;
     const rows: ReactElement[] = [];
 
@@ -87,15 +114,8 @@ export function ResourceAllocationGantt({ window, month, people, bookings, weeks
                         {personBookings.map((b, lane) =>
                             b.segments.map((s) => {
                                 const same = s.hours.every((h) => h === s.hours[0]);
-                                const from = window.weeks[s.first];
-                                const to = addDays(window.weeks[s.last], 6);
-                                const tip = [
-                                    `${b.project} · T&M · planned hours`,
-                                    `${dayLabel.format(from)} – ${dayLabel.format(to)}`,
-                                    ...s.hours.map((h, i) => `Week of ${dayLabel.format(window.weeks[s.first + i])}: ${hours(h)} h`),
-                                ].join("\n");
                                 return (
-                                    <div key={`${b.project}-${s.first}`} className="ax-gantt-bar" title={tip} style={{ gridRow: lane + 1, gridColumn: `${s.first + 1} / ${s.last + 2}` }}>
+                                    <div key={`${b.project}-${s.first}`} className="ax-gantt-bar" style={{ gridRow: lane + 1, gridColumn: `${s.first + 1} / ${s.last + 2}` }}>
                                         {b.project}
                                         {same && ` · ${hours(s.hours[0])} h/wk`}
                                     </div>
@@ -108,11 +128,19 @@ export function ResourceAllocationGantt({ window, month, people, bookings, weeks
                             const c = personWeeks?.get(weekKeyOf(w));
                             const load = weekLoad(c);
                             const opacity = load === "free" ? Math.max(0.3, c?.freeShare ?? 1) : 1;
-                            const tip = c
-                                ? `Week of ${dayLabel.format(w)}: ${hours(c.hours)} h planned, ${c.over > 0 ? `${hours(c.over)} h over` : `${hours(c.free)} h free`}`
-                                : `Week of ${dayLabel.format(w)}: no T&M hours planned`;
-                            return <span key={w.getTime()} className={`ax-gantt-load is-${load}`} style={{ opacity }} title={tip} />;
+                            return <span key={w.getTime()} className={`ax-gantt-load is-${load}`} style={{ opacity }} />;
                         })}
+                    </div>
+                    {/* Hover areas, one per week over the whole row: open the week tooltip (mouse; the person detail is the keyboard path). */}
+                    <div className="ax-gantt-hits" aria-hidden="true">
+                        {window.weeks.map((w, i) => (
+                            <span
+                                key={w.getTime()}
+                                className={cn("ax-gantt-hit", active?.person.employeeNumber === person.employeeNumber && active.week === i && "is-active")}
+                                onMouseEnter={(e) => setActive({ person, week: i, rect: e.currentTarget.getBoundingClientRect() })}
+                                onMouseLeave={() => setActive(null)}
+                            />
+                        ))}
                     </div>
                 </div>
             </div>,
@@ -127,7 +155,19 @@ export function ResourceAllocationGantt({ window, month, people, bookings, weeks
     }
 
     return (
-        <div className="ax-matrix-scroll overflow-x-auto" tabIndex={0} aria-label="Bookings by person, week by week">
+        <>
+            {active && (
+                <AllocationWeekTooltip
+                    id={tooltipId}
+                    anchor={active.rect}
+                    person={active.person}
+                    weekStart={window.weeks[active.week]}
+                    load={weeks.get(active.person.employeeNumber)?.get(weekKeyOf(window.weeks[active.week]))}
+                    detail={weekDetail}
+                    state={weekState}
+                />
+            )}
+            <div className="ax-matrix-scroll overflow-x-auto" tabIndex={0} aria-label="Bookings by person, week by week">
             <div className="ax-gantt" style={style}>
                 <div className="ax-gantt-row ax-gantt-head">
                     <div className="ax-gantt-name ax-label">Person</div>
@@ -148,6 +188,7 @@ export function ResourceAllocationGantt({ window, month, people, bookings, weeks
                 {rows}
             </div>
         </div>
+        </>
     );
 }
 

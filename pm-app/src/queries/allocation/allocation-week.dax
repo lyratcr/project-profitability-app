@@ -1,0 +1,37 @@
+// Resource Allocation week tooltip (mockup approved by Ion, 2026-11-19): one person, one Sunday-Saturday week. Rows:
+// "total" (planned T&M hours and revenue of the week), "project" (per project) and "day" (per date; the Backlog is by
+// day). Run only for the week being hovered. The app fills the week and the person (an escaped DAX string).
+DEFINE
+    MEASURE _Measures[RA Hours] = CALCULATE ( [Planned Hours_app], KEEPFILTERS ( fact_revenue_metrics[revenue_type] = "T&M" ) )
+    MEASURE _Measures[RA Revenue] = CALCULATE ( [Planned Revenue_app], KEEPFILTERS ( fact_revenue_metrics[revenue_type] = "T&M" ) )
+    VAR _from = @@WEEK_FROM@@
+    VAR _to = @@WEEK_TO@@
+    VAR _person = @@PERSON@@
+    VAR _total =
+        CALCULATETABLE (
+            ROW ( "Hours", [RA Hours], "Revenue", [RA Revenue] ),
+            DATESBETWEEN ( dim_calendar[date], _from, _to ),
+            TREATAS ( { _person }, fact_revenue_metrics[employee_number] )
+        )
+    VAR _projects =
+        SUMMARIZECOLUMNS (
+            fact_revenue_metrics[project_key],
+            KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], _from, _to ) ),
+            KEEPFILTERS ( TREATAS ( { _person }, fact_revenue_metrics[employee_number] ) ),
+            "Hours", [RA Hours],
+            "Revenue", [RA Revenue]
+        )
+    VAR _days =
+        SUMMARIZECOLUMNS (
+            dim_calendar[date],
+            KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], _from, _to ) ),
+            KEEPFILTERS ( TREATAS ( { _person }, fact_revenue_metrics[employee_number] ) ),
+            "Hours", [RA Hours]
+        )
+EVALUATE
+UNION (
+    SELECTCOLUMNS ( _total, "Kind", "total", "Key", "", "Hours", [Hours], "Revenue", [Revenue] ),
+    SELECTCOLUMNS ( _projects, "Kind", "project", "Key", fact_revenue_metrics[project_key], "Hours", [Hours], "Revenue", [Revenue] ),
+    SELECTCOLUMNS ( _days, "Kind", "day", "Key", FORMAT ( dim_calendar[date], "yyyy-mm-dd" ), "Hours", [Hours], "Revenue", BLANK () )
+)
+ORDER BY [Kind], [Hours] DESC, [Key]

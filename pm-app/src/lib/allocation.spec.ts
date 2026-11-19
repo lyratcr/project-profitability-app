@@ -13,6 +13,7 @@ import {
     readBookings,
     readOptions,
     readPeople,
+    readWeekDetail,
     readWeeks,
     weekKeyOf,
     weekLoad,
@@ -156,5 +157,22 @@ describe("results", () => {
         expect(findPerson(choices, "  zoe ")?.employeeNumber).toBe("Zoe");
         expect(findPerson(choices, "Zo")).toBeNull();
         expect(findPerson(choices, "")).toBeNull();
+    });
+
+    it("reads the week tooltip: total, projects by hours, and days", () => {
+        const detail = readWeekDetail(
+            table(
+                ["[Kind]", "[Key]", "[Hours]", "[Revenue]"],
+                [
+                    ["day", "2026-12-14", 13, null],
+                    ["project", "BLU-401-03", 16, 1744],
+                    ["project", "GTA-101-04", 48, 912],
+                    ["total", "", 64, 2656],
+                ],
+            ),
+        );
+        expect([detail.hours, detail.revenue]).toEqual([64, 2656]);
+        expect(detail.projects.map((p) => p.project)).toEqual(["GTA-101-04", "BLU-401-03"]);
+        expect(detail.days.get("2026-12-14")).toBe(13);
     });
 });

@@ -872,3 +872,10 @@ body {
 }
 .ax-person-clear:hover { background: var(--line-strong); }
 .ax-person-clear:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+/* Resource Allocation week tooltip (Ion, 2026-11-19): hover areas per week over each person's row, and the tooltip's
+   project rows (name, bar, hours, revenue) and heavy days (more than 8 h planned). */
+.ax-gantt-hits { position: absolute; inset: 0; z-index: 2; display: grid; grid-template-columns: repeat(var(--weeks), minmax(0, 1fr)); }
+.ax-gantt-hit { display: block; cursor: default; }
+.ax-gantt-hit:hover, .ax-gantt-hit.is-active { background: color-mix(in srgb, var(--ink) 7%, transparent); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.ax-alloc-tip-row { display: grid; grid-template-columns: 84px 1fr 30px 58px; align-items: center; gap: 8px; margin: 4px 0; }
+.ax-cell-tooltip-days > div.is-heavy { background: var(--negative-soft); color: var(--negative-ink); }
