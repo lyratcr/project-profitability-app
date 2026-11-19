@@ -9,11 +9,12 @@ import { AppHeader } from "./components/app-header.component";
 import { LogoWatermark } from "./components/logo-watermark.component";
 import { ProjectsPage } from "./components/projects-page.component";
 import { PagePlaceholder } from "./components/page-placeholder.component";
+import { ResourceAllocationPage } from "./components/resource-allocation-page.component";
 import { FilterBar } from "./components/filter-bar.component";
 import { useGlobalFilters } from "./hooks/use-global-filters";
 import { useHashRoute } from "./hooks/use-hash-route";
 
-// PM app shell (Ion, 2026-11-16): Project Progress (P6, moved out of the executive app) and the Resource Utilization and Resource Allocation (2026-11-18) placeholders.
+// PM app shell (Ion, 2026-11-16): Project Progress (P6, moved out of the executive app) Resource Utilization (placeholder) and Resource Allocation (6.17, first version 2026-11-19).
 // Same Auxis look: logo watermark, glass header, liquid glass on the page (design-system bundle.css `.ax-liquid`).
 function App() {
     const route = useHashRoute();
@@ -39,6 +40,8 @@ function App() {
                     <div className="pt-6">
                         {page.id === "projects" ? (
                             <ProjectsPage page={page} filters={filters.state} options={filters.options} params={route.params} onFiltersChange={filters.setFilters} />
+                        ) : page.id === "allocation" ? (
+                            <ResourceAllocationPage page={page} />
                         ) : (
                             <PagePlaceholder page={page} />
                         )}

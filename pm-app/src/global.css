@@ -789,3 +789,75 @@ body {
 .ax-seg button[aria-pressed="true"] { background: var(--yellow-300); color: var(--grey-700); font-weight: 600; }
 .ax-seg button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 
+
+/* Resource Allocation Gantt (build plan 6.17, mockup approved by Ion 2026-11-19). One row per person: the name column
+   stays put while the weeks scroll; bars are T&M bookings per project; the strip under them is the weekly load
+   (free green, full grey, over 40 h red). The chosen month is shaded; this week has a dashed gold line. */
+.ax-gantt { min-width: 980px; font-size: 12px; }
+.ax-gantt-row { display: grid; grid-template-columns: 250px minmax(0, 1fr); border-top: 1px solid var(--line); }
+.ax-gantt-row.is-open { background: var(--glass-sunken, var(--surface-sunken)); }
+.ax-gantt-head { border-top: 0; }
+.ax-gantt-name {
+  position: sticky; left: 0; z-index: 3; min-width: 0;
+  display: flex; flex-direction: column; gap: 4px; justify-content: center;
+  padding: 8px 12px 8px 4px;
+  background: var(--surface-raised);
+}
+.ax-gantt-head .ax-gantt-name { background: transparent; justify-content: flex-end; }
+.ax-gantt-person {
+  display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%;
+  border: 0; padding: 0; background: none; color: var(--ink); font: inherit; font-size: 13px; font-weight: 600;
+  text-align: left; cursor: pointer;
+}
+.ax-gantt-person:hover span { text-decoration: underline; text-decoration-color: var(--yellow-500, var(--chart-1)); text-underline-offset: 3px; }
+.ax-gantt-person:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
+.ax-gantt-pills { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 18px; }
+.ax-gantt-meta { padding-left: 18px; font-size: 11px; color: var(--ink-muted); }
+.ax-gantt-track { position: relative; min-width: 0; padding: 8px 0 16px; }
+.ax-gantt-months {
+  display: grid; grid-template-columns: repeat(var(--weeks), minmax(0, 1fr)); grid-template-rows: auto auto;
+  row-gap: 2px; padding: 4px 0 6px;
+}
+.ax-gantt-month {
+  grid-row: 1; position: relative; z-index: 1; padding: 0 6px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: var(--ink-muted);
+  border-left: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ax-gantt-month.is-current { color: var(--ink); }
+.ax-gantt-week { position: relative; z-index: 1; text-align: center; font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.ax-gantt-week.is-today { color: var(--ink); font-weight: 700; }
+.ax-gantt-band { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--accent) 12%, transparent); border-left: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-right: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); pointer-events: none; }
+.ax-gantt-today { position: absolute; top: 0; bottom: 0; border-left: 2px dashed var(--accent); z-index: 2; pointer-events: none; }
+.ax-gantt-lanes { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(var(--weeks), minmax(0, 1fr)); grid-auto-rows: 22px; row-gap: 4px; }
+.ax-gantt-bar {
+  min-width: 0; height: 22px; padding: 0 8px; border-radius: 6px;
+  background: var(--chart-2); color: var(--on-accent);
+  font-size: 11px; font-weight: 600; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  cursor: default;
+}
+.ax-gantt-strip { position: absolute; left: 0; right: 0; bottom: 4px; height: 6px; display: grid; grid-template-columns: repeat(var(--weeks), minmax(0, 1fr)); gap: 1px; z-index: 1; }
+.ax-gantt-load { display: block; border-radius: 2px; }
+.ax-gantt-load.is-free { background: var(--positive); }
+.ax-gantt-load.is-full { background: var(--grey-300); }
+.ax-gantt-load.is-over { background: var(--negative); }
+.ax-gantt-role {
+  position: sticky; left: 0; padding: 14px 4px 6px; border-top: 1px solid var(--line);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--ink-muted);
+}
+.ax-gantt-detail { position: sticky; left: 0; max-width: min(100%, 980px); padding: 12px 16px 16px 22px; border-top: 1px solid var(--line); background: var(--glass-sunken, var(--surface-sunken)); }
+.ax-gantt-detail .ax-table td, .ax-gantt-detail .ax-table th { padding: 6px 10px; }
+.ax-gantt-total td { font-weight: 600; background: var(--surface-sunken); }
+.ax-gantt-share { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.ax-gantt-share-bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--chart-2); }
+.ax-gantt-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--ink-muted); }
+.ax-gantt-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ax-gantt-swatch { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+.ax-gantt-swatch.is-bar { background: var(--chart-2); }
+.ax-gantt-swatch.is-free { background: var(--positive); }
+.ax-gantt-swatch.is-full { background: var(--grey-300); }
+.ax-gantt-swatch.is-over { background: var(--negative); }
+.ax-gantt-swatch.is-today { width: 0; height: 12px; border-left: 2px dashed var(--accent); border-radius: 0; }
+.ax-gantt-kpi { cursor: pointer; border: 1px solid transparent; }
+.ax-gantt-kpi:hover, .ax-gantt-kpi.is-pressed { border-color: var(--negative); }
+.ax-gantt-kpi:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }

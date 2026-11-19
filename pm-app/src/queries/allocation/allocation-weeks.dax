@@ -1,0 +1,22 @@
+// The weekly strip under each person (after allocation-set.dax): planned T&M hours per Sunday-Saturday week, and the
+// free or over hours against the 40 h capacity. A week with no row has no T&M hours planned (all 40 h free).
+EVALUATE
+VAR _rows =
+    SUMMARIZECOLUMNS (
+        fact_revenue_metrics[employee_number],
+        dim_calendar[start_of_week_sun],
+        KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], _from, _to ) ),
+        KEEPFILTERS ( TREATAS ( _setKeys, fact_revenue_metrics[employee_number] ) ),
+        "Hours", [RA Hours]
+    )
+RETURN
+    SELECTCOLUMNS (
+        _rows,
+        "EmployeeNumber", fact_revenue_metrics[employee_number],
+        "WeekKey", VALUE ( FORMAT ( dim_calendar[start_of_week_sun], "yyyymmdd" ) ),
+        "Hours", [Hours],
+        "Free", MAX ( 0, _capacity - [Hours] ),
+        "Over", MAX ( 0, [Hours] - _capacity ),
+        "FreeShare", DIVIDE ( MAX ( 0, _capacity - [Hours] ), _capacity )
+    )
+ORDER BY [EmployeeNumber], [WeekKey]

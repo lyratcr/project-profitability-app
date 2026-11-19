@@ -21,15 +21,15 @@ export interface PageDef {
 
 // PM app pages (Ion, 2026-11-16; tab labels "Project Health" and "Resource Utilization"): Project Progress, moved out of the executive app (app/, P1-P5), is the home page;
 // it works by Sunday-Saturday week (lib/weeks.ts) instead of a period. Resource Utilization is a placeholder tab for now
-// (an urgent need in the company; to be designed later, build plan task 6.8): no filters, no data. Resource Allocation is a
-// placeholder tab too (Ion, 2026-11-18, task 6.17): people planned on projects week by week; it needs the Project Ops resource
-// assignments in gold, since the Fixed Fee Backlog has no people.
+// (an urgent need in the company; to be designed later, build plan task 6.8): no filters, no data. Resource Allocation (Ion,
+// 2026-11-18, task 6.17; first version 2026-11-19, components/resource-allocation-page) has its own filters (role, L1, month),
+// not the global filter bar.
 export type PageId = "projects" | "utilization" | "allocation";
 
 export const PAGES: readonly PageDef[] = [
     { id: "projects", path: "/projects", label: "Project Health", title: "Project Progress", purpose: "Progress of my projects against plan, and the Monday timesheet review.", task: "4.1", filters: ["org", "customer", "pm", "project"], periodKinds: [] },
     { id: "utilization", path: "/utilization", label: "Resource Utilization", title: "Resource Utilization", purpose: "How the team members' time is used.", task: "6.8", filters: [], periodKinds: [] },
-    { id: "allocation", path: "/allocation", label: "Resource Allocation", title: "Resource Allocation", purpose: "Who is planned on which projects, week by week.", task: "6.17", filters: [], periodKinds: [] },
+    { id: "allocation", path: "/allocation", label: "Resource Allocation", title: "Resource Allocation", purpose: "Who is planned on which projects, week by week, and who is free.", task: "6.17", filters: [], periodKinds: [] },
 ];
 
 export const DEFAULT_PAGE: PageDef = PAGES[0];

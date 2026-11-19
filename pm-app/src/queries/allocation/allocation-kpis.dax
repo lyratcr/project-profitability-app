@@ -1,0 +1,9 @@
+// KPI row for the chosen month, over the same people as the list (allocation-people-vars.dax). Over 40 h counts
+// whole hours, as the list shows them (under half an hour over reads as none).
+EVALUATE
+ROW (
+    "People", COUNTROWS ( _people ),
+    "Revenue", SUMX ( _people, [MonthRevenue] ),
+    "FreeHours", SUMX ( _people, [FreeHours] ),
+    "OverPeople", COUNTROWS ( FILTER ( _people, ROUND ( [OverHours], 0 ) > 0 ) )
+)

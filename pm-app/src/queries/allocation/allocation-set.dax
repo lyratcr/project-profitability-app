@@ -1,0 +1,26 @@
+// Resource Allocation (build plan 6.17, Ion 2026-11-19): shared head of every allocation query. The planned hours are
+// the T&M Backlog by person (fact_revenue_metrics, by day; Fixed Fee has no person detail, as it is). The app fills
+// the dates from the viewer's local calendar (lib/allocation.ts): the window (Sunday of this week to the Saturday of
+// the last week that starts in the sixth month ahead), the chosen month (the weeks whose Sunday falls in it) and
+// today, for the person's current org. The filters marker takes the role and L1 filters: they pick the people (_set);
+// every number then counts all of that person's T&M bookings. Capacity: a fixed 40 h a week (open item #36).
+DEFINE
+    MEASURE _Measures[RA Hours] = CALCULATE ( [Planned Hours_app], KEEPFILTERS ( fact_revenue_metrics[revenue_type] = "T&M" ) )
+    MEASURE _Measures[RA Revenue] = CALCULATE ( [Planned Revenue_app], KEEPFILTERS ( fact_revenue_metrics[revenue_type] = "T&M" ) )
+    VAR _capacity = 40
+    VAR _from = @@FROM@@
+    VAR _to = @@TO@@
+    VAR _monthFrom = @@MONTH_FROM@@
+    VAR _monthTo = @@MONTH_TO@@
+    VAR _today = @@TODAY@@
+    VAR _set =
+        FILTER (
+            SUMMARIZECOLUMNS (
+                fact_revenue_metrics[employee_number],
+                KEEPFILTERS ( DATESBETWEEN ( dim_calendar[date], _from, _to ) ),
+                /* @filters */
+                "WindowHours", [RA Hours]
+            ),
+            NOT ISBLANK ( fact_revenue_metrics[employee_number] )
+        )
+    VAR _setKeys = SELECTCOLUMNS ( _set, "employee_number", fact_revenue_metrics[employee_number] )
