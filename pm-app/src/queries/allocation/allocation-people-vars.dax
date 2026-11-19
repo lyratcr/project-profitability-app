@@ -36,4 +36,10 @@
         )
     // Billing rate (Ion, 2026-11-19): the person's planned revenue over planned hours in the month; what the client
     // is billed, never the person's cost.
-    VAR _people = ADDCOLUMNS ( _base, "Rate", DIVIDE ( [MonthRevenue], [MonthHours] ) )
+    // Free hours per week (Ion, 2026-11-19): the month's free hours over its weeks, for the Available filter (8 / 20 / 40 h).
+    VAR _people =
+        ADDCOLUMNS (
+            _base,
+            "Rate", DIVIDE ( [MonthRevenue], [MonthHours] ),
+            "FreePerWeek", DIVIDE ( [FreeHours], COUNTROWS ( _monthWeeks ) )
+        )

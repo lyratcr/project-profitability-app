@@ -84,7 +84,10 @@ export function fillAllocationDates(query: string, window: AllocationWindow, mon
 
 // ---------------------------------------------------------------- filters
 
-export type ShowFilter = "all" | "free" | "over";
+export type ShowFilter = "all" | "available" | "over";
+/** Available (Ion, 2026-11-19): at least this many free hours a week on average in the month (1 day, half time, full time). */
+export type AvailableMin = 8 | 20 | 40;
+export const AVAILABLE_MINS: readonly AvailableMin[] = [8, 20, 40];
 export type AllocationOrder = "revenue" | "free" | "name";
 
 export interface AllocationFilters {
@@ -181,6 +184,8 @@ export interface AllocationPerson {
     overHours: number | null;
     peakHours: number | null;
     rate: number | null;
+    /** The month's free hours over its weeks (model). */
+    freePerWeek: number | null;
 }
 
 const text = (table: QueryTable, column: string, i: number) => {
@@ -204,6 +209,7 @@ export function readPeople(table: QueryTable): AllocationPerson[] {
                 overHours: numberCell(table, "[OverHours]", i),
                 peakHours: numberCell(table, "[PeakHours]", i),
                 rate: numberCell(table, "[Rate]", i),
+                freePerWeek: numberCell(table, "[FreePerWeek]", i),
             };
         })
         .filter((p): p is AllocationPerson => p !== null);
@@ -358,9 +364,14 @@ export function personLoad(p: AllocationPerson): WeekLoad {
     return shownHours(p.freeHours) > 0 ? "free" : "full";
 }
 
+/** Available: at least `min` free hours a week on average (whole hours) and never over 40 h in the month. */
+export function isAvailable(p: AllocationPerson, min: AvailableMin): boolean {
+    return personLoad(p) !== "over" && shownHours(p.freePerWeek) >= min;
+}
+
 /** Applies the Show filter and the order (model values only), grouped by role. */
-export function arrangePeople(people: readonly AllocationPerson[], show: ShowFilter, order: AllocationOrder): AllocationPerson[] {
-    const shown = people.filter((p) => show === "all" || personLoad(p) === show);
+export function arrangePeople(people: readonly AllocationPerson[], show: ShowFilter, order: AllocationOrder, min: AvailableMin = 8): AllocationPerson[] {
+    const shown = people.filter((p) => show === "all" || (show === "over" ? personLoad(p) === "over" : isAvailable(p, min)));
     const byOrder = (a: AllocationPerson, b: AllocationPerson) => {
         if (order === "name") return a.name.localeCompare(b.name);
         if (order === "free") return (b.freeHours ?? 0) - (a.freeHours ?? 0) || a.name.localeCompare(b.name);

@@ -10,6 +10,7 @@ SELECTCOLUMNS (
     "FreeHours", [FreeHours],
     "OverHours", [OverHours],
     "PeakHours", [PeakHours],
-    "Rate", [Rate]
+    "Rate", [Rate],
+    "FreePerWeek", [FreePerWeek]
 )
 ORDER BY [Employee], [EmployeeNumber]

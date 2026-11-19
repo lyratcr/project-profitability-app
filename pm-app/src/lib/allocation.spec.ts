@@ -125,6 +125,7 @@ describe("results", () => {
         overHours: over,
         peakHours: 0,
         rate: null,
+        freePerWeek: free / 4,
     });
 
     it("reads people and falls back to the Auxis ID for a missing name", () => {
@@ -143,7 +144,11 @@ describe("results", () => {
     it("filters by Show and orders within each role", () => {
         const people = [person("Ana", "B", 10, 0, 100), person("Bea", "A", 0, 5, 300), person("Cid", "A", 20, 0, 200), person("Dan", "A", 0, 9, 50)];
         expect(arrangePeople(people, "all", "revenue").map((p) => p.name)).toEqual(["Bea", "Cid", "Dan", "Ana"]);
-        expect(arrangePeople(people, "free", "free").map((p) => p.name)).toEqual(["Cid", "Ana"]);
+        // Available: Cid 20 h free in 4 weeks = 5 h a week; Ana 10 h = 3 h a week; Eva 160 h = 40 h a week.
+        const more = [...people, person("Eva", "B", 160, 0, 0), person("Fay", "B", 88, 0, 0)];
+        expect(arrangePeople(more, "available", "free", 8).map((p) => p.name)).toEqual(["Eva", "Fay"]);
+        expect(arrangePeople(more, "available", "free", 20).map((p) => p.name)).toEqual(["Eva", "Fay"]);
+        expect(arrangePeople(more, "available", "free", 40).map((p) => p.name)).toEqual(["Eva"]);
         expect(arrangePeople(people, "over", "revenue").map((p) => p.name)).toEqual(["Dan", "Bea"]);
         expect(arrangePeople(people, "all", "name").map((p) => p.name)).toEqual(["Bea", "Cid", "Dan", "Ana"]);
     });
