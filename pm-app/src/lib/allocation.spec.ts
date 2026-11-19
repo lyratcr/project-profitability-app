@@ -5,8 +5,10 @@ import {
     allocationWindow,
     arrangePeople,
     fillAllocationDates,
+    findPerson,
     lowestRate,
     personArg,
+    personChoices,
     personLoad,
     readBookings,
     readOptions,
@@ -144,5 +146,15 @@ describe("results", () => {
     it("names the lowest billing rate only with two or more rated projects", () => {
         expect(lowestRate([{ project: "A", hours: 10, rate: 100, revenue: 1000, share: 1 }])).toBeNull();
         expect(lowestRate([{ project: "A", hours: 10, rate: 100, revenue: 1000, share: 0.6 }, { project: "B", hours: 10, rate: 60, revenue: 600, share: 0.4 }])?.project).toBe("B");
+    });
+
+    it("offers the person search sorted by name, telling apart people who share a name", () => {
+        const people = [person("Zoe", "R", 1, 0, 0), person("Ana", "R", 1, 0, 0), { ...person("Ana", "R", 1, 0, 0), employeeNumber: "T2" }];
+        const choices = personChoices(people);
+        expect(choices.map((c) => c.label)).toEqual(["Ana · Auxis ID Ana", "Ana · Auxis ID T2", "Zoe"]);
+        expect(choices[2].hint).toBe("R · DTF");
+        expect(findPerson(choices, "  zoe ")?.employeeNumber).toBe("Zoe");
+        expect(findPerson(choices, "Zo")).toBeNull();
+        expect(findPerson(choices, "")).toBeNull();
     });
 });

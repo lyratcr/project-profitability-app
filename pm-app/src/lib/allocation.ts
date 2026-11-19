@@ -133,7 +133,37 @@ export function allocationFilterArgs(filters: Pick<AllocationFilters, "role" | "
     return args;
 }
 
-/** The person filter of the detail query. */
+export interface PersonChoice {
+    employeeNumber: string;
+    /** What the Person search shows and matches: the name, plus the Auxis ID when two people share it. */
+    label: string;
+    /** Role · L1, as a hint in the suggestions. */
+    hint: string;
+}
+
+/**
+ * Person search choices (Ion, 2026-11-19): the people the Role and L1 filters leave, sorted by name. The list comes
+ * from the model (allocation people query), so it is also the whitelist for the person filter.
+ */
+export function personChoices(people: readonly AllocationPerson[]): PersonChoice[] {
+    const count = new Map<string, number>();
+    for (const p of people) count.set(p.name, (count.get(p.name) ?? 0) + 1);
+    return [...people]
+        .sort((a, b) => a.name.localeCompare(b.name) || a.employeeNumber.localeCompare(b.employeeNumber))
+        .map((p) => ({
+            employeeNumber: p.employeeNumber,
+            label: (count.get(p.name) ?? 0) > 1 ? `${p.name} · Auxis ID ${p.employeeNumber}` : p.name,
+            hint: [p.role, p.l1].filter((v) => v !== null).join(" · "),
+        }));
+}
+
+/** The choice whose label matches the typed text (any case, outer spaces ignored), or null. */
+export function findPerson(choices: readonly PersonChoice[], typed: string): PersonChoice | null {
+    const t = typed.trim().toLowerCase();
+    return t === "" ? null : (choices.find((c) => c.label.toLowerCase() === t) ?? null);
+}
+
+/** The person filter (detail query, and the Person search on every query). */
 export function personArg(employeeNumber: string): string {
     return `KEEPFILTERS ( TREATAS ( { ${daxString(employeeNumber)} }, fact_revenue_metrics[employee_number] ) )`;
 }

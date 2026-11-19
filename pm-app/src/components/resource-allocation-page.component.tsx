@@ -1,11 +1,14 @@
 import { useId, useMemo, useState, type ReactElement, type ReactNode } from "react";
+import { X } from "lucide-react";
 import { formatValue } from "@microsoft/fabric-visuals-core";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
 import {
     allocationFilterArgs,
     allocationWindow,
     arrangePeople,
+    findPerson,
     personArg,
+    personChoices,
     readBookings,
     readKpis,
     readOptions,
@@ -41,14 +44,36 @@ export function ResourceAllocationPage({ page }: { page: PageDef }): ReactElemen
     const [show, setShow] = useState<ShowFilter>("all");
     const [order, setOrder] = useState<AllocationOrder>("revenue");
     const [open, setOpen] = useState<string | null>(null);
+    // Person search (Ion, 2026-11-19): suggests only the people the Role and L1 filters leave; the pick goes to the
+    // model like the other filters, so the KPIs are that person's.
+    const [person, setPerson] = useState<string | undefined>();
+    const [personText, setPersonText] = useState("");
     const month = window.months.find((m) => m.key === monthKey) ?? window.months[0];
 
     const optionsResult = useSemanticModelQuery(allocationOptions({ window, month: window.months[0], today }));
     const options = optionsResult.data?.status === "success" ? readOptions(optionsResult.data.table) : null;
-    const filters = options === null ? [] : allocationFilterArgs({ role, l1 }, options);
+    const groupFilters = options === null ? [] : allocationFilterArgs({ role, l1 }, options);
     const ready = options !== null;
-    const params = { window, month, today, filters };
     const run = (q: { connection: string; query: string }) => ({ connection: q.connection, query: ready ? q.query : "" });
+
+    // The people Role and L1 leave: the search's suggestions and whitelist (the same query as the list without a person).
+    const poolResult = useSemanticModelQuery(run(allocationPeople({ window, month, today, filters: groupFilters })));
+    const choices = useMemo(() => (poolResult.data?.status === "success" ? personChoices(readPeople(poolResult.data.table)) : null), [poolResult.data]);
+    const picked = person !== undefined && choices !== null && choices.some((c) => c.employeeNumber === person) ? person : undefined;
+    // A person the new Role or L1 leaves out no longer filters, and the search box shows empty again.
+    const searchText = person !== undefined && choices !== null && picked === undefined ? "" : personText;
+    const pickPerson = (text: string) => {
+        setPersonText(text);
+        const choice = choices === null ? null : findPerson(choices, text);
+        if (choice !== null) {
+            setPerson(choice.employeeNumber);
+            setOpen(choice.employeeNumber);
+        } else if (text.trim() === "") {
+            setPerson(undefined);
+        }
+    };
+    const filters = picked === undefined ? groupFilters : [...groupFilters, personArg(picked)];
+    const params = { window, month, today, filters };
 
     const kpisResult = useSemanticModelQuery(run(allocationKpis(params)));
     const peopleResult = useSemanticModelQuery(run(allocationPeople(params)));
@@ -97,6 +122,31 @@ export function ResourceAllocationPage({ page }: { page: PageDef }): ReactElemen
                         ))}
                     </select>
                 </Field>
+                <Field label="Person" id={`${id}-person`}>
+                    <div className="relative">
+                        <input
+                            id={`${id}-person`}
+                            type="search"
+                            list={`${id}-people`}
+                            className="ax-select ax-person-search disabled:opacity-60"
+                            placeholder={choices === null ? "Loading people…" : `All people (${choices.length})`}
+                            disabled={choices === null}
+                            autoComplete="off"
+                            value={searchText}
+                            onChange={(e) => pickPerson(e.target.value)}
+                        />
+                        {searchText !== "" && (
+                            <button type="button" className="ax-person-clear" aria-label="Clear person" onClick={() => pickPerson("")}>
+                                <X className="icon-size-100" aria-hidden="true" />
+                            </button>
+                        )}
+                        <datalist id={`${id}-people`}>
+                            {choices?.map((c) => (
+                                <option key={c.employeeNumber} value={c.label} label={c.hint} />
+                            ))}
+                        </datalist>
+                    </div>
+                </Field>
                 <Field label="Month" id={`${id}-month`}>
                     <select id={`${id}-month`} className="ax-select app-select-narrow" value={month.key} onChange={(e) => setMonthKey(e.target.value)}>
                         {window.months.map((m) => (
@@ -137,7 +187,11 @@ export function ResourceAllocationPage({ page }: { page: PageDef }): ReactElemen
             <QueryStates result={kpisResult} shape="kpi" title="Allocation summary">
                 {() => (
                     <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        <Kpi label="People" value={fmt(kpis?.people ?? null, ALLOCATION_FORMATS.hours)} note={role ?? "All roles"} />
+                        <Kpi
+                            label="People"
+                            value={fmt(kpis?.people ?? null, ALLOCATION_FORMATS.hours)}
+                            note={picked !== undefined ? (choices?.find((c) => c.employeeNumber === picked)?.label ?? "One person") : [role ?? "All roles", l1].filter(Boolean).join(" · ")}
+                        />
                         <Kpi label={`Planned revenue in ${shortMonth}`} value={fmt(kpis?.revenue ?? null, ALLOCATION_FORMATS.money)} note="T&M Backlog" />
                         <Kpi label={`Free hours in ${shortMonth}`} value={fmt(kpis?.freeHours ?? null, ALLOCATION_FORMATS.hours)} note="Of 40 h a week each" className="text-[var(--positive-ink)]" />
                         <Kpi
