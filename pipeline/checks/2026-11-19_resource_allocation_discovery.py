@@ -1,6 +1,16 @@
 # Resource Allocation (build plan 6.17, open item #37): read-only discovery of Project Ops bookings.
 # Paste each cell into a Fabric notebook attached to LH_Corp_DataHub and run them in order.
 # Nothing here writes, overwrites or deletes: only SHOW / SELECT / count.
+#
+# Results (Ion ran it 2026-11-19; decisions in docs/04 #35-#38):
+# - Not in the lakehouse: bookableresourcebooking, msdyn_resourceassignment, bookingstatus, bookableresourcecategoryassn.
+# - dataverse_lh_shortcut.aux_resourceassignmentshistory: a change log (Create / Update / Delete events since Nov 2024),
+#   not the current assignments; not used. Ask Alejandro for msdyn_resourceassignment and msdyn_projectteam.
+# - dataverse_history.msdyn_projecttask: 1,895 tasks with scheduled dates, effort, effort remaining and resource
+#   category (role), but no assigned people (that link is msdyn_resourceassignment).
+# - dataverse.bookableresource_clean: 1,713 active resources, 99.7% with aux_ukgrole and aux_organizationname (L1-L2-L3);
+#   calendaridname and aux_country empty (no capacity source).
+# - Cells 3-4 below assume tables that don't exist; the follow-up cells were run from chat.
 
 # %% Cell 1: which Project Ops scheduling tables exist in the lakehouse
 CAT = "LH_Corp_DataHub"
