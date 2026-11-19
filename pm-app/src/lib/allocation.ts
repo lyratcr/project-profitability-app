@@ -365,3 +365,38 @@ export function arrangePeople(people: readonly AllocationPerson[], show: ShowFil
     };
     return [...shown].sort((a, b) => (a.role ?? "~").localeCompare(b.role ?? "~") || byOrder(a, b));
 }
+
+// ---------------------------------------------------------------- week tooltip
+
+/** Capacity a week, as the queries use it (open item #36); shown in the tooltip, never used to compute. */
+export const WEEK_CAPACITY = 40;
+/** A day above this many planned hours is marked in the tooltip (Ion, 2026-11-19: 40 h over 5 days). */
+export const DAY_LIMIT = 8;
+
+export interface WeekDetail {
+    hours: number | null;
+    revenue: number | null;
+    projects: { project: string; hours: number | null; revenue: number | null }[];
+    /** `YYYY-MM-DD` → planned hours. */
+    days: Map<string, number>;
+}
+
+export function readWeekDetail(table: QueryTable): WeekDetail {
+    const detail: WeekDetail = { hours: null, revenue: null, projects: [], days: new Map() };
+    table.rows.forEach((_, i) => {
+        const kind = cell(table, "[Kind]", i);
+        const key = text(table, "[Key]", i);
+        const hours = numberCell(table, "[Hours]", i);
+        const revenue = numberCell(table, "[Revenue]", i);
+        if (kind === "total") {
+            detail.hours = hours;
+            detail.revenue = revenue;
+        } else if (kind === "project" && key !== null) {
+            detail.projects.push({ project: key, hours, revenue });
+        } else if (kind === "day" && key !== null && hours !== null) {
+            detail.days.set(key, hours);
+        }
+    });
+    detail.projects.sort((a, b) => (b.hours ?? 0) - (a.hours ?? 0) || a.project.localeCompare(b.project));
+    return detail;
+}
