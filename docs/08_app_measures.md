@@ -1348,3 +1348,35 @@ Planned Revenue Unassigned_app = CALCULATE ( [Planned Revenue_app], KEEPFILTERS 
 
 **Validated (2026-11-17, MOS-401-09, model measures; all 4 valid in `INFO.MEASURES()`):** billed by person sums to $261,362 = plain sum of Actual lines with an Auxis ID (both views); people Backlog $229,905 + unassigned (roles) $46,462 = the $276,367 SOW. Iliak Herrera 78% to date ($24,974 of $32,200) vs 38% of the whole project ($64,975); Erick Angulo 140% to date; 20 people bill with no Backlog line of their own (100%, "No plan"); roles Systems Engineer Sr, Systems Engineer and IT Manager planned with no person. Found: the Project Ops line "Alejandro Garita" ($14,940 plan) maps by Auxis ID to Gustavo Cervantes, who has billed nothing (to check with the PMO).
 
+## 24. Integration dates outside row-level security (open item #33): FIXED 2026-11-19
+
+Under `Project access_app`, `REMOVEFILTERS()` doesn't lift row-level security, so `Last Revenue Date_app` returned the last T&M date of the viewer's own projects (Ion, 10 BPO projects: 2026-04-23; Iliak: around June) instead of the integration date, and every page cut its revenue there. Gold (`build_gold_refresh_info`, deployed by Ion 2026-11-19) now writes the global dates to `gold.info_gold_profitability_refresh`, a table with no relationship to `dim_project`, so the role doesn't filter it. Applied after Ion's approval; both measures `State = Ready`.
+
+**Columns added** to `info_gold_profitability_refresh` (Direct Lake source columns, hidden, not calculated): `LastRevenueDate_app` (source `LastRevenueDate`) and `LastSynerionDate_app` (source `LastSynerionDate`).
+
+### Last Revenue Date_app (fixed)
+
+```dax
+VAR _global = MAX ( info_gold_profitability_refresh[LastRevenueDate_app] )
+RETURN
+    IF (
+        NOT ISBLANK ( _global ),
+        _global,
+        CALCULATE (
+            MAX ( fact_revenue_metrics[transaction_date] ),
+            fact_revenue_metrics[scenario] = "Actual",
+            fact_revenue_metrics[revenue_type] = "T&M",
+            REMOVEFILTERS ()
+        )
+    )
+```
+
+### Last Synerion Date_app (fixed)
+
+```dax
+VAR _global = MAX ( info_gold_profitability_refresh[LastSynerionDate_app] )
+RETURN IF ( NOT ISBLANK ( _global ), _global, CALCULATE ( MAX ( fact_profitability_metrics[transaction_date] ), REMOVEFILTERS () ) )
+```
+
+**Validated (2026-11-19):** without a role, gold columns = old global measures (2026-11-14 revenue, 2026-11-18 Synerion). Impersonating `isanlee@auxis.com` with `Project access_app` (10 projects): 2026-11-14 and 2026-11-18 (was 2026-04-23 for revenue). Impersonating Iliak was refused by the service (no permission to impersonate that user), so his case is to confirm in the app.
+
