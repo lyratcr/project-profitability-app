@@ -15,6 +15,24 @@ table info_gold_profitability_refresh
 
 		annotation SummarizationSetBy = Automatic
 
+	/// ADDED 2026-11-19 (Fabric app): global last T&M Actual revenue date, written by gold (build_gold_refresh_info). This table has no relationship to dim_project, so row-level security doesn't filter it (open item #33).
+	column LastRevenueDate_app
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: e459cbb6-d8e8-4b1b-b0a6-df8f3289877b
+		summarizeBy: none
+		sourceColumn: LastRevenueDate
+
+	/// ADDED 2026-11-19 (Fabric app): global last Synerion hours date, written by gold (build_gold_refresh_info). Not filtered by row-level security (open item #33).
+	column LastSynerionDate_app
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 9d59aaac-5c58-4f28-9cdd-bab3507051c7
+		summarizeBy: none
+		sourceColumn: LastSynerionDate
+
 	partition info_gold_profitability_refresh = entity
 		mode: directLake
 		source

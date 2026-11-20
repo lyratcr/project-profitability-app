@@ -2,3 +2,4 @@
 role 'All company_app'
 	modelPermission: read
 
+	member 'adrivera@auxis.com'

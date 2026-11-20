@@ -1323,20 +1323,28 @@ table _Measures
 		displayFolder: _app\Projects
 		lineageTag: e2971c0c-a547-47eb-866e-a1a304ed0dc7
 
-	/// ADDED 2026-11-04 (Fabric app): Last day with Synerion hours loaded.
-	measure 'Last Synerion Date_app' = CALCULATE ( MAX ( fact_profitability_metrics[transaction_date] ), REMOVEFILTERS () )
+	/// FIXED 2026-11-19 (Fabric app, open item #33): the global last day with Synerion hours, from info_gold_profitability_refresh[LastSynerionDate_app] (written by gold, not filtered by row-level security). Falls back to the old calculation when gold leaves it blank. ADDED 2026-11-04.
+	measure 'Last Synerion Date_app' =
+			VAR _global = MAX ( info_gold_profitability_refresh[LastSynerionDate_app] )
+			RETURN IF ( NOT ISBLANK ( _global ), _global, CALCULATE ( MAX ( fact_profitability_metrics[transaction_date] ), REMOVEFILTERS () ) )
 		formatString: yyyy-mm-dd
 		displayFolder: _app\Data health
 		lineageTag: 31cf5317-146c-45d3-95df-0572f5d9f14e
 
-	/// ADDED 2026-11-04 (Fabric app): Last day with T&M actuals (follows the hours integration); other revenue types are posted with future dates.
+	/// FIXED 2026-11-19 (Fabric app, open item #33): the global last day with T&M actuals, from info_gold_profitability_refresh[LastRevenueDate_app] (written by gold, not filtered by row-level security), so every PM gets the integration date, not the last date of their own projects. Falls back to the old calculation when gold leaves it blank. ADDED 2026-11-04.
 	measure 'Last Revenue Date_app' =
-			CALCULATE (
-			    MAX ( fact_revenue_metrics[transaction_date] ),
-			    fact_revenue_metrics[scenario] = "Actual",
-			    fact_revenue_metrics[revenue_type] = "T&M",
-			    REMOVEFILTERS ()
-			)
+			VAR _global = MAX ( info_gold_profitability_refresh[LastRevenueDate_app] )
+			RETURN
+			    IF (
+			        NOT ISBLANK ( _global ),
+			        _global,
+			        CALCULATE (
+			            MAX ( fact_revenue_metrics[transaction_date] ),
+			            fact_revenue_metrics[scenario] = "Actual",
+			            fact_revenue_metrics[revenue_type] = "T&M",
+			            REMOVEFILTERS ()
+			        )
+			    )
 		formatString: yyyy-mm-dd
 		displayFolder: _app\Data health
 		lineageTag: feea6d63-5170-4141-872f-4ae048c2ea01
