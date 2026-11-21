@@ -25,6 +25,7 @@ import {
     projectsKpiColumns,
     projectsKpis,
     projectsBilledThrough,
+    projectsBudgetByProject,
     BILLED_THROUGH_COLUMN,
     projectsPace,
     projectsPaceByProject,
@@ -52,6 +53,7 @@ import {
 } from "@/queries/projects";
 import { AxCard } from "./ax/ax-card.component";
 import { AxPageHeader } from "./ax/ax-page-header.component";
+import { BudgetByProject } from "./budget-by-project.component";
 import { PaceToPlanEnd } from "./pace-to-plan-end.component";
 import { ProjectsByPace } from "./projects-by-pace.component";
 import { RevenueByPerson } from "./revenue-by-person.component";
@@ -167,6 +169,8 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
             kpis: projectsKpis({ filters: project }),
             lastWeekQuery: projectsWeek({ filters: weekArgs(last) }),
             thisWeekQuery: projectsWeek({ filters: weekArgs(current) }),
+            // Act 1, budget by project (PM feedback, 2026-11-20): whole-life budget measures; last week only for Hours vs plan.
+            budgetByProject: projectsBudgetByProject({ filters: weekArgs(last) }),
             weekly: projectsWeeklyTrend({ filters: trendArgs, glass }),
             variance: glass ? projectsWeeklyVariance({ filters: trendArgs, glass }) : null,
             // Act 3: hours by month over the same months as revenue by month, so both tables read side by side (Ion, 2026-11-16).
@@ -208,6 +212,7 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
     const kpiResult = useSemanticModelQuery(run(model.kpis));
     const lastWeekResult = useSemanticModelQuery(run(model.lastWeekQuery));
     const thisWeekResult = useSemanticModelQuery(run(model.thisWeekQuery));
+    const budgetByProjectResult = useSemanticModelQuery(runIf(!single && projectCount !== 1, model.budgetByProject));
     const trendResult = useSemanticModelQuery(run(model.weekly));
     const trendMonthsResult = useSemanticModelQuery(run(model.trendMonths));
     const peopleWeeksResult = useSemanticModelQuery(runIf(single, model.peopleWeeks));
@@ -289,7 +294,10 @@ export function ProjectsPage({ page, filters, options, params, onFiltersChange, 
                                 </p>
                             </AxCard>
                         </div>
-
+                        {/* Several projects (PM feedback, 2026-11-20): the same budget per project, the ones over the SOW first. */}
+                        {!single && projectCount !== 1 && (
+                            <BudgetByProject result={budgetByProjectResult} weekLabel={weekSpan(model.last)} onPick={(key) => onFiltersChange?.({ ...filters, project: key })} />
+                        )}
                     </StoryAct>
 
                     <StoryAct step={2} title="How we got here" question="The shape of the last weeks first, then who drove it">

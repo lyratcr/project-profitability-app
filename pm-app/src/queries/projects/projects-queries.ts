@@ -7,6 +7,7 @@ import paceQuery from "./projects-pace.dax?raw";
 import paceWeeksQuery from "./projects-pace-weeks.dax?raw";
 import peopleWeeksQuery from "./projects-people-weeks.dax?raw";
 import billedThroughQuery from "./projects-billed-through.dax?raw";
+import budgetByProjectQuery from "./projects-budget-by-project.dax?raw";
 import paceByProjectQuery from "./projects-pace-by-project.dax?raw";
 import projectWeeksQuery from "./projects-project-weeks.dax?raw";
 import reconcilePeopleWeeksQuery from "./projects-reconcile-people-weeks.dax?raw";
@@ -366,4 +367,31 @@ export function projectsReconcileProjectWeeks({ filters = [] }: ProjectsParams =
 
 export function projectsReconcileProjectsWeeks({ filters = [] }: ProjectsParams = {}) {
     return { connection: CONNECTION, query: applyFilters(reconcileProjectsWeeksQuery, filters) } as const;
+}
+
+// ---------------------------------------------------------------- budget by project (act 1, PM feedback 2026-11-20)
+
+/**
+ * % Actual from which a project not over its SOW reads as "near the limit". A presentation threshold proposed with the
+ * mockup (2026-11-21), not confirmed by the PMs yet (docs/04, open item on Budget by project).
+ */
+export const BUDGET_NEAR_SOW = 0.9;
+
+export const projectsBudgetByProjectColumns = {
+    projectKey: "dim_project[project_key]",
+    projectName: "dim_project[project_name]",
+    customer: "dim_project[project_customer]",
+    planned: "[Planned]",
+    billed: "[Billed]",
+    leftToBill: "[LeftToBill]",
+    progress: "[Progress]",
+    hoursVsPlan: "[HoursVsPlan]",
+} as const;
+
+/**
+ * The budget card's measures per project in scope; `filters` carry the projects and last week's date range (only
+ * Hours vs plan reads the dates: the budget measures cover the project's whole life).
+ */
+export function projectsBudgetByProject({ filters = [] }: ProjectsParams = {}) {
+    return { connection: CONNECTION, query: applyFilters(budgetByProjectQuery, filters) } as const;
 }
