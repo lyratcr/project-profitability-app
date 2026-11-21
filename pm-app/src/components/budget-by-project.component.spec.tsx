@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { budgetStatus } from "@/lib/budget-status";
+import { budgetStatus, budgetTone } from "@/lib/budget-status";
 import { BudgetByProject } from "./budget-by-project.component";
 
 const columns = ["dim_project[project_key]", "dim_project[project_name]", "dim_project[project_customer]", "[Planned]", "[Billed]", "[LeftToBill]", "[Progress]", "[HoursVsPlan]"];
@@ -29,6 +29,20 @@ describe("budgetStatus", () => {
         expect(budgetStatus(100, 0.89, 11)).toBe("on-track");
         expect(budgetStatus(null, null, -5000)).toBe("no-sow");
         expect(budgetStatus(0, null, 0)).toBe("no-sow");
+    });
+});
+
+describe("budgetTone", () => {
+    it("is red over the SOW, green with SOW left and none on the line, by the value as shown", () => {
+        expect(budgetTone("left", -206480)).toBe("over");
+        expect(budgetTone("left", 132)).toBe("under");
+        expect(budgetTone("left", -0.3)).toBeNull();
+        expect(budgetTone("progress", 1.1565)).toBe("over");
+        expect(budgetTone("progress", 0.54)).toBe("under");
+        expect(budgetTone("progress", 1.001)).toBeNull();
+        expect(budgetTone("leftPct", -0.1565)).toBe("over");
+        expect(budgetTone("leftPct", 0.46)).toBe("under");
+        expect(budgetTone("leftPct", null)).toBeNull();
     });
 });
 

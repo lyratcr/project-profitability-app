@@ -13,3 +13,16 @@ export function budgetStatus(planned: number | null, progress: number | null, le
     if (leftToBill !== null && Math.round(leftToBill) < 0) return "over";
     return progress >= BUDGET_NEAR_SOW ? "near" : "on-track";
 }
+
+export type BudgetTone = "over" | "under" | null;
+
+/**
+ * Colour of a budget card figure (Ion, 2026-11-21): red when it says the SOW is exceeded, green when there is SOW
+ * left, none on the line. Read from the model's value rounded as shown, so the colour never disagrees with the number.
+ * `left` = Variance (left to bill, dollars) or % Variance; `progress` = % Actual (billed ÷ SOW).
+ */
+export function budgetTone(kind: "left" | "leftPct" | "progress", value: number | null): BudgetTone {
+    if (value === null) return null;
+    const shown = kind === "left" ? Math.round(value) : kind === "leftPct" ? Math.round(value * 100) : 100 - Math.round(value * 100);
+    return shown < 0 ? "over" : shown > 0 ? "under" : null;
+}
