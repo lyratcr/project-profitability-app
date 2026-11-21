@@ -504,6 +504,12 @@ body {
   background: var(--negative-soft);
   color: var(--negative-ink);
 }
+/* The budget card's large figures as pills (Ion, 2026-11-21): the same colours at the card's own type size. */
+.ax-var-pill.is-lg {
+  padding: 0 12px;
+  font-size: 18px;
+  line-height: 30px;
+}
 .ax-var-pill.is-even {
   background: var(--surface-sunken);
   color: var(--ink-muted);

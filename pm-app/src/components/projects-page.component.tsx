@@ -2,6 +2,7 @@ import { useMemo, type ReactElement, type ReactNode } from "react";
 import { formatValue } from "@microsoft/fabric-visuals-core";
 import { useDesignTokens } from "@/hooks/use-design-tokens";
 import { useSemanticModelQuery } from "@/hooks/use-semantic-model-query";
+import { budgetTone } from "@/lib/budget-status";
 import { signedChange } from "@/lib/change";
 import { describeFilterContext } from "@/lib/filter-context";
 import { DATA_START, dateRangeArg, monthWindow, projectScope, projectScopeArgs, TREND_MONTHS, type FilterOptions, type FilterState } from "@/lib/filters";
@@ -860,9 +861,10 @@ function ProjectBudget({ table, planEnd, status, projects }: { table: QueryTable
     const rows = [
         { label: "SOW", note: "Backlog, whole plan", value: money(c.planned) },
         { label: "Actual", note: "Billed to date", value: money(c.billed) },
-        { label: "Variance", note: "Left to bill", value: money(c.leftToBill) },
-        { label: "% Actual", note: "Actual ÷ SOW", value: percent(c.progress) },
-        { label: "% Variance", note: "Variance ÷ SOW", value: percent(c.leftToBillPct) },
+        // Red over the SOW, green with SOW left, as the app's variance pills (Ion, 2026-11-21); the sign or the % carries it too.
+        { label: "Variance", note: "Left to bill", value: money(c.leftToBill), tone: budgetTone("left", numberCell(table, c.leftToBill)) },
+        { label: "% Actual", note: "Actual ÷ SOW", value: percent(c.progress), tone: budgetTone("progress", progress) },
+        { label: "% Variance", note: "Variance ÷ SOW", value: percent(c.leftToBillPct), tone: budgetTone("leftPct", numberCell(table, c.leftToBillPct)) },
     ];
     // Billed over the SOW (Ion, 2026-11-16): the bar's scale stretches to the model's % Actual, a mark shows 100% of the
     // SOW, gold runs to it and the excess is a red striped segment. Widths only scale the model's value for display.
@@ -904,7 +906,9 @@ function ProjectBudget({ table, planEnd, status, projects }: { table: QueryTable
                             <span className="text-300 font-semibold text-[var(--ink)]">{r.label}</span>
                             <span className="ml-2 text-200 text-[var(--ink-muted)]">{r.note}</span>
                         </dt>
-                        <dd className="m-0 text-[20px] font-semibold tabular-nums text-[var(--ink)]">{r.value}</dd>
+                        <dd className="m-0 text-[20px] font-semibold tabular-nums text-[var(--ink)]">
+                            {"tone" in r && r.tone ? <span className={`ax-var-pill is-lg is-${r.tone}`}>{r.value}</span> : r.value}
+                        </dd>
                     </div>
                 ))}
             </dl>
