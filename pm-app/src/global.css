@@ -879,3 +879,27 @@ body {
 .ax-gantt-hit:hover, .ax-gantt-hit.is-active { background: color-mix(in srgb, var(--ink) 7%, transparent); box-shadow: inset 0 0 0 1px var(--line-strong); }
 .ax-alloc-tip-row { display: grid; grid-template-columns: 84px 1fr 30px 58px; align-items: center; gap: 8px; margin: 4px 0; }
 .ax-cell-tooltip-days > div.is-heavy { background: var(--negative-soft); color: var(--negative-ink); }
+
+/* P6 Budget by project (PM feedback, 2026-11-20): the budget bar per row, on a track that reads in both themes, and
+   the status chips that filter the list. */
+.ax-budget-row-track {
+  height: 8px;
+  min-width: 140px;
+  background: var(--glass-sunken, var(--surface-sunken));
+}
+.ax-budget-row-track .ax-budget-fill,
+.ax-budget-row-track .ax-budget-over { box-shadow: none; }
+.ax-budget-row-track .ax-budget-mark { top: -4px; bottom: -4px; }
+.ax-status-chip {
+  border: 1px solid transparent;
+  border-radius: var(--radius-md, 8px);
+  padding: 10px 14px;
+  background: var(--glass-sunken, var(--surface-sunken));
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ax-status-chip:hover:not(:disabled) { border-color: var(--line-strong, var(--line)); }
+.ax-status-chip.is-active { border-color: var(--yellow-500, var(--chart-1)); }
+.ax-status-chip:disabled { cursor: default; opacity: 0.6; }
+.ax-status-chip:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }

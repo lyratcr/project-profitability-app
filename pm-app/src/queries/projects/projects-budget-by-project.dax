@@ -1,0 +1,21 @@
+// P6 aggregated view, act 1 "Budget by project" (PM feedback, 2026-11-20): the project budget card's measures per
+// project in scope, so a PM sees which projects are over the SOW without opening them one by one. SOW, Actual,
+// Variance and % Actual cover the project's whole life (they ignore the date filter); Hours vs plan is for the week
+// the app sends (last Sunday-Saturday week, from the viewer's local date). Most billed against the SOW first;
+// projects without a SOW (blank % Actual) come last.
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        dim_project[project_key],
+        dim_project[project_name],
+        dim_project[project_customer],
+        /* @filters */
+        "Planned", [Total Planned Revenue_app],
+        "Billed", [Revenue Billed to Date_app],
+        "LeftToBill", [Revenue Left to Bill_app],
+        "Progress", [Billing Progress %_app],
+        "HoursVsPlan", [Hours vs Plan_app]
+    ),
+    NOT ISBLANK ( dim_project[project_key] )
+)
+ORDER BY [Progress] DESC, [LeftToBill], dim_project[project_key]
