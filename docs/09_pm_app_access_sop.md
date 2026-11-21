@@ -98,9 +98,9 @@ If the app keeps loading on a link to a specific page, open the base URL first, 
    | `director2@auxis.com` | `area` | `BPO-BTR` | L1 = BPO, L2 = BTR |
    | `manager@auxis.com` | `area` | `BPO-BTR-CORE` | Only that L3 |
 
-   A person with two areas gets two rows.
+   A person with two areas gets two rows. A project is in the area when any of its organizations is: its org in the hours (what the app's L1 / L2 / L3 filter shows), its billing org, or its organization in Project Operations. So the person sees the same projects as the app's project list for that area.
 3. Upload the file back to the same folder with the same name, replacing the old one.
-4. Run the gold notebook, or wait for its next scheduled run.
+4. Run the gold notebook, or wait for its next scheduled run. The list is read when gold runs: a change saved after a run shows only after the next one.
 5. Give the person app access (section 4, or the group in section 6). Executives can go in role `All company_app` instead.
 
 The gold log reports list problems on every run: areas that match no project (usually a typo), emails not found in HR, and rows with an invalid scope. All three should be 0.
