@@ -1,0 +1,797 @@
+{
+ "captured_at": "2026-11-24 20:15",
+ "rows": {
+  "Analysis Type": 2,
+  "app_user_profile_app": 2544,
+  "dim_calendar": 1553,
+  "dim_employee": 5170,
+  "dim_employee_history": 32862,
+  "dim_hierarchy_master": 41,
+  "dim_organization": 44,
+  "dim_project": 319,
+  "fact_profitability_metrics": 1393058,
+  "fact_revenue_metrics": 284491,
+  "info_gold_profitability_refresh": 1,
+  "security_project_access_app": 1930
+ },
+ "columns": {
+  "app_user_profile_app": {
+   "user_upn": {
+    "distinct": 2544,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "display_name": {
+    "distinct": 2449,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "job_title": {
+    "distinct": 267,
+    "blank": 1,
+    "min": "",
+    "max": ""
+   }
+  },
+  "dim_calendar": {
+   "date": {
+    "distinct": 1553,
+    "blank": 0,
+    "min": "2024-12-31",
+    "max": "2029-04-01"
+   },
+   "day_of_year": {
+    "distinct": 366,
+    "blank": 0,
+    "min": "1.",
+    "max": "366."
+   },
+   "day": {
+    "distinct": 31,
+    "blank": 0,
+    "min": "1.",
+    "max": "31."
+   },
+   "day_of_week_number": {
+    "distinct": 7,
+    "blank": 0,
+    "min": "1.",
+    "max": "7."
+   },
+   "day_name": {
+    "distinct": 7,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "day_name_short": {
+    "distinct": 7,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "week_of_month_number": {
+    "distinct": 5,
+    "blank": 0,
+    "min": "1.",
+    "max": "5."
+   },
+   "week_of_month_label": {
+    "distinct": 5,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "week_of_year_number": {
+    "distinct": 53,
+    "blank": 0,
+    "min": "1.",
+    "max": "53."
+   },
+   "week_of_year_label": {
+    "distinct": 53,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "month": {
+    "distinct": 12,
+    "blank": 0,
+    "min": "1.",
+    "max": "12."
+   },
+   "month_name": {
+    "distinct": 12,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "month_name_short": {
+    "distinct": 12,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "start_of_month": {
+    "distinct": 53,
+    "blank": 0,
+    "min": "2024-12-01",
+    "max": "2029-04-01"
+   },
+   "end_of_month": {
+    "distinct": 53,
+    "blank": 0,
+    "min": "2024-12-31",
+    "max": "2029-04-30"
+   },
+   "quarter": {
+    "distinct": 1,
+    "blank": 1553,
+    "min": "",
+    "max": ""
+   },
+   "semester": {
+    "distinct": 1,
+    "blank": 1553,
+    "min": "",
+    "max": ""
+   },
+   "year": {
+    "distinct": 6,
+    "blank": 0,
+    "min": "2024.",
+    "max": "2029."
+   },
+   "start_of_week_sun": {
+    "distinct": 223,
+    "blank": 0,
+    "min": "2024-12-29",
+    "max": "2029-04-01"
+   },
+   "end_of_week_sat": {
+    "distinct": 223,
+    "blank": 0,
+    "min": "2025-01-04",
+    "max": "2029-04-07"
+   },
+   "is_weekend": {
+    "distinct": 2,
+    "blank": 0,
+    "min": "0.",
+    "max": "1."
+   },
+   "is_weekday": {
+    "distinct": 2,
+    "blank": 0,
+    "min": "0.",
+    "max": "1."
+   },
+   "is_today": {
+    "distinct": 2,
+    "blank": 0,
+    "min": "0.",
+    "max": "1."
+   },
+   "year_week": {
+    "distinct": 224,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "year_month": {
+    "distinct": 53,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "year_month_number": {
+    "distinct": 53,
+    "blank": 0,
+    "min": "202412.",
+    "max": "202904."
+   },
+   "year_quarter": {
+    "distinct": 19,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "year_quarter_number": {
+    "distinct": 19,
+    "blank": 0,
+    "min": "20244.",
+    "max": "20292."
+   },
+   "year_semester": {
+    "distinct": 10,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "year_semester_number": {
+    "distinct": 10,
+    "blank": 0,
+    "min": "20242.",
+    "max": "20291."
+   },
+   "_row_modified_at": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-03-16",
+    "max": "2026-03-16"
+   },
+   "_pipeline_run_id": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "quarter_number": {
+    "distinct": 4,
+    "blank": 0,
+    "min": "1.",
+    "max": "4."
+   },
+   "quarter_label": {
+    "distinct": 4,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "semester_number": {
+    "distinct": 2,
+    "blank": 0,
+    "min": "1.",
+    "max": "2."
+   },
+   "semester_label": {
+    "distinct": 2,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   }
+  },
+  "dim_employee": {
+   "ukg_employee_id": {
+    "distinct": 5170,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "employee_full_name": {
+    "distinct": 3378,
+    "blank": 1729,
+    "min": "",
+    "max": ""
+   },
+   "legal_entity": {
+    "distinct": 5,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "hire_date": {
+    "distinct": 893,
+    "blank": 0,
+    "min": "1997-05-01",
+    "max": "2026-12-14"
+   },
+   "termination_date": {
+    "distinct": 1441,
+    "blank": 1738,
+    "min": "2017-04-04",
+    "max": "2026-11-24"
+   },
+   "status_code": {
+    "distinct": 2,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "_gold_modified_at": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-11-24",
+    "max": "2026-11-24"
+   },
+   "_gold_pipeline_run_id": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "employee_number": {
+    "distinct": 5170,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   }
+  },
+  "dim_employee_history": {
+   "ukg_employee_id": {
+    "distinct": 5170,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "L1": {
+    "distinct": 126,
+    "blank": 120,
+    "min": "",
+    "max": ""
+   },
+   "effective_date": {
+    "distinct": 2097,
+    "blank": 0,
+    "min": "1900-01-01",
+    "max": "2026-12-14"
+   },
+   "end_date": {
+    "distinct": 1763,
+    "blank": 0,
+    "min": "2016-04-26",
+    "max": "2099-12-31"
+   },
+   "_gold_modified_at": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-11-24",
+    "max": "2026-11-24"
+   },
+   "_gold_pipeline_run_id": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   }
+  },
+  "dim_hierarchy_master": {
+   "L1": {
+    "distinct": 4,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "L2": {
+    "distinct": 11,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "L3": {
+    "distinct": 24,
+    "blank": 1,
+    "min": "",
+    "max": ""
+   },
+   "_gold_modified_at": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-11-24",
+    "max": "2026-11-24"
+   },
+   "_gold_pipeline_run_id": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   }
+  },
+  "dim_organization": {
+   "org_key": {
+    "distinct": 44,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "L1": {
+    "distinct": 6,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "L2": {
+    "distinct": 13,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "L3": {
+    "distinct": 31,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "_gold_modified_at": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-11-24",
+    "max": "2026-11-24"
+   },
+   "_gold_pipeline_run_id": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   }
+  },
+  "dim_project": {
+   "project_key": {
+    "distinct": 319,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_name": {
+    "distinct": 319,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_customer": {
+    "distinct": 139,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "_gold_modified_at": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-11-24",
+    "max": "2026-11-24"
+   },
+   "_gold_pipeline_run_id": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_manager_name": {
+    "distinct": 47,
+    "blank": 5,
+    "min": "",
+    "max": ""
+   }
+  },
+  "fact_profitability_metrics": {
+   "transaction_date": {
+    "distinct": 690,
+    "blank": 0,
+    "min": "2025-01-01",
+    "max": "2026-11-21"
+   },
+   "synerion_emp_id": {
+    "distinct": 2973,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "ukg_employee_id": {
+    "distinct": 2973,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "employee_full_name": {
+    "distinct": 2920,
+    "blank": 394,
+    "min": "",
+    "max": ""
+   },
+   "employee_reporting_category": {
+    "distinct": 5,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_name": {
+    "distinct": 280,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "task_name": {
+    "distinct": 816,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "pay_category_description": {
+    "distinct": 4,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "worked_hours": {
+    "distinct": 649,
+    "blank": 0,
+    "min": "0.02",
+    "max": "44."
+   },
+   "actual_cost_usd": {
+    "distinct": 28722,
+    "blank": 0,
+    "min": "0.",
+    "max": "30000000."
+   },
+   "_gold_modified_at": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-11-24",
+    "max": "2026-11-24"
+   },
+   "_gold_pipeline_run_id": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_key": {
+    "distinct": 278,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "employee_L1": {
+    "distinct": 7,
+    "blank": 1,
+    "min": "",
+    "max": ""
+   },
+   "employee_L2": {
+    "distinct": 12,
+    "blank": 104,
+    "min": "",
+    "max": ""
+   },
+   "employee_L3": {
+    "distinct": 24,
+    "blank": 887,
+    "min": "",
+    "max": ""
+   },
+   "project_company": {
+    "distinct": 5,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_customer": {
+    "distinct": 129,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_industry": {
+    "distinct": 37,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_service_line": {
+    "distinct": 30,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_L1": {
+    "distinct": 5,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_L2": {
+    "distinct": 12,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_L3": {
+    "distinct": 24,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "subtask_category": {
+    "distinct": 15,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "employee_country": {
+    "distinct": 3,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_country": {
+    "distinct": 2,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "intercompany_flag": {
+    "distinct": 2,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "intercompany_flow": {
+    "distinct": 6,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "cross_charge_flag": {
+    "distinct": 2,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "cross_charge_flow": {
+    "distinct": 21,
+    "blank": 1,
+    "min": "",
+    "max": ""
+   },
+   "pay_category_id": {
+    "distinct": 29,
+    "blank": 0,
+    "min": "1.",
+    "max": "35."
+   },
+   "org_key": {
+    "distinct": 36,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   }
+  },
+  "fact_revenue_metrics": {
+   "transaction_date": {
+    "distinct": 987,
+    "blank": 0,
+    "min": "2024-12-31",
+    "max": "2029-12-01"
+   },
+   "project_key": {
+    "distinct": 269,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "actual_revenue_usd": {
+    "distinct": 6118,
+    "blank": 60,
+    "min": "-242499.73",
+    "max": "435498.8"
+   },
+   "revenue_type": {
+    "distinct": 5,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "financial_L1": {
+    "distinct": 3,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "financial_customer": {
+    "distinct": 132,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "_gold_modified_at": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-11-24",
+    "max": "2026-11-24"
+   },
+   "_gold_pipeline_run_id": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "financial_L2": {
+    "distinct": 8,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "financial_L3": {
+    "distinct": 13,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "org_key": {
+    "distinct": 24,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "hours_quantity": {
+    "distinct": 1671,
+    "blank": 200,
+    "min": "-7214.",
+    "max": "5000."
+   },
+   "scenario": {
+    "distinct": 2,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "resource_name": {
+    "distinct": 2567,
+    "blank": 56,
+    "min": "",
+    "max": ""
+   },
+   "resource_role": {
+    "distinct": 861,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "employee_number": {
+    "distinct": 427,
+    "blank": 39868,
+    "min": "",
+    "max": ""
+   },
+   "resource_match": {
+    "distinct": 7,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   }
+  },
+  "info_gold_profitability_refresh": {
+   "LastRefresh": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-11-24",
+    "max": "2026-11-24"
+   },
+   "LastRevenueDate_app": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-11-14",
+    "max": "2026-11-14"
+   },
+   "LastSynerionDate_app": {
+    "distinct": 1,
+    "blank": 0,
+    "min": "2026-11-21",
+    "max": "2026-11-21"
+   }
+  },
+  "security_project_access_app": {
+   "user_upn": {
+    "distinct": 50,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "project_key": {
+    "distinct": 319,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   },
+   "reason": {
+    "distinct": 7,
+    "blank": 0,
+    "min": "",
+    "max": ""
+   }
+  }
+ }
+}

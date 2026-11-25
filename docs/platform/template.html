@@ -1,0 +1,625 @@
+<title>Profitability Data Platform</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Architecture, data lineage, data model and data catalog of the Project Real Profitability platform, built from the repo by docs/platform/build_site.py.">
+<style>
+/*__TOKENS__*/
+:root { --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg-base); color: var(--ink); font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
+a { color: var(--link); }
+code, .mono { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+.grid3 > *, .health > *, .loose > * { min-width: 0; }
+table.t code { overflow-wrap: normal; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
+@media (max-width: 600px) { .wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); } }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+
+/* header */
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; padding-block: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand .mark { width: 10px; height: 28px; border-radius: var(--radius-xs); background: var(--accent); }
+.brand b { font-family: var(--font-display); font-size: 16px; font-weight: 600; display: block; line-height: 18px; }
+.brand span { font-size: 11px; color: var(--ink-muted); letter-spacing: .6px; text-transform: uppercase; }
+nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+nav.tabs a { text-decoration: none; color: var(--ink-muted); padding: 6px 12px; border-radius: var(--radius-pill); font-weight: 600; font-size: 13px; }
+nav.tabs a:hover { color: var(--ink); background: var(--surface-sunken); }
+nav.tabs a[aria-current="page"] { background: var(--accent); color: var(--on-accent); }
+.built { margin-left: auto; font-size: 11px; color: var(--ink-faint); }
+@media (max-width: 800px) { .built { margin-left: 0; width: 100%; } }
+
+/* page */
+section.page { padding-block: 32px 64px; }
+section.page[hidden] { display: none !important; }
+h1 { font-family: var(--font-display); font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -.4px; margin: 0 0 6px; }
+h2 { font-family: var(--font-display); font-size: 18px; line-height: 24px; font-weight: 600; margin: 36px 0 12px; }
+.lede { color: var(--ink-muted); margin: 0 0 24px; max-width: 860px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.muted { color: var(--ink-muted); }
+.faint { color: var(--ink-faint); }
+.badge { display: inline-block; font-size: 10px; line-height: 16px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; padding: 0 6px; border-radius: var(--radius-xs); background: var(--surface-sunken); color: var(--ink-muted); border: 1px solid var(--line); white-space: nowrap; }
+.badge.fact { background: var(--glow-gold); color: var(--accent-ink); border-color: transparent; }
+.badge.dim { background: var(--glow-blue); color: var(--link); border-color: transparent; }
+.badge.warn { background: var(--negative-soft); color: var(--negative-ink); border-color: transparent; }
+.badge.ok { background: var(--positive-soft); color: var(--positive-ink); border-color: transparent; }
+.badge.app { background: transparent; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* architecture */
+/* every icon sits on one line: outer stages start lower by the lake's border + top padding */
+.flow { --lake-top: 23px; --icon: 64px; display: flex; align-items: stretch; gap: 0; min-width: 1160px; padding: 28px 24px; }
+.stage { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 6px; min-width: 0; }
+.flow > .stage { padding-top: calc(var(--lake-top) + 8px); }
+.stage .icon { width: var(--icon); height: var(--icon); margin-bottom: 12px; filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--glow, transparent) 38%, transparent)); }
+.stage .lname { font-family: var(--mono); font-size: 12px; color: var(--ink-muted); }
+.stage .big { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -.5px; }
+.stage .big small { font-size: 14px; font-weight: 400; color: var(--ink-muted); letter-spacing: 0; margin-left: 4px; }
+.stage .sub { font-size: 12px; line-height: 16px; color: var(--ink-muted); max-width: 170px; }
+.stage.box { border: 1px dashed var(--line-strong); border-radius: var(--radius-md); }
+.arrow { flex: 0 0 80px; align-self: flex-start; height: 24px; color: var(--ink-faint); display: flex; align-items: center; justify-content: center;
+  margin-top: calc(8px + var(--icon) / 2 - 12px); }
+.flow > .arrow { margin-top: calc(var(--lake-top) + 8px + var(--icon) / 2 - 12px); }
+.arrow svg { display: block; overflow: visible; }
+.arrow .ring { fill: var(--surface); stroke: var(--accent); stroke-width: 1.5; }
+.arrow .tip { fill: var(--accent); }
+.arrow .no { fill: var(--ink); font: 700 11px var(--font-sans); }
+.lake { display: flex; flex: 4.4 1 0; border: 1px dashed var(--line-strong); border-radius: var(--radius-md); padding: 22px 4px 10px; position: relative; background: color-mix(in srgb, var(--surface-sunken) 45%, transparent); }
+.lake > .lake-label { position: absolute; top: -9px; left: 20px; background: var(--surface); padding: 0 8px; font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
+.stage.consumers { flex: 1.7 1 0; align-items: stretch; padding-left: 10px; }
+.stage.consumers { position: relative; }
+.stage.consumers > .lname { position: absolute; top: calc(var(--lake-top) - 16px); left: 6px; }
+.consumer-list { display: flex; flex-direction: column; gap: 18px; text-align: left; }
+.consumer-list .c { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; }
+.consumer-list .c svg { width: 40px; height: 40px; color: var(--ink-muted); }
+.consumer-list .c.app svg { color: var(--green-500); }
+.consumer-list .c b { display: block; font-size: 16px; line-height: 20px; }
+.consumer-list .c > div > span { display: block; font-size: 12px; color: var(--ink-muted); line-height: 16px; }
+.consumer-list .c .n { display: inline; font-weight: 600; color: var(--ink); }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.step { padding: 16px 18px; }
+.step h3 { margin: 0 0 6px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.step h3 .stepno { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--ink-muted); font-size: 11px; display: inline-grid; place-items: center; flex: none; }
+.step p { margin: 4px 0; font-size: 13px; color: var(--ink-muted); }
+.health { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.health .h { padding: 14px 16px; }
+.health .h .k { font-size: 11px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; color: var(--ink-muted); }
+.health .h .v { font-size: 22px; line-height: 30px; font-weight: 600; }
+.health .h .d { font-size: 12px; color: var(--ink-muted); }
+
+/* lineage */
+.lin { position: relative; display: grid; grid-template-columns: 1.25fr 1fr 1.1fr 1.15fr .9fr; gap: 36px; min-width: 1120px; padding: 20px; }
+.lin svg.wires { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.lin .col h3 { margin: 0 0 2px; font-family: var(--mono); font-size: 13px; }
+.lin .col .cnt { font-size: 12px; color: var(--ink-muted); margin-bottom: 12px; }
+.lin .grp { font-size: 11px; color: var(--ink-faint); margin: 12px 0 4px; font-family: var(--mono); }
+.node { position: relative; display: block; width: 100%; text-align: left; font: inherit; font-family: var(--mono); font-size: 12px; line-height: 16px; padding: 5px 8px 5px 10px; margin: 0 0 6px; color: var(--ink); background: var(--surface-sunken); border: 1px solid var(--line); border-left: 3px solid var(--ink-faint); border-radius: var(--radius-xs); cursor: pointer; overflow-wrap: anywhere; z-index: 1; }
+.node:hover { border-color: var(--line-strong); }
+.node:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.node.l-src { border-left-color: var(--grey-300); }
+.node.l-silver { border-left-color: var(--blue-300); }
+.node.l-gold { border-left-color: var(--yellow-300); }
+.node.l-model { border-left-color: var(--blue-700); }
+.node.l-app { border-left-color: var(--green-500); font-family: var(--font-sans); font-weight: 600; }
+.node.ext { border-style: dashed; border-left-style: solid; }
+.lin.focus .node { opacity: .28; }
+.lin.focus .node.on { opacity: 1; }
+.lin.focus .node.sel { box-shadow: 0 0 0 2px var(--accent); }
+.wires path { fill: none; stroke: var(--line-strong); stroke-width: 1.1; opacity: .45; }
+.wires path.on { stroke: var(--accent-ink); stroke-width: 1.8; opacity: 1; }
+.lin.focus .wires path:not(.on) { opacity: .08; }
+.wires path.dash { stroke-dasharray: 4 4; }
+.detail { margin-top: 16px; padding: 18px 20px; }
+.detail h3 { margin: 0 0 4px; font-family: var(--mono); font-size: 15px; }
+.kv { display: grid; grid-template-columns: 140px 1fr; gap: 6px 16px; font-size: 13px; margin-top: 10px; }
+.kv > div:nth-child(odd) { color: var(--ink-muted); }
+@media (max-width: 600px) { .kv { grid-template-columns: 1fr; } .kv > div:nth-child(odd) { margin-top: 6px; } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: var(--radius-pill); background: var(--surface-sunken); border: 1px solid var(--line); cursor: pointer; color: var(--ink); }
+.chip:hover { border-color: var(--line-strong); }
+
+/* data model */
+.star { position: relative; display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 90px; min-width: 1000px; padding: 24px; align-items: start; }
+.star svg.wires { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.star .scol { display: flex; flex-direction: column; gap: 24px; }
+.ent { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--blue-300); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); position: relative; z-index: 1; }
+.ent.fact { border-left-color: var(--yellow-300); }
+.ent .eh { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.ent .eh b { font-family: var(--mono); font-size: 13px; }
+.ent .eh a { text-decoration: none; color: inherit; }
+.ent .eh a:hover b { text-decoration: underline; }
+.ent .row { display: flex; justify-content: space-between; gap: 8px; padding: 3px 12px; font-family: var(--mono); font-size: 12px; }
+.ent .row .k { font-size: 10px; color: var(--ink-muted); font-weight: 700; }
+.ent .row.key { color: var(--ink); }
+.ent .more { padding: 4px 12px 8px; font-size: 11px; color: var(--ink-faint); }
+.loose { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.loose .ent { padding-bottom: 8px; }
+.loose .ent p { margin: 8px 12px 0; font-size: 12px; color: var(--ink-muted); }
+table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.t th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--ink-muted); padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.t td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t tr:last-child td { border-bottom: 0; }
+table.t td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.t th.n { text-align: right; }
+
+/* catalog */
+.search { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.search input { flex: 1 1 320px; font: inherit; font-size: 15px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); }
+.search input:focus { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.filters button { font: inherit; font-family: var(--mono); font-size: 12px; padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.filters button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+details.item { margin-bottom: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+details.item > summary { list-style: none; cursor: pointer; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 14px; }
+details.item > summary::-webkit-details-marker { display: none; }
+details.item > summary::before { content: "▸"; color: var(--ink-faint); font-size: 12px; width: 10px; }
+details.item[open] > summary::before { content: "▾"; }
+details.item > summary .name { font-family: var(--mono); font-weight: 600; font-size: 13px; }
+details.item > summary .desc { color: var(--ink-muted); font-size: 12px; flex: 1 1 260px; min-width: 0; }
+details.item > summary .meta { margin-left: auto; font-size: 12px; color: var(--ink-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+details.item .body { padding: 0 14px 14px 34px; }
+@media (max-width: 600px) { details.item .body { padding-left: 14px; } details.item > summary .meta { margin-left: 0; } }
+.hit { background: var(--glow-gold); }
+.empty { color: var(--ink-faint); font-style: italic; }
+.foot { margin-top: 40px; font-size: 12px; color: var(--ink-faint); }
+</style>
+
+<header class="top"><div class="wrap">
+  <div class="brand"><div class="mark"></div><div><b>Project Profitability</b><span>data platform</span></div></div>
+  <nav class="tabs" aria-label="Pages">
+    <a href="#architecture">Architecture</a>
+    <a href="#lineage">Data lineage</a>
+    <a href="#model">Data model</a>
+    <a href="#catalog">Data catalog</a>
+  </nav>
+  <div class="built" id="built"></div>
+</div></header>
+
+<main class="wrap">
+  <section class="page" id="p-architecture"></section>
+  <section class="page" id="p-lineage" hidden></section>
+  <section class="page" id="p-model" hidden></section>
+  <section class="page" id="p-catalog" hidden></section>
+</main>
+
+<script>
+const D = __DATA__;
+
+/* ------------------------------------------------------------------ helpers */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = n => n == null || n === "" ? "–" : Number(n).toLocaleString("en-US");
+const short = n => n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 2) + " M" : n >= 1e4 ? Math.round(n / 1e3) + " k" : fmt(n);
+const low = s => String(s).toLowerCase();
+const $ = (sel, el = document) => el.querySelector(sel);
+const NOTES = D.notes, STATS = D.stats || {}, ROWS = STATS.rows || {}, CSTATS = STATS.columns || {};
+const tableNote = t => NOTES.tables[t] || {};
+const colNote = (t, c) => (tableNote(t).columns || {})[c] || "";
+const kindOf = name => name.startsWith("fact_") ? "fact" : name.startsWith("dim_") ? "dim"
+  : name.startsWith("info_") ? "info" : /security|profile/.test(name) ? "security" : name === "_Measures" ? "measures" : "parameter";
+const APPS = NOTES.consumers;
+const appName = id => (APPS.find(a => a.id === id) || {}).name || id;
+
+/* ------------------------------------------------------------------ graph */
+const steps = [];
+D.pipeline.forEach(nb => nb.steps.forEach(s => steps.push({ ...s, notebook: nb.name, file: nb.file, full_load: nb.full_load })));
+const written = new Set(steps.map(s => low(s.writes)));
+const schemaSystem = {};
+NOTES.systems.forEach(s => s.schemas.forEach(sc => schemaSystem[sc] = s));
+const modelTables = D.model.tables.filter(t => t.name !== "_Measures");
+const N = {};      // id -> node
+const E = [];      // {from, to, kind}
+function addNode(id, o) { if (!N[id]) N[id] = { id, up: new Set(), down: new Set(), ...o }; return N[id]; }
+function addEdge(a, b, kind) { if (a === b || !N[a] || !N[b] || N[a].down.has(b)) return; E.push({ from: a, to: b, kind }); N[a].down.add(b); N[b].up.add(a); }
+const layerOf = name => { const sc = name.split(".")[0]; return sc === "silver" ? "silver" : sc === "gold" ? "gold" : "src"; };
+
+steps.forEach(s => {
+  addNode(low(s.writes), { name: s.writes, layer: layerOf(s.writes), step: s });
+  s.reads.forEach(r => { if (!written.has(low(r))) addNode(low(r), { name: r, layer: "src", ext: true }); });
+});
+modelTables.forEach(t => {
+  const id = "model:" + t.name;
+  addNode(id, { name: t.name, layer: "model", table: t });
+  if (t.schema && t.entity) {
+    const src = low(t.schema + "." + t.entity);
+    if (!N[src]) addNode(src, { name: t.schema + "." + t.entity, layer: "src", ext: true });
+  }
+});
+APPS.forEach(a => addNode("app:" + a.id, { name: a.name, layer: "app", app: a }));
+steps.forEach(s => s.reads.forEach(r => addEdge(low(r), low(s.writes), "build")));
+modelTables.forEach(t => { if (t.schema && t.entity) addEdge(low(t.schema + "." + t.entity), "model:" + t.name, "load"); });
+Object.entries(D.apps).forEach(([app, u]) => {
+  const used = new Set([...Object.keys(u.tables_direct), ...Object.keys(u.tables_via_measures)]);
+  used.forEach(t => addEdge("model:" + t, "app:" + app, "read"));
+});
+const usedBy = t => Object.entries(D.apps).filter(([, u]) => u.tables_direct[t] || u.tables_via_measures[t]).map(([a]) => a);
+const colUsedBy = (t, c) => Object.entries(D.apps).filter(([, u]) => (u.tables_direct[t] || []).includes(c) || (u.tables_via_measures[t] || []).includes(c)).map(([a]) => a);
+const appBadges = ids => ids.map(a => `<span class="badge app">${esc(appName(a))}</span>`).join(" ");
+const srcNodes = Object.values(N).filter(n => n.layer === "src");
+const systemsUsed = NOTES.systems.filter(s => srcNodes.some(n => s.schemas.includes(n.name.split(".")[0])));
+const measures = D.model.tables.flatMap(t => t.measures);
+const appMeasures = measures.filter(m => /_app$/.test(m.name));
+
+/* ------------------------------------------------------------------ icons */
+const ic = {
+  file: `<svg class="icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8h20l10 10v38H18z"/><path d="M38 8v10h10M24 30h16M24 38h16M24 46h10"/></svg>`,
+  db: c => `<svg class="icon" viewBox="0 0 64 64" fill="none" stroke="${c}" stroke-width="2.4"><ellipse cx="32" cy="14" rx="20" ry="7"/><path d="M12 14v36c0 3.9 9 7 20 7s20-3.1 20-7V14"/><path d="M12 26c0 3.9 9 7 20 7s20-3.1 20-7M12 38c0 3.9 9 7 20 7s20-3.1 20-7"/></svg>`,
+  sigma: `<svg class="icon" viewBox="0 0 64 64" fill="none" stroke="var(--link)" stroke-width="2.4"><rect x="8" y="8" width="48" height="48" rx="10"/><path d="M42 20H22l12 12-12 12h20" stroke-linejoin="round"/></svg>`,
+  // consumers
+  dashboard: `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="7" width="32" height="26" rx="4"/><path d="M4 13h32"/><circle cx="8.5" cy="10" r=".6" fill="currentColor"/><circle cx="11.5" cy="10" r=".6" fill="currentColor"/><path d="M11 28v-6M17 28V19M23 28v-9M29 28v-4" stroke-linecap="round"/></svg>`,
+  people: `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="15" cy="14" r="5.5"/><path d="M5 33c0-6 4.5-10 10-10s10 4 10 10" stroke-linecap="round"/><circle cx="27.5" cy="15.5" r="4.5"/><path d="M27 23.5c5 0 8.5 3.6 8.5 9" stroke-linecap="round"/></svg>`,
+  report: `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 5h14l7 7v23H10z" stroke-linejoin="round"/><path d="M24 5v7h7"/><path d="M15 30v-5M20 30v-9M25 30v-6" stroke-linecap="round"/></svg>`,
+};
+// a flow arrow; a numbered one carries the step on the line, like (1)▸
+const arrow = n => `<div class="arrow" aria-hidden="true">${n ? `<svg width="80" height="24" viewBox="0 0 80 24">
+    <path d="M0 12H27M57 12H76" stroke="currentColor" stroke-width="1.5"/><path d="M72 7.5l5 4.5-5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle class="ring" cx="39" cy="12" r="11"/><text class="no" x="39" y="16" text-anchor="middle">${n}</text><path class="tip" d="M51 8.5l4.5 3.5-4.5 3.5z"/></svg>`
+  : `<svg width="80" height="24" viewBox="0 0 80 24"><path d="M4 12H76" stroke="currentColor" stroke-width="1.5"/><path d="M72 7.5l5 4.5-5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`}</div>`;
+const consumerIcon = { app: "dashboard", "pm-app": "people", "pbi-report": "report" };
+
+/* ------------------------------------------------------------------ architecture */
+function renderArchitecture() {
+  const silver = Object.values(N).filter(n => n.layer === "silver");
+  const gold = Object.values(N).filter(n => n.layer === "gold");
+  const silverNb = D.pipeline.find(nb => nb.steps.some(s => s.writes.startsWith("silver.")));
+  const goldNb = D.pipeline.find(nb => nb.steps.some(s => s.writes.startsWith("gold.")));
+  const dl = modelTables.filter(t => t.mode === "directLake").length;
+  const rels = D.model.relationships;
+  const appRows = APPS.map(a => {
+    const u = D.apps[a.id];
+    const extra = u ? `<span class="n">${u.query_files}</span> DAX queries · <span class="n">${u.measures.length}</span> measures` : "original measures · not in this repo";
+    return `<div class="c${u ? " app" : ""}">${ic[consumerIcon[a.id] || "dashboard"]}<div><b>${esc(a.name)}</b><span>${extra}</span></div></div>`;
+  }).join("");
+  const fp = CSTATS.fact_profitability_metrics || {}, fr = CSTATS.fact_revenue_metrics || {}, cal = CSTATS.dim_calendar || {}, inf = CSTATS.info_gold_profitability_refresh || {};
+  const maxRev = (fr.transaction_date || {}).max, maxCal = (cal.date || {}).max;
+  const calShort = maxRev && maxCal && maxRev > maxCal;
+
+  $("#p-architecture").innerHTML = `
+  <h1>Architecture</h1>
+  <p class="lede">How the data flows: from ${systemsUsed.length} source systems, through ${D.pipeline.length} notebooks in lakehouse <code>${esc(D.pipeline[0]?.catalog)}</code>, to the semantic model and the apps that read it. Drawn from the notebooks and the model in this repo.</p>
+  <div class="card scroll-x"><div class="flow">
+    <div class="stage" style="--glow: var(--ink-muted)">
+      ${ic.file}
+      <div class="lname">sources</div>
+      <div class="big">${systemsUsed.length}<small>systems</small></div>
+      <div class="sub">${systemsUsed.map(s => esc(s.name)).join(", ")}</div>
+    </div>
+    ${arrow("")}
+    <div class="lake"><span class="lake-label">${esc(D.pipeline[0]?.catalog)} · Fabric lakehouse</span>
+      <div class="stage" style="--glow: var(--grey-300)">
+        ${ic.db("var(--grey-300)")}
+        <div class="lname">source schemas</div>
+        <div class="big">${srcNodes.length}<small>tables</small></div>
+        <div class="sub">${[...new Set(srcNodes.map(n => n.name.split(".")[0]))].join(" · ")}<br>loaded by pipelines outside this repo</div>
+      </div>
+      ${arrow(1)}
+      <div class="stage" style="--glow: var(--blue-300)">
+        ${ic.db("var(--blue-300)")}
+        <div class="lname">silver</div>
+        <div class="big">${silver.length}<small>tables</small></div>
+        <div class="sub">hours enriched with HR${silverNb?.full_load ? " · full load" : ""}</div>
+      </div>
+      ${arrow(2)}
+      <div class="stage" style="--glow: var(--yellow-300)">
+        ${ic.db("var(--yellow-300)")}
+        <div class="lname">gold</div>
+        <div class="big">${gold.length}<small>tables</small></div>
+        <div class="sub">star schema, security and refresh info</div>
+      </div>
+    </div>
+    ${arrow(3)}
+    <div class="stage" style="--glow: var(--blue-500)">
+      ${ic.sigma}
+      <div class="lname">semantic model</div>
+      <div class="big">${modelTables.length}<small>tables</small></div>
+      <div class="sub">${dl} Direct Lake · ${measures.length} measures (${appMeasures.length} _app) · ${rels.length} relationships · ${D.model.roles.length} roles</div>
+    </div>
+    ${arrow("")}
+    <div class="stage consumers"><div class="lname">consumers</div><div class="consumer-list">${appRows}</div></div>
+  </div></div>
+
+  <h2>The steps</h2>
+  <div class="grid3">
+    <div class="card step"><h3><span class="stepno">1</span><code>${esc(silverNb?.name)}</code></h3>
+      <p>Synerion time entries joined to UKG: employee, country, pay category, shrinkage code, and org L1–L3 as of the transaction date.</p>
+      <p>Writes ${silverNb?.steps.map(s => `<code>${esc(s.writes)}</code>`).join(", ")}.${silverNb?.full_load ? " Full overwrite every run." : ""}</p></div>
+    <div class="card step"><h3><span class="stepno">2</span><code>${esc(goldNb?.name)}</code></h3>
+      <p>Silver hours joined to Project Operations projects, tasks and financials; builds facts, dimensions, the PM app access list and the refresh info.</p>
+      <p>Writes ${goldNb?.steps.length} gold tables, each one overwritten.</p></div>
+    <div class="card step"><h3><span class="stepno">3</span>Model refresh</h3>
+      <p>The last step of the gold notebook refreshes <code>${esc(D.model_name)}</code> with sempy. The model reads gold in Direct Lake: no import copy.</p>
+      <p>Two apps read the model through the Rayfin connector; the original Power BI report binds to the original measures.</p></div>
+  </div>
+
+  <h2>Data as of the last stats capture <span class="faint" style="font-size:12px;font-weight:400">(${esc(STATS.captured_at || "no capture yet")})</span></h2>
+  <div class="health">
+    <div class="card h"><div class="k">Gold refresh</div><div class="v">${esc((inf.LastRefresh || {}).max || "–")}</div><div class="d">info_gold_profitability_refresh</div></div>
+    <div class="card h"><div class="k">Latest hours</div><div class="v">${esc((fp.transaction_date || {}).max || "–")}</div><div class="d">Synerion, from ${esc((fp.transaction_date || {}).min || "–")} · ${short(ROWS.fact_profitability_metrics || 0)} rows</div></div>
+    <div class="card h"><div class="k">Latest T&amp;M actual</div><div class="v">${esc((inf.LastRevenueDate_app || {}).max || "–")}</div><div class="d">fact_revenue_metrics · ${short(ROWS.fact_revenue_metrics || 0)} rows</div></div>
+    <div class="card h"><div class="k">Calendar</div><div class="v">${esc((cal.date || {}).max || "–")}</div><div class="d">${calShort ? `<span class="badge warn">short</span> revenue dates reach ${esc(maxRev)}` : "covers every fact date"}</div></div>
+  </div>
+  <p class="foot">Known issues and open items live in <code>docs/01_model_overview.md</code> § 6 and <code>docs/04_decisions_and_open_items.md</code>.</p>`;
+}
+
+/* ------------------------------------------------------------------ lineage */
+let linSel = null;
+function reach(id, dir, seen = new Set()) {
+  N[id][dir].forEach(n => { if (!seen.has(n)) { seen.add(n); reach(n, dir, seen); } });
+  return seen;
+}
+function renderLineage() {
+  const node = n => `<button class="node l-${n.layer}${n.ext ? " ext" : ""}" data-id="${esc(n.id)}">${esc(n.layer === "model" || n.layer === "app" ? n.name : n.name)}</button>`;
+  const bySystem = {};
+  srcNodes.sort((a, b) => a.name.localeCompare(b.name)).forEach(n => {
+    const sys = schemaSystem[n.name.split(".")[0]];
+    const key = sys ? sys.name : "other";
+    (bySystem[key] = bySystem[key] || []).push(n);
+  });
+  const srcCol = Object.entries(bySystem).map(([k, list]) => `<div class="grp">${esc(k)}</div>${list.map(node).join("")}`).join("");
+  const layer = l => Object.values(N).filter(n => n.layer === l).sort((a, b) => a.name.localeCompare(b.name));
+  const order = n => ({ fact: 0, dim: 1, info: 2, security: 3, parameter: 4 }[kindOf(n.name.split(".").pop())] ?? 5);
+  const gold = layer("gold").sort((a, b) => order(a) - order(b) || a.name.localeCompare(b.name));
+  const model = layer("model").sort((a, b) => order(a) - order(b) || a.name.localeCompare(b.name));
+
+  $("#p-lineage").innerHTML = `
+  <h1>Data lineage</h1>
+  <p class="lede">Every table and what feeds it: ${Object.keys(N).length} nodes and ${E.length} dependencies, read from the notebook code, the model partitions and the apps' queries. Click a table to light its upstream and downstream; dashed boxes are tables loaded outside this repo.</p>
+  <div class="card scroll-x"><div class="lin" id="lin">
+    <svg class="wires" id="lin-wires"></svg>
+    <div class="col"><h3>sources</h3><div class="cnt">${srcNodes.length} tables · ${systemsUsed.length} systems</div>${srcCol}</div>
+    <div class="col"><h3>silver</h3><div class="cnt">${layer("silver").length} tables</div>${layer("silver").map(node).join("")}</div>
+    <div class="col"><h3>gold</h3><div class="cnt">${gold.length} tables</div>${gold.map(node).join("")}</div>
+    <div class="col"><h3>semantic model</h3><div class="cnt">${model.length} tables</div>${model.map(node).join("")}</div>
+    <div class="col"><h3>consumers</h3><div class="cnt">${APPS.length}</div>${layer("app").map(node).join("")}</div>
+  </div></div>
+  <div class="card detail" id="lin-detail"><span class="muted">Select a table to see what builds it and what reads it.</span></div>`;
+
+  $("#lin").addEventListener("click", e => {
+    const b = e.target.closest(".node"); if (!b) return;
+    selectLineage(linSel === b.dataset.id ? null : b.dataset.id);
+  });
+  drawLineage();
+}
+function drawLineage() {
+  const box = $("#lin"); if (!box || box.offsetParent === null) return;
+  const svg = $("#lin-wires"), r0 = box.getBoundingClientRect();
+  svg.setAttribute("width", box.scrollWidth); svg.setAttribute("height", box.scrollHeight);
+  const pos = {};
+  box.querySelectorAll(".node").forEach(el => { const r = el.getBoundingClientRect(); pos[el.dataset.id] = { l: r.left - r0.left, r: r.right - r0.left, y: r.top - r0.top + r.height / 2 }; });
+  svg.innerHTML = E.map(e => {
+    const a = pos[e.from], b = pos[e.to]; if (!a || !b) return "";
+    let d;
+    if (Math.abs(a.l - b.l) < 4) { const x = a.r, k = 28 + Math.abs(b.y - a.y) * 0.08; d = `M${x} ${a.y} C${x + k} ${a.y}, ${x + k} ${b.y}, ${x} ${b.y}`; }
+    else { const mx = (a.r + b.l) / 2; d = `M${a.r} ${a.y} C${mx} ${a.y}, ${mx} ${b.y}, ${b.l} ${b.y}`; }
+    return `<path d="${d}" data-f="${esc(e.from)}" data-t="${esc(e.to)}"/>`;
+  }).join("");
+  if (linSel) selectLineage(linSel, true);
+}
+function selectLineage(id, redraw) {
+  linSel = id;
+  const box = $("#lin");
+  box.classList.toggle("focus", !!id);
+  box.querySelectorAll(".node").forEach(el => el.classList.remove("on", "sel"));
+  box.querySelectorAll(".wires path").forEach(p => p.classList.remove("on"));
+  if (!id) { $("#lin-detail").innerHTML = `<span class="muted">Select a table to see what builds it and what reads it.</span>`; return; }
+  const up = reach(id, "up"), down = reach(id, "down"), lit = new Set([id, ...up, ...down]);
+  box.querySelectorAll(".node").forEach(el => { if (lit.has(el.dataset.id)) el.classList.add("on"); if (el.dataset.id === id) el.classList.add("sel"); });
+  box.querySelectorAll(".wires path").forEach(p => {
+    const f = p.dataset.f, t = p.dataset.t;
+    if ((up.has(f) || f === id) && (up.has(t) || t === id) || (down.has(t) || t === id) && (down.has(f) || f === id)) p.classList.add("on");
+  });
+  if (redraw) return;
+  const n = N[id];
+  const chips = set => set.size ? `<div class="chips">${[...set].sort().map(x => `<button class="chip" data-go="${esc(x)}">${esc(N[x].name)}</button>`).join("")}</div>` : `<span class="empty">none</span>`;
+  const lakeName = n.name.split(".").pop();
+  let what = "", desc = "";
+  if (n.layer === "model") { desc = tableNote(n.name).description || n.table.description; what = `${n.table.mode === "directLake" ? "Direct Lake" : "Import"} table in the semantic model · ${fmt(ROWS[n.name])} rows`; }
+  else if (n.layer === "app") { desc = n.app.description; what = n.app.path ? `code in <code>${esc(n.app.path)}</code>` : "not in this repo"; }
+  else if (n.step) { what = `built by <code>${esc(n.step.functions.join(" + "))}</code> in <code>${esc(n.step.notebook)}</code>`; desc = (tableNote(Object.keys(NOTES.tables).find(k => low(k).replace(/_app$/, "") === low(lakeName)) || "").description) || ""; }
+  else { what = "loaded outside this repo"; desc = NOTES.external_tables[n.name] || ""; }
+  $("#lin-detail").innerHTML = `<h3>${esc(n.name)}</h3><div class="muted">${what}</div>${desc ? `<p style="margin:10px 0 0">${esc(desc)}</p>` : ""}
+    <div class="kv"><div>Reads from</div><div>${chips(n.up)}</div><div>Read by</div><div>${chips(n.down)}</div>
+    <div>All upstream</div><div>${up.size} tables</div><div>All downstream</div><div>${down.size} tables and apps</div></div>`;
+  $("#lin-detail").querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => selectLineage(b.dataset.go)));
+}
+
+/* ------------------------------------------------------------------ data model */
+function renderModel() {
+  const rels = D.model.relationships;
+  const out = {}, inc = {};
+  rels.forEach(r => { (out[r.from.table] = out[r.from.table] || []).push(r); (inc[r.to.table] = inc[r.to.table] || []).push(r); });
+  const facts = modelTables.filter(t => (out[t.name] || []).filter(r => r.active).length >= 2).map(t => t.name);
+  const dims = [...new Set(rels.filter(r => facts.includes(r.from.table)).map(r => r.to.table))]
+    .sort((a, b) => (inc[b] || []).length - (inc[a] || []).length || a.localeCompare(b));
+  const left = [], right = [];
+  dims.forEach((d, i) => (i % 2 ? right : left).push(d));
+  const placed = new Set([...facts, ...dims]);
+  modelTables.forEach(t => {          // snowflake: a table that only points to a placed dimension sits under it
+    if (placed.has(t.name) || !(out[t.name] || []).length) return;
+    const target = out[t.name][0].to.table;
+    const colArr = left.includes(target) ? left : right;
+    colArr.splice(colArr.indexOf(target) + 1, 0, t.name); placed.add(t.name);
+  });
+  const keyCols = name => {
+    const ks = [];
+    rels.forEach(r => {
+      if (r.to.table === name && !ks.some(k => k.c === r.to.column)) ks.push({ c: r.to.column, k: "PK" });
+      if (r.from.table === name && !ks.some(k => k.c === r.from.column)) ks.push({ c: r.from.column, k: "FK" });
+    });
+    return ks;
+  };
+  const tbl = name => modelTables.find(t => t.name === name);
+  const ent = name => {
+    const t = tbl(name), ks = keyCols(name), cols = t.columns.filter(c => !c.name.startsWith("_"));
+    return `<div class="ent ${kindOf(name) === "fact" ? "fact" : ""}" data-t="${esc(name)}">
+      <div class="eh"><a href="#catalog/${encodeURIComponent(name)}"><b>${esc(name)}</b></a><span class="faint num" style="font-size:11px">${ROWS[name] != null ? short(ROWS[name]) + " rows" : ""}</span></div>
+      ${ks.map(k => `<div class="row key" data-c="${esc(k.c)}"><span>${esc(k.c)}</span><span class="k">${k.k}</span></div>`).join("")}
+      <div class="more">+ ${cols.length - ks.length} more columns</div></div>`;
+  };
+  const loose = modelTables.filter(t => !placed.has(t.name));
+  const relRows = rels.map(r => `<tr><td><code>${esc(r.from.table)}[${esc(r.from.column)}]</code></td><td><code>${esc(r.to.table)}[${esc(r.to.column)}]</code></td>
+    <td>${esc(r.fromCard)} → ${esc(r.toCard)}</td><td>${r.crossFilter === "both" ? "both" : "single"}</td><td>${r.active ? `<span class="badge ok">active</span>` : `<span class="badge">inactive</span>`}</td></tr>`).join("");
+  const roleRows = D.model.roles.map(r => `<tr><td><code>${esc(r.name)}</code></td><td>${r.filters.length ? r.filters.map(f => `<code>${esc(f)}</code>`).join(", ") : '<span class="muted">no filter</span>'}</td><td class="muted">${esc(r.description.replace(/^ADDED [0-9-]+ \(Fabric app\):\s*/, ""))}</td></tr>`).join("");
+
+  $("#p-model").innerHTML = `
+  <h1>Data model</h1>
+  <p class="lede">The star schema of <code>${esc(D.model_name)}</code>: ${facts.length} facts share conformed dimensions, so a project, a period or an org slices hours and revenue together. Read from <code>model/definition</code> (the TMDL export of the published model). Click a table for its columns.</p>
+  <div class="card scroll-x"><div class="star" id="star">
+    <svg class="wires" id="star-wires"></svg>
+    <div class="scol">${left.map(ent).join("")}</div>
+    <div class="scol" style="padding-top:40px">${facts.map(ent).join("")}</div>
+    <div class="scol">${right.map(ent).join("")}</div>
+  </div></div>
+  <h2>Tables outside the star</h2>
+  <div class="loose">${loose.map(t => `<div class="ent ${t.hidden ? "" : ""}"><div class="eh"><a href="#catalog/${encodeURIComponent(t.name)}"><b>${esc(t.name)}</b></a><span class="badge">${esc(kindOf(t.name))}</span></div><p>${esc(tableNote(t.name).description || t.description || "")}</p></div>`).join("")}</div>
+  <h2>Relationships</h2>
+  <div class="card scroll-x"><table class="t"><thead><tr><th>From (many)</th><th>To (one)</th><th>Cardinality</th><th>Filter</th><th>State</th></tr></thead><tbody>${relRows}</tbody></table></div>
+  <h2>Row-level security roles</h2>
+  <div class="card scroll-x"><table class="t"><thead><tr><th>Role</th><th>Filters</th><th>What it does</th></tr></thead><tbody>${roleRows}</tbody></table></div>`;
+  drawModel();
+}
+function drawModel() {
+  const box = $("#star"); if (!box || box.offsetParent === null) return;
+  const svg = $("#star-wires"), r0 = box.getBoundingClientRect();
+  svg.setAttribute("width", box.scrollWidth); svg.setAttribute("height", box.scrollHeight);
+  const rowPos = (t, c) => {
+    const el = box.querySelector(`.ent[data-t="${CSS.escape(t)}"] .row[data-c="${CSS.escape(c)}"]`);
+    if (!el) return null; const r = el.getBoundingClientRect();
+    return { l: r.left - r0.left, r: r.right - r0.left, y: r.top - r0.top + r.height / 2 };
+  };
+  svg.innerHTML = D.model.relationships.map(r => {
+    const a = rowPos(r.from.table, r.from.column), b = rowPos(r.to.table, r.to.column); if (!a || !b) return "";
+    let d;
+    if (Math.abs(a.l - b.l) < 4) { const x = a.l, k = 36; d = `M${x} ${a.y} C${x - k} ${a.y}, ${x - k} ${b.y}, ${x} ${b.y}`; }
+    else if (a.l > b.l) { const mx = (a.l + b.r) / 2; d = `M${a.l} ${a.y} C${mx} ${a.y}, ${mx} ${b.y}, ${b.r} ${b.y}`; }
+    else { const mx = (a.r + b.l) / 2; d = `M${a.r} ${a.y} C${mx} ${a.y}, ${mx} ${b.y}, ${b.l} ${b.y}`; }
+    return `<path d="${d}" class="${r.active ? "" : "dash"}" style="opacity:.75"/>`;
+  }).join("");
+}
+
+/* ------------------------------------------------------------------ catalog */
+let catFilter = "all", catQuery = "";
+function renderCatalog() {
+  const allCols = modelTables.flatMap(t => t.columns.map(c => ({ t: t.name, c })));
+  const described = allCols.filter(x => x.c.description || colNote(x.t, x.c.name)).length;
+  const pipeTables = Object.values(N).filter(n => ["src", "silver", "gold"].includes(n.layer));
+  const counts = { model: D.model.tables.length, measures: measures.length, pipeline: pipeTables.length };
+  $("#p-catalog").innerHTML = `
+  <h1>Data catalog</h1>
+  <p class="lede">${D.model.tables.length} model tables, ${allCols.length} columns and ${measures.length} measures, plus the ${pipeTables.length} lakehouse tables of the pipeline. Counts come from the published model (${esc(STATS.captured_at || "not captured")}); no data values are shown, so personal columns stay private. ${described} of ${allCols.length} columns have a description; the rest are still empty in <code>docs/platform/catalog_notes.json</code>.</p>
+  <div class="search"><input id="q" type="search" placeholder="a table, a column, a measure or a word of a description" aria-label="Search the catalog"><span class="muted" id="qcount"></span></div>
+  <div class="filters" role="group" aria-label="Filter">
+    ${[["all", "all"], ["model", `model tables ${counts.model}`], ["measures", `measures ${counts.measures}`], ["pipeline", `lakehouse ${counts.pipeline}`]].map(([k, l]) => `<button data-f="${k}" aria-pressed="${k === catFilter}">${l}</button>`).join("")}
+  </div>
+  <div id="cat-list"></div>`;
+  $("#q").value = catQuery;
+  $("#q").addEventListener("input", e => { catQuery = e.target.value; listCatalog(); });
+  $("#p-catalog .filters").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    catFilter = b.dataset.f; $("#p-catalog .filters").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); listCatalog();
+  });
+  listCatalog();
+}
+function hl(text, q) {
+  const s = esc(text); if (!q) return s;
+  const i = low(text).indexOf(low(q)); if (i < 0) return s;
+  return esc(text.slice(0, i)) + `<mark class="hit">${esc(text.slice(i, i + q.length))}</mark>` + esc(text.slice(i + q.length));
+}
+function listCatalog(openName) {
+  const q = catQuery.trim(), ql = low(q), m = s => !ql || low(s).includes(ql);
+  let html = "", shown = 0;
+  if (catFilter === "all" || catFilter === "model") {
+    D.model.tables.filter(t => t.name !== "_Measures").forEach(t => {
+      const note = tableNote(t.name), desc = t.description || note.description || "";
+      const colHits = t.columns.filter(c => m(c.name) || m(c.description) || m(colNote(t.name, c.name)));
+      if (!(m(t.name) || m(desc) || colHits.length)) return;
+      shown++;
+      const st = CSTATS[t.name] || {}, rows = ROWS[t.name];
+      const step = steps.find(s => t.schema && low(s.writes) === low(t.schema + "." + t.entity));
+      const colRows = t.columns.map(c => {
+        const s = st[c.name] || {}, d = c.description || colNote(t.name, c.name);
+        const keyRel = D.model.relationships.find(r => (r.from.table === t.name && r.from.column === c.name) || (r.to.table === t.name && r.to.column === c.name));
+        const key = keyRel ? (keyRel.to.table === t.name ? "PK" : "FK") : "";
+        const range = s.min || s.max ? `${esc(s.min)} → ${esc(s.max)}` : "";
+        const blankPct = rows ? (s.blank || 0) / rows : 0;
+        const dim = ql && !(m(c.name) || m(d)) ? ' style="opacity:.45"' : "";
+        return `<tr${dim}><td><code>${hl(c.name, q)}</code>${c.hidden ? ' <span class="badge">hidden</span>' : ""}${c.personal ? ' <span class="badge warn">personal</span>' : ""}</td>
+          <td class="muted">${esc(c.dataType)}</td><td>${key ? `<span class="badge ${key === "PK" ? "dim" : "fact"}">${key}</span>` : ""}</td>
+          <td class="n">${s.distinct != null ? fmt(s.distinct) : ""}</td><td class="n">${s.blank ? (blankPct >= .001 ? (blankPct * 100).toFixed(1) + "%" : fmt(s.blank)) : s.distinct != null ? "0" : ""}</td>
+          <td class="mono" style="white-space:nowrap">${range}</td><td>${d ? hl(d, q) : '<span class="empty">no description yet</span>'}</td><td>${appBadges(colUsedBy(t.name, c.name))}</td></tr>`;
+      }).join("");
+      const open = (ql && colHits.length && !m(t.name)) || openName === t.name;
+      html += `<details class="item" id="cat-${esc(t.name)}"${open ? " open" : ""}><summary>
+        <span class="name">${hl(t.name, q)}</span><span class="badge ${kindOf(t.name) === "fact" ? "fact" : kindOf(t.name) === "dim" ? "dim" : ""}">${kindOf(t.name)}</span>
+        ${t.hidden ? '<span class="badge">hidden</span>' : ""}
+        <span class="desc">${hl(!note.grain ? desc : /^one /i.test(note.grain) ? "one row per " + note.grain.replace(/^one /i, "") : note.grain, q)}</span>
+        <span class="meta">${rows != null ? fmt(rows) + " rows · " : ""}${t.columns.length} columns ${appBadges(usedBy(t.name))}</span></summary>
+        <div class="body">
+          <p style="margin-top:0">${hl(desc, q) || '<span class="empty">no description yet</span>'}</p>
+          <div class="kv" style="margin-bottom:14px">
+            <div>Storage</div><div>${t.mode === "directLake" ? `Direct Lake on <code>${esc(t.schema)}.${esc(t.entity)}</code>` : esc(t.mode || "")}</div>
+            <div>Built by</div><div>${step ? `<code>${esc(step.functions.join(" + "))}</code> in <code>${esc(step.notebook)}</code>` : t.schema ? '<span class="muted">outside this repo</span>' : '<span class="muted">calculated in the model</span>'}</div>
+            <div>Source of the text</div><div class="muted">${esc(note.doc || "TMDL")}</div>
+          </div>
+          <div class="scroll-x"><table class="t"><thead><tr><th>Column</th><th>Type</th><th>Key</th><th class="n">Distinct</th><th class="n">Blank</th><th>Range</th><th>Description</th><th>Used by</th></tr></thead><tbody>${colRows}</tbody></table></div>
+        </div></details>`;
+    });
+  }
+  if (catFilter === "all" || catFilter === "measures") {
+    const folders = {};
+    measures.forEach(me => { if (m(me.name) || m(me.description) || m(me.folder)) (folders[me.folder || "(no folder)"] = folders[me.folder || "(no folder)"] || []).push(me); });
+    Object.keys(folders).sort((a, b) => (b.startsWith("_app") - a.startsWith("_app")) || a.localeCompare(b)).forEach(f => {
+      const list = folders[f]; shown += list.length;
+      const rows = list.map(me => {
+        const users = Object.entries(D.apps).filter(([, u]) => u.measures.includes(me.name)).map(([a]) => a);
+        return `<tr><td><code>${hl(me.name, q)}</code></td><td class="muted mono">${esc(me.format)}</td><td>${me.tables.map(t => `<code>${esc(t)}</code>`).join(", ")}</td><td>${me.description ? hl(me.description, q) : '<span class="empty">no description</span>'}</td><td>${appBadges(users)}</td></tr>`;
+      }).join("");
+      html += `<details class="item"${ql ? " open" : ""}><summary><span class="name">${hl(f, q)}</span><span class="badge">${f.startsWith("_app") ? "app measures" : "original measures"}</span><span class="desc">${f.startsWith("_app") ? "used by the Fabric apps" : "bound to the Power BI report; never edited"}</span><span class="meta">${list.length} measures</span></summary>
+        <div class="body"><div class="scroll-x"><table class="t"><thead><tr><th>Measure</th><th>Format</th><th>Reads</th><th>Description</th><th>Used by</th></tr></thead><tbody>${rows}</tbody></table></div></div></details>`;
+    });
+  }
+  if (catFilter === "all" || catFilter === "pipeline") {
+    Object.values(N).filter(n => ["src", "silver", "gold"].includes(n.layer)).sort((a, b) => ["src", "silver", "gold"].indexOf(a.layer) - ["src", "silver", "gold"].indexOf(b.layer) || a.name.localeCompare(b.name)).forEach(n => {
+      const desc = n.ext ? NOTES.external_tables[n.name] || "" : "";
+      const built = n.step ? `<code>${esc(n.step.functions.join(" + "))}</code> in <code>${esc(n.step.notebook)}</code>` : "outside this repo";
+      if (!(m(n.name) || m(desc))) return;
+      shown++;
+      html += `<details class="item"><summary><span class="name">${hl(n.name, q)}</span><span class="badge">${n.layer === "src" ? "source" : n.layer}</span><span class="desc">${hl(desc || (n.step ? "built by " + n.step.functions[0] : ""), q)}</span><span class="meta">${n.down.size} downstream</span></summary>
+        <div class="body"><div class="kv"><div>Built by</div><div>${built}</div><div>Reads</div><div>${[...n.up].map(x => `<code>${esc(N[x].name)}</code>`).join(", ") || '<span class="muted">–</span>'}</div><div>Read by</div><div>${[...n.down].map(x => `<code>${esc(N[x].name)}</code>`).join(", ") || '<span class="muted">–</span>'}</div></div>
+        <p class="muted" style="font-size:12px">Columns of lakehouse tables are not in the repo yet; see the model table for the gold columns.</p></div></details>`;
+    });
+  }
+  $("#cat-list").innerHTML = html || `<p class="empty">Nothing matches “${esc(q)}”.</p>`;
+  $("#qcount").textContent = q ? `${shown} matches` : "";
+  if (openName) { const el = document.getElementById("cat-" + openName); if (el) el.scrollIntoView({ block: "start" }); }
+}
+
+/* ------------------------------------------------------------------ routing */
+const PAGES = ["architecture", "lineage", "model", "catalog"];
+const rendered = {};
+function route(target) {
+  const [page, arg] = (target ?? (location.hash.slice(1) || "architecture")).split("/");
+  const p = PAGES.includes(page) ? page : "architecture";
+  PAGES.forEach(x => $("#p-" + x).hidden = x !== p);
+  document.querySelectorAll("nav.tabs a").forEach(a => { if (a.getAttribute("href") === "#" + p) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  if (!rendered[p]) { ({ architecture: renderArchitecture, lineage: renderLineage, model: renderModel, catalog: renderCatalog })[p](); rendered[p] = true; }
+  if (p === "lineage") requestAnimationFrame(drawLineage);
+  if (p === "model") requestAnimationFrame(drawModel);
+  if (p === "catalog" && arg) { catQuery = ""; catFilter = "all"; renderCatalog(); listCatalog(decodeURIComponent(arg)); }
+  else if (!arg) window.scrollTo(0, 0);
+}
+$("#built").textContent = `built ${D.built_at}${D.git ? " · " + D.git : ""} · docs/platform/build_site.py`;
+window.addEventListener("hashchange", () => route());
+// in-page links work by click as well, so the page also runs where the hash cannot change (data: URLs, sandboxed viewers)
+document.addEventListener("click", e => {
+  const a = e.target.closest('a[href^="#"]'); if (!a) return;
+  e.preventDefault();
+  const target = a.getAttribute("href").slice(1);
+  try { history.replaceState(null, "", "#" + target); } catch (_) { /* hash not writable here */ }
+  route(target);
+});
+let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { drawLineage(); drawModel(); }, 120); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawLineage(); drawModel(); });
+route();
+</script>

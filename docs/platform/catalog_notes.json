@@ -1,0 +1,246 @@
+{
+  "_readme": "Hand-kept knowledge the builder cannot read from code. Every description traces to the doc in 'doc'. Leave a description out rather than guess it; the catalog lists what is still empty. Column descriptions written in the published model (TMDL ///) win over these.",
+  "systems": [
+    {
+      "id": "synerion",
+      "name": "Synerion",
+      "kind": "time keeping",
+      "description": "People log hours weekly; line managers approve timesheets.",
+      "schemas": ["synerion"],
+      "doc": "docs/01 § 1, docs/02 § 1"
+    },
+    {
+      "id": "ukg",
+      "name": "UKG",
+      "kind": "HR",
+      "description": "Employment details, job history (SCD2), org levels and pay rates.",
+      "schemas": ["hr"],
+      "doc": "docs/02 § 1-2"
+    },
+    {
+      "id": "projectops",
+      "name": "Project Operations",
+      "kind": "Dataverse",
+      "description": "Projects, tasks, bookable resources and the unified financials (Actual + Backlog).",
+      "schemas": ["dataverse", "dataverse_history"],
+      "doc": "docs/02 § 1"
+    },
+    {
+      "id": "accesslist",
+      "name": "PM access list",
+      "kind": "CSV in OneLake Files",
+      "description": "Manual list of extra users and areas for the PM app row-level security.",
+      "schemas": ["Files"],
+      "doc": "docs/09_pm_app_access_sop.md"
+    },
+    {
+      "id": "calendar",
+      "name": "Calendar",
+      "kind": "lakehouse table",
+      "description": "dbo.dim_calendar, built outside this repo.",
+      "schemas": ["dbo"],
+      "doc": "docs/01 § 2"
+    }
+  ],
+  "consumers": [
+    {
+      "id": "app",
+      "name": "Executive app",
+      "path": "app/src",
+      "description": "Fabric App for the CFO, executives and area directors: effort, headcount, FTE, flows, yield, projects.",
+      "doc": "docs/05_app_design.md"
+    },
+    {
+      "id": "pm-app",
+      "name": "PM app",
+      "path": "pm-app/src",
+      "description": "Fabric App for Project Managers: their projects, hours vs plan, budget, allocation. Row-level security by project.",
+      "doc": "docs/04 2026-11-16"
+    },
+    {
+      "id": "pbi-report",
+      "name": "Power BI report",
+      "path": null,
+      "description": "The original report; binds to the original (non _app) measures, which are never renamed or edited.",
+      "doc": "CLAUDE.md"
+    }
+  ],
+  "external_tables": {
+    "synerion.time_costing_detail": "One row per Synerion time entry: date, employee, project, task, pay category, hours. Bronze extract not in this repo (docs/02 § 4).",
+    "synerion.pay_categories": "Pay category descriptions (Regular Time, Overtime, Holiday, Time Off).",
+    "synerion.employment_type": "Employment type lookup.",
+    "synerion.auxiliar_codes": "Shrinkage codes behind subtask_category.",
+    "hr.ukg_employment_details": "UKG employment: name, company, employee type.",
+    "hr.ukg_employee_job_history": "UKG job history (SCD2): hourly pay rate and org levels as of a date.",
+    "hr.ukg_company_details": "UKG companies, mapped to country CRI / COL / USA.",
+    "hr.ukg_dimensions_details": "UKG org level descriptions.",
+    "hr.ukg_jobs_details": "UKG job titles (PM app header).",
+    "hr.vw_dim_employee_details": "UKG employee view with supervisor chain (PM app access).",
+    "dataverse_history.msdyn_project": "Project Operations projects: name, company, customer, industry, service line, org, PM.",
+    "dataverse_history.msdyn_projecttask": "Project Operations tasks; umbrella projects take their attributes from the task.",
+    "dataverse.bookableresource_clean": "Project Operations resources: names and Auxis IDs.",
+    "dataverse.fact_financials_unified": "Project Operations financial lines, Actual and Backlog, per project x day x type.",
+    "dbo.dim_calendar": "Calendar table, outside this repo.",
+    "Files.pm_app_access_list.csv": "Manual PM app access list (docs/09)."
+  },
+  "tables": {
+    "fact_profitability_metrics": {
+      "description": "Synerion time: what people logged, enriched with UKG HR and Project Operations project/task attributes. Not Project Ops actuals.",
+      "grain": "One Synerion time entry (employee x day x project task x pay category)",
+      "doc": "docs/01 § 2, docs/02 § 3",
+      "personal": ["employee_full_name", "synerion_emp_id", "ukg_employee_id"],
+      "columns": {
+        "transaction_date": "Day the hours were worked.",
+        "worked_hours": "Hours logged in Synerion.",
+        "actual_cost_usd": "Hours x UKG hourly pay rate, in each company's LOCAL currency despite the name. Out of scope, don't use.",
+        "ukg_employee_id": "UKG employee id; relates to dim_employee.",
+        "synerion_emp_id": "Synerion employee id.",
+        "employee_full_name": "Employee name (internal HR data).",
+        "employee_country": "Employee country from the UKG company (CRI, COL, USA).",
+        "employee_reporting_category": "Regular, Contractor, Intern, GT Contractor, Temporary Employee.",
+        "employee_L1": "Employee's home org, level 1.",
+        "employee_L2": "Employee's home org, level 2.",
+        "employee_L3": "Employee's home org, level 3.",
+        "project_key": "First 10 characters of the project name; relates to dim_project. Fragile key (open issue #6).",
+        "project_name": "Project name from Project Operations; 'Unmapped Project' when unmatched.",
+        "project_company": "Company of the project.",
+        "project_country": "Country of the project, from the project company name.",
+        "project_customer": "Customer of the project (from the task for umbrella projects).",
+        "project_industry": "Industry of the project.",
+        "project_service_line": "Service line of the project.",
+        "project_L1": "Project's org, level 1.",
+        "project_L2": "Project's org, level 2.",
+        "project_L3": "Project's org, level 3.",
+        "task_name": "Project task.",
+        "subtask_category": "Productive / Regular / shrinkage codes (from auxiliar_codes).",
+        "pay_category_id": "Synerion pay category id.",
+        "pay_category_description": "Regular Time, Overtime, Holiday, Time Off.",
+        "intercompany_flag": "Employee country = project country.",
+        "intercompany_flow": "'EMP -> PRJ' label for the intercompany view.",
+        "cross_charge_flag": "employee_L1 = project_L1 -> Direct, otherwise Cross Charge.",
+        "cross_charge_flow": "'EMP -> PRJ' label for the cross-charge view.",
+        "org_key": "project L1 | L2 | L3; relates to dim_organization."
+      }
+    },
+    "fact_revenue_metrics": {
+      "description": "Project Operations money: Actual and Backlog financial lines, licenses (L3 = LICS) excluded. Always filter the scenario.",
+      "grain": "One Project Ops financial line per project x day x type x scenario",
+      "doc": "docs/01 § 2, docs/02 § 3, docs/04 2026-11-12",
+      "personal": ["resource_name", "employee_number"],
+      "columns": {
+        "transaction_date": "Day of the financial line (Backlog is daily). Actual lines can be dated in the future: Accounting handles some special projects that way, expected (Ion, docs/04 2026-11-24).",
+        "project_key": "Project key; relates to dim_project.",
+        "actual_revenue_usd": "The amount for BOTH scenarios, despite the name.",
+        "hours_quantity": "Project Ops hours on the line (billable plan / actuals only).",
+        "scenario": "Actual or Backlog.",
+        "revenue_type": "T&M, Fixed Fee, Fixed Fee After Month, Rev Rec, Manual Adjustment.",
+        "financial_L1": "Financial org, level 1.",
+        "financial_L2": "Financial org, level 2.",
+        "financial_L3": "Financial org, level 3.",
+        "financial_customer": "Customer on the financial line.",
+        "org_key": "financial L1 | L2 | L3; relates to dim_organization.",
+        "resource_name": "Resource on the line (person or role).",
+        "resource_role": "Role of the resource.",
+        "employee_number": "Auxis ID of the resource; inactive relationship to dim_employee.",
+        "resource_match": "How the resource matched: a person, a role or no resource."
+      }
+    },
+    "dim_project": {
+      "description": "Projects: full outer join of financial projects and time projects on project_key; name and customer prefer the financial side. One row per case-insensitive key.",
+      "grain": "Project (project_key)",
+      "doc": "docs/01 § 2, docs/02 § 3",
+      "personal": [],
+      "columns": {
+        "project_key": "First 10 characters of the project name.",
+        "project_name": "Project name (financial side first).",
+        "project_customer": "Customer (financial side first)."
+      }
+    },
+    "dim_employee": {
+      "description": "Employees from UKG, with the name taken from Dataverse resources when available.",
+      "grain": "Employee (UKG)",
+      "doc": "docs/01 § 2, docs/02 § 3",
+      "personal": ["employee_full_name", "ukg_employee_id", "employee_number"],
+      "columns": {
+        "ukg_employee_id": "UKG employee id.",
+        "employee_number": "Auxis ID.",
+        "employee_full_name": "Employee name (internal HR data)."
+      }
+    },
+    "dim_employee_history": {
+      "description": "SCD2 of the employee's L1 only. Relates on ukg_employee_id -> dim_employee[employee_number] (id vs number, open issue #9).",
+      "grain": "Employee x L1 period",
+      "doc": "docs/01 § 2-3",
+      "personal": ["ukg_employee_id"],
+      "columns": {}
+    },
+    "dim_organization": {
+      "description": "Conformed org: union of project org (time) and financial org (revenue); nulls -> 'Unallocated'.",
+      "grain": "L1 | L2 | L3 combination (org_key)",
+      "doc": "docs/01 § 2, docs/02 § 3",
+      "personal": [],
+      "columns": {
+        "org_key": "L1 | L2 | L3."
+      }
+    },
+    "dim_hierarchy_master": {
+      "description": "Master L1/L2/L3 list (employee org from time + financial org), active since 2026-01-01. No relationships: measures apply it with TREATAS.",
+      "grain": "L1/L2/L3 active since 2026-01-01",
+      "doc": "docs/01 § 2-4",
+      "personal": [],
+      "columns": {}
+    },
+    "dim_calendar": {
+      "description": "Calendar, maintained by Alejandro (dbo.dim_calendar). Auxis weeks run Sunday-Saturday: use start_of_week_sun / end_of_week_sat, never year_week (Monday ISO). Ends before the last Backlog date (open item #5).",
+      "grain": "Day",
+      "doc": "docs/01 § 2",
+      "personal": [],
+      "columns": {
+        "year_week": "Text 'YYYY Www', weeks start Monday. Don't use for Auxis weeks.",
+        "start_of_week_sun": "Sunday that starts the Auxis week.",
+        "end_of_week_sat": "Saturday that ends the Auxis week."
+      }
+    },
+    "info_gold_profitability_refresh": {
+      "description": "Gold pipeline end time and the latest data dates; feeds 'data as of'.",
+      "grain": "1 row",
+      "doc": "docs/01 § 2",
+      "personal": [],
+      "columns": {
+        "LastRefresh": "Gold pipeline end time (EST)."
+      }
+    },
+    "security_project_access_app": {
+      "description": "Hidden. PM app row-level security source: which projects each user may see (PM, supervisor chain, manual list). No relationships.",
+      "grain": "User x project key",
+      "doc": "docs/04 2026-11-16",
+      "personal": ["user_upn"],
+      "columns": {
+        "user_upn": "User principal name (lower case).",
+        "project_key": "Project the user may see.",
+        "reason": "pm / manager / director / manual list."
+      }
+    },
+    "app_user_profile_app": {
+      "description": "Hidden. Name and UKG job title of the signed-in user for the PM app header, filtered to the viewer's own row.",
+      "grain": "User",
+      "doc": "docs/04 2026-11-16",
+      "personal": ["user_upn", "display_name", "job_title"],
+      "columns": {}
+    },
+    "Analysis Type": {
+      "description": "Field parameter: Intercompany / Cross Charge (switches intercompany_flow and cross_charge_flow).",
+      "grain": "2 rows",
+      "doc": "docs/01 § 2",
+      "personal": [],
+      "columns": {}
+    },
+    "_Measures": {
+      "description": "Measure holder. New measures end in _app and live in an _app\\<topic> folder; original measures bind the Power BI report and are never edited. The calculated table itself is in an error state on the published model (open item #42).",
+      "grain": "-",
+      "doc": "docs/03 § 3",
+      "personal": [],
+      "columns": {}
+    }
+  }
+}
