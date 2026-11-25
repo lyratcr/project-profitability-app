@@ -49,22 +49,35 @@ h2 { font-family: var(--font-display); font-size: 18px; line-height: 24px; font-
 .num { font-variant-numeric: tabular-nums; }
 
 /* architecture */
-.flow { display: flex; align-items: stretch; gap: 0; min-width: 1120px; padding: 24px; }
+/* every icon sits on one line: outer stages start lower by the lake's border + top padding */
+.flow { --lake-top: 23px; --icon: 64px; display: flex; align-items: stretch; gap: 0; min-width: 1160px; padding: 28px 24px; }
 .stage { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 6px; min-width: 0; }
-.stage .icon { width: 64px; height: 64px; margin-bottom: 10px; }
+.flow > .stage { padding-top: calc(var(--lake-top) + 8px); }
+.stage .icon { width: var(--icon); height: var(--icon); margin-bottom: 12px; filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--glow, transparent) 38%, transparent)); }
 .stage .lname { font-family: var(--mono); font-size: 12px; color: var(--ink-muted); }
 .stage .big { font-size: 34px; line-height: 40px; font-weight: 600; letter-spacing: -.5px; }
 .stage .big small { font-size: 14px; font-weight: 400; color: var(--ink-muted); letter-spacing: 0; margin-left: 4px; }
 .stage .sub { font-size: 12px; line-height: 16px; color: var(--ink-muted); max-width: 170px; }
 .stage.box { border: 1px dashed var(--line-strong); border-radius: var(--radius-md); }
-.arrow { flex: 0 0 56px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 30px; color: var(--ink-faint); }
-.arrow .stepno { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--ink-muted); color: var(--ink); font-size: 12px; font-weight: 700; display: grid; place-items: center; background: var(--surface); }
-.arrow svg { margin-top: 4px; }
-.lake { display: flex; flex: 4.4 1 0; border: 1px dashed var(--line-strong); border-radius: var(--radius-md); padding: 22px 4px 10px; position: relative; }
+.arrow { flex: 0 0 80px; align-self: flex-start; height: 24px; color: var(--ink-faint); display: flex; align-items: center; justify-content: center;
+  margin-top: calc(8px + var(--icon) / 2 - 12px); }
+.flow > .arrow { margin-top: calc(var(--lake-top) + 8px + var(--icon) / 2 - 12px); }
+.arrow svg { display: block; overflow: visible; }
+.arrow .ring { fill: var(--surface); stroke: var(--accent); stroke-width: 1.5; }
+.arrow .tip { fill: var(--accent); }
+.arrow .no { fill: var(--ink); font: 700 11px var(--font-sans); }
+.lake { display: flex; flex: 4.4 1 0; border: 1px dashed var(--line-strong); border-radius: var(--radius-md); padding: 22px 4px 10px; position: relative; background: color-mix(in srgb, var(--surface-sunken) 45%, transparent); }
 .lake > .lake-label { position: absolute; top: -9px; left: 20px; background: var(--surface); padding: 0 8px; font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
-.consumer-list { display: flex; flex-direction: column; gap: 14px; text-align: left; align-self: stretch; padding-top: 6px; }
-.consumer-list .c b { font-size: 15px; }
-.consumer-list .c div { font-size: 12px; color: var(--ink-muted); line-height: 16px; }
+.stage.consumers { flex: 1.7 1 0; align-items: stretch; padding-left: 10px; }
+.stage.consumers { position: relative; }
+.stage.consumers > .lname { position: absolute; top: calc(var(--lake-top) - 16px); left: 6px; }
+.consumer-list { display: flex; flex-direction: column; gap: 18px; text-align: left; }
+.consumer-list .c { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; }
+.consumer-list .c svg { width: 40px; height: 40px; color: var(--ink-muted); }
+.consumer-list .c.app svg { color: var(--green-500); }
+.consumer-list .c b { display: block; font-size: 16px; line-height: 20px; }
+.consumer-list .c > div > span { display: block; font-size: 12px; color: var(--ink-muted); line-height: 16px; }
+.consumer-list .c .n { display: inline; font-weight: 600; color: var(--ink); }
 .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .step { padding: 16px 18px; }
 .step h3 { margin: 0 0 6px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
@@ -232,10 +245,18 @@ const appMeasures = measures.filter(m => /_app$/.test(m.name));
 const ic = {
   file: `<svg class="icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8h20l10 10v38H18z"/><path d="M38 8v10h10M24 30h16M24 38h16M24 46h10"/></svg>`,
   db: c => `<svg class="icon" viewBox="0 0 64 64" fill="none" stroke="${c}" stroke-width="2.4"><ellipse cx="32" cy="14" rx="20" ry="7"/><path d="M12 14v36c0 3.9 9 7 20 7s20-3.1 20-7V14"/><path d="M12 26c0 3.9 9 7 20 7s20-3.1 20-7M12 38c0 3.9 9 7 20 7s20-3.1 20-7"/></svg>`,
-  sigma: `<svg class="icon" viewBox="0 0 64 64" fill="none" stroke="var(--blue-700)" stroke-width="2.4"><rect x="8" y="8" width="48" height="48" rx="10"/><path d="M42 20H22l12 12-12 12h20" stroke-linejoin="round"/></svg>`,
-  arrow: `<svg width="40" height="12" viewBox="0 0 40 12"><path d="M0 6h34" stroke="currentColor" stroke-width="1.6"/><path d="M32 1l6 5-6 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`,
+  sigma: `<svg class="icon" viewBox="0 0 64 64" fill="none" stroke="var(--link)" stroke-width="2.4"><rect x="8" y="8" width="48" height="48" rx="10"/><path d="M42 20H22l12 12-12 12h20" stroke-linejoin="round"/></svg>`,
+  // consumers
+  dashboard: `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="7" width="32" height="26" rx="4"/><path d="M4 13h32"/><circle cx="8.5" cy="10" r=".6" fill="currentColor"/><circle cx="11.5" cy="10" r=".6" fill="currentColor"/><path d="M11 28v-6M17 28V19M23 28v-9M29 28v-4" stroke-linecap="round"/></svg>`,
+  people: `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="15" cy="14" r="5.5"/><path d="M5 33c0-6 4.5-10 10-10s10 4 10 10" stroke-linecap="round"/><circle cx="27.5" cy="15.5" r="4.5"/><path d="M27 23.5c5 0 8.5 3.6 8.5 9" stroke-linecap="round"/></svg>`,
+  report: `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 5h14l7 7v23H10z" stroke-linejoin="round"/><path d="M24 5v7h7"/><path d="M15 30v-5M20 30v-9M25 30v-6" stroke-linecap="round"/></svg>`,
 };
-const arrow = n => `<div class="arrow">${n ? `<div class="stepno">${n}</div>` : ""}${ic.arrow}</div>`;
+// a flow arrow; a numbered one carries the step on the line, like (1)▸
+const arrow = n => `<div class="arrow" aria-hidden="true">${n ? `<svg width="80" height="24" viewBox="0 0 80 24">
+    <path d="M0 12H27M57 12H76" stroke="currentColor" stroke-width="1.5"/><path d="M72 7.5l5 4.5-5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle class="ring" cx="39" cy="12" r="11"/><text class="no" x="39" y="16" text-anchor="middle">${n}</text><path class="tip" d="M51 8.5l4.5 3.5-4.5 3.5z"/></svg>`
+  : `<svg width="80" height="24" viewBox="0 0 80 24"><path d="M4 12H76" stroke="currentColor" stroke-width="1.5"/><path d="M72 7.5l5 4.5-5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`}</div>`;
+const consumerIcon = { app: "dashboard", "pm-app": "people", "pbi-report": "report" };
 
 /* ------------------------------------------------------------------ architecture */
 function renderArchitecture() {
@@ -247,8 +268,8 @@ function renderArchitecture() {
   const rels = D.model.relationships;
   const appRows = APPS.map(a => {
     const u = D.apps[a.id];
-    const extra = u ? `${u.query_files} DAX queries · ${u.measures.length} measures` : "original measures · not in this repo";
-    return `<div class="c"><b>${esc(a.name)}</b><div>${extra}</div></div>`;
+    const extra = u ? `<span class="n">${u.query_files}</span> DAX queries · <span class="n">${u.measures.length}</span> measures` : "original measures · not in this repo";
+    return `<div class="c${u ? " app" : ""}">${ic[consumerIcon[a.id] || "dashboard"]}<div><b>${esc(a.name)}</b><span>${extra}</span></div></div>`;
   }).join("");
   const fp = CSTATS.fact_profitability_metrics || {}, fr = CSTATS.fact_revenue_metrics || {}, cal = CSTATS.dim_calendar || {}, inf = CSTATS.info_gold_profitability_refresh || {};
   const maxRev = (fr.transaction_date || {}).max, maxCal = (cal.date || {}).max;
@@ -258,7 +279,7 @@ function renderArchitecture() {
   <h1>Architecture</h1>
   <p class="lede">How the data flows: from ${systemsUsed.length} source systems, through ${D.pipeline.length} notebooks in lakehouse <code>${esc(D.pipeline[0]?.catalog)}</code>, to the semantic model and the apps that read it. Drawn from the notebooks and the model in this repo.</p>
   <div class="card scroll-x"><div class="flow">
-    <div class="stage">
+    <div class="stage" style="--glow: var(--ink-muted)">
       ${ic.file}
       <div class="lname">sources</div>
       <div class="big">${systemsUsed.length}<small>systems</small></div>
@@ -266,21 +287,21 @@ function renderArchitecture() {
     </div>
     ${arrow("")}
     <div class="lake"><span class="lake-label">${esc(D.pipeline[0]?.catalog)} · Fabric lakehouse</span>
-      <div class="stage">
+      <div class="stage" style="--glow: var(--grey-300)">
         ${ic.db("var(--grey-300)")}
         <div class="lname">source schemas</div>
         <div class="big">${srcNodes.length}<small>tables</small></div>
         <div class="sub">${[...new Set(srcNodes.map(n => n.name.split(".")[0]))].join(" · ")}<br>loaded by pipelines outside this repo</div>
       </div>
       ${arrow(1)}
-      <div class="stage">
+      <div class="stage" style="--glow: var(--blue-300)">
         ${ic.db("var(--blue-300)")}
         <div class="lname">silver</div>
         <div class="big">${silver.length}<small>tables</small></div>
         <div class="sub">hours enriched with HR${silverNb?.full_load ? " · full load" : ""}</div>
       </div>
       ${arrow(2)}
-      <div class="stage">
+      <div class="stage" style="--glow: var(--yellow-300)">
         ${ic.db("var(--yellow-300)")}
         <div class="lname">gold</div>
         <div class="big">${gold.length}<small>tables</small></div>
@@ -288,14 +309,14 @@ function renderArchitecture() {
       </div>
     </div>
     ${arrow(3)}
-    <div class="stage">
+    <div class="stage" style="--glow: var(--blue-500)">
       ${ic.sigma}
       <div class="lname">semantic model</div>
       <div class="big">${modelTables.length}<small>tables</small></div>
       <div class="sub">${dl} Direct Lake · ${measures.length} measures (${appMeasures.length} _app) · ${rels.length} relationships · ${D.model.roles.length} roles</div>
     </div>
     ${arrow("")}
-    <div class="stage"><div class="lname" style="margin-bottom:6px">consumers</div><div class="consumer-list">${appRows}</div></div>
+    <div class="stage consumers"><div class="lname">consumers</div><div class="consumer-list">${appRows}</div></div>
   </div></div>
 
   <h2>The steps</h2>
